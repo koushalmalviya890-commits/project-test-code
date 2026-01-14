@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Invoice</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background: white;
+        width: 180mm;
+        height: 270mm;
+        margin: 15mm auto;
+        padding: 10mm;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        display: flex;
+        /* flex-direction: column; */
+        justify-content: space-between;
+      
+      }
+
+      .logo img {
+        width: 150px;
+        /* margin-top: 20px; */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      h1 {
+        margin: 20px 0 5px;
+        font-size: 32px;
+        color: #555;
+      }
+
+      .section {
+        margin-top: 20px;
+      }
+
+      .invoice-meta {
+        display: flex;
+        justify-content: space-between;
+        /* margin-top: 10px; */
+      }
+
+      .addresses {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+      }
+
+      .from,
+      .to {
+        width: 48%;
+        line-height: 30px;
+      }
+
+      .bold {
+        font-weight: bold;
+      }
+
+      .table {
+        margin-top: 30px;
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      .table th,
+      .table td {
+        border: 1px solid #000;
+        padding: 10px;
+        text-align: left;
+      }
+
+      .table th {
+        background: #000;
+        color: #fff;
+        font-weight: bold;
+      }
+
+      .right {
+        text-align: right;
+      }
+
+      .total {
+        margin-top: 30px;
+        border-top: 2px solid #000;
+        padding-top: 10px;
+        font-size: 16px;
+        font-weight: bold;
+        text-align: right;
+      }
+
+      .bank-details {
+        margin-top: 30px;
+        font-size: 13px;
+      }
+
+      .note {
+        margin-top: 200px;
+        font-size: 12px;
+
+      }
+
+      .stamp-signature {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 40px;
+      }
+
+      .stamp-signature img {
+        height: 80px;
+        margin-right: 20px;
+      }
+
+      .ciic-accounts {
+        font-weight: bold;
+      }
+
+      hr {
+        border: none;
+        border-top: 2px solid #000;
+        margin-top: 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+
+        <div>
+          <h1>Invoice</h1>
+          <p><strong>Invoice Number</strong></p>
+          <div class="invoice-meta">
+            <p><strong>Date:</strong> 26.03.2025</p>
+          </div>
+        </div>
+        <div>
+          <!-- <div class="header-right">
+            <p>
+              CIN - U85320TN2019NPL128310<br />
+              TAN - CHEC13753A<br />
+              PAN - AACC0938N
+            </p>
+          </div> -->
+          <div class="logo">
+            <img src="" alt=" Logo" />
+          </div>
+        </div>
+      
+    </div>
+
+    <div class="addresses section">
+      <div class="from">
+        <p>
+          <strong>From</strong><br />
+           [BUSINESS NAME]<br />
+         Address Line 1, Address Line 2<br />
+          City, State and Country,<br />
+        [E-MAIL]<br />
+        [PHONE]
+        </p>
+      </div>
+      <div class="to">
+        <p>
+          <strong>To</strong><br />
+          [CLIENT NAME]<br />
+         Address Line 1, Address Line 2<br />
+          City, State and Country,<br />
+        [E-MAIL]<br />
+        [PHONE]
+        </p>
+        </p>
+      </div>
+    </div>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Price</th>
+          <th>Qty</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>[ITEM NAME #1]</td>
+          <td class="right">Rs. 5,000/-</td>
+          <td class="right">12</td>
+          <td class="right">Rs. 60,000/-</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <hr />
+    <div class="total">TOTAL: Rs. 60,000/-</div>
+
+    <!-- <div class="stamp-signature">
+      <img src="YOUR_STAMP_IMAGE_URL" alt="Stamp" />
+      <div class="ciic-accounts">CIIC-Accounts</div>
+    </div> -->
+
+<!-- <div class="bank-details">
+  <table>
+      <tr>
+        <td><strong>Name:</strong></td>
+        <td>CRESCENT INNOVATION AND INCUBATION COUNCIL</td>
+      </tr>
+      <tr>
+        <td><strong>Bank:</strong></td>
+        <td>ICICI BANK</td>
+      </tr>
+      <tr>
+        <td><strong>Branch:</strong></td>
+        <td>URAPAKKAM</td>
+      </tr>
+      <tr>
+        <td><strong>A/c No:</strong></td>
+        <td>321805000661</td>
+      </tr>
+      <tr>
+        <td><strong>IFSC:</strong></td>
+        <td>ICIC0003218</td>
+      </tr>
+  </table>
+</div> -->
+
+    <div class="note">
+      <footer>
+
+        <p>
+          <strong>Note:</strong> [sample notes ]
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

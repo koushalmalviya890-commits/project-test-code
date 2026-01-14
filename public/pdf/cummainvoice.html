@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Invoice ${invoiceNumber}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.4;
+      color: #1a1a1a;
+      background-color: #ffffff;
+      font-size: 13px;
+    }
+    
+    .invoice-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: white;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .letterhead {
+      border-bottom: 2px solid #2563eb;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .company-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .company-logo h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2563eb;
+      letter-spacing: 1px;
+    }
+    
+    .company-details {
+      text-align: right;
+      font-size: 11px;
+      color: #6b7280;
+    }
+    
+    .invoice-title {
+      text-align: center;
+      margin: 15px 0;
+    }
+    
+    .invoice-title h2 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #1f2937;
+      letter-spacing: 0.5px;
+    }
+    
+    .invoice-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .invoice-details, .billing-info {
+      background: #f8fafc;
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 3px solid #2563eb;
+    }
+    
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 12px;
+      align-items: baseline;
+    }
+    
+    .info-label {
+      font-weight: 500;
+      color: #6b7280;
+      flex-shrink: 0;
+      min-width: 100px;
+    }
+    
+    .info-value {
+      font-weight: 500;
+      color: #1f2937;
+      text-align: right;
+      word-break: break-all;
+      margin-left: 10px;
+    }
+    
+    .facility-startup-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .facility-info, .startup-info {
+      background: #fefefe;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 15px;
+    }
+    
+    .detail-item {
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    
+    .detail-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .detail-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: 2px;
+    }
+    
+    .detail-value {
+      font-size: 12px;
+      font-weight: 500;
+      color: #1f2937;
+    }
+    
+    .amount-breakdown {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 15px;
+    }
+    
+    .breakdown-header {
+      background: #f9fafb;
+      padding: 12px 15px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .breakdown-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .breakdown-table th {
+      background: #f9fafb;
+      padding: 10px 15px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    
+    .breakdown-table th:last-child {
+      text-align: right;
+    }
+    
+    .breakdown-table td {
+      padding: 8px 15px;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 12px;
+    }
+    
+    .breakdown-table td:last-child {
+      text-align: right;
+      font-weight: 500;
+    }
+    
+    .subtotal-row {
+      background: #f9fafb;
+      font-weight: 500;
+    }
+    
+    .total-row {
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .total-row td {
+      border-bottom: none;
+    }
+    
+    .payment-info {
+      background: #ecfdf5;
+      border: 1px solid #d1fae5;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .payment-details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+    
+    .payment-status {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 15px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    
+    .status-paid {
+      background: #dcfce7;
+      color: #166534;
+    }
+    
+    .status-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .status-failed {
+      background: #fecaca;
+      color: #991b1b;
+    }
+    
+    .footer {
+      margin-top: auto;
+      padding-top: 15px;
+      border-top: 1px solid #f3f4f6;
+      text-align: center;
+    }
+    
+    .footer p {
+      color: #6b7280;
+      font-size: 10px;
+      margin-bottom: 4px;
+    }
+    
+    .footer .company-name {
+      color: #2563eb;
+      font-weight: 600;
+    }
+    
+    @media print {
+      .invoice-container {
+        padding: 15px;
+        height: auto;
+      }
+      
+      body {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-container">
+    <!-- Letterhead -->
+    <div class="letterhead">
+      <div class="company-info">
+        <div class="company-logo">
+          <h1>CUMMA</h1>
+        </div>
+        <div class="company-details">
+          <p><strong>Coworking & Startup Facilities</strong></p>
+          <p>Email: hello@cumma.in</p>
+          <p>Website: www.cumma.in</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice Title -->
+    <div class="invoice-title">
+      <h2>INVOICE</h2>
+    </div>
+
+    <!-- Invoice Meta Information -->
+    <div class="invoice-meta">
+      <div class="invoice-details">
+        <div class="section-title">Invoice Details</div>
+        <div class="info-row">
+          <span class="info-label">Invoice Number:</span>
+          <span class="info-value">${invoiceNumber}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Date Issued:</span>
+          <span class="info-value">${formatDate(invoiceDate)}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Booking ID:</span>
+          <span class="info-value">${booking._id}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Payment Status:</span>
+          <span class="info-value payment-status ${booking.paymentStatus === 'paid' ? 'status-paid' : booking.paymentStatus === 'pending' ? 'status-pending' : 'status-failed'}">${booking.paymentStatus || 'N/A'}</span>
+        </div>
+      </div>
+
+      <div class="billing-info">
+        <div class="section-title">Billed To</div>
+        <div class="info-row">
+          <span class="info-label">Company:</span>
+          <span class="info-value">${startup.startupName || 'N/A'}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Email:</span>
+          <span class="info-value">${startup.startupMailId || startup.email || 'N/A'}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">WhatsApp:</span>
+          <span class="info-value">${booking.whatsappNumber || 'N/A'}</span>
+        </div>
+        ${incubator ? `
+        <div class="info-row">
+          <span class="info-label">Incubator:</span>
+          <span class="info-value">${incubator.name || 'N/A'}</span>
+        </div>
+        ` : ''}
+      </div>
+    </div>
+
+    <!-- Facility and Startup Information -->
+    <div class="facility-startup-info">
+      <div class="facility-info">
+        <div class="section-title">Facility Information</div>
+        <div class="detail-item">
+          <div class="detail-label">Facility Name</div>
+          <div class="detail-value">${facility.details?.name || 'N/A'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Type</div>
+          <div class="detail-value">${facility.facilityType || 'N/A'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Location</div>
+          <div class="detail-value">${facility.address?.formatted || facility.address || 'N/A'}</div>
+        </div>
+      </div>
+
+      <div class="startup-info">
+        <div class="section-title">Booking Summary</div>
+        <div class="detail-item">
+          <div class="detail-label">Rental Plan</div>
+          <div class="detail-value">${booking.rentalPlan || 'N/A'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Duration</div>
+          <div class="detail-value">${formatDate(booking.startDate)} - ${formatDate(booking.endDate)}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Unit Count</div>
+          <div class="detail-value">${booking.unitCount || 1}</div>
+        </div>
+          <div class="detail-item">
+          <div class="detail-label">Seat Count</div>
+          <div class="detail-value">${bookingSeats || 1}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Amount Breakdown -->
+    <div class="amount-breakdown">
+      <div class="breakdown-header">
+        <div class="section-title">Payment Breakdown</div>
+      </div>
+      <table class="breakdown-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Base Amount</td>
+            <td>${formatCurrency(originalBaseAmount)}</td>
+          </tr>
+          
+          <tr>
+            <td>GST (${gstAmount > 0 ? '18%' : '0%'})</td>
+            <td>${formatCurrency(gstAmount)}</td>
+          </tr>
+          <tr class="subtotal-row">
+            <td><strong>Calculated Total</strong></td>
+            <td><strong>${formatCurrency(totalAmount)}</strong></td>
+          </tr>
+          <tr class="total-row">
+            <td><strong>GRAND TOTAL</strong></td>
+            <td><strong>${formatCurrency(totalAmount)}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Payment Information -->
+    ${booking.paymentDetails ? `
+    <div class="payment-info">
+      <div class="section-title">Payment Information</div>
+      <div class="payment-details-grid">
+        <div class="detail-item">
+          <div class="detail-label">Payment ID</div>
+          <div class="detail-value">${booking.paymentDetails.razorpay_payment_id || 'N/A'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Payment Method</div>
+          <div class="detail-value">${booking.paymentDetails.method || 'N/A'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Payment Date</div>
+          <div class="detail-value">${formatDateTime(booking.paymentDetails.receivedAt)}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Transaction Status</div>
+          <div class="detail-value">${booking.paymentDetails.status || 'N/A'}</div>
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Thank you for choosing <span class="company-name">CUMMA</span> for your workspace needs!</p>
+      <p>This is a computer-generated invoice and does not require a physical signature.</p>
+      <p>For any queries, please contact us at support@cumma.in</p>
+      <p><em>Generated on ${formatDateTime(new Date())}</em></p>
+    </div>
+  </div>
+</body>
+</html>

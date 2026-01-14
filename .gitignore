@@ -1,0 +1,26 @@
+# Node.js dependencies
+/node_modules
+# Environment variables
+.env
+.env.example
+# Next.js build output
+/.next
+# Logs
+logs
+*.log
+# OS generated files
+.DS_Store
+Thumbs.db
+# Build output
+dist
+build
+# Temporary files
+*.tmp
+*.temp
+
+/Context
+/DB_back
+/.vscode
+/.qodo
+
+env.example

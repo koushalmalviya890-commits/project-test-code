@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Robotic Arm</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 600px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .robotic-arm-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 500px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        svg {
+            width: 100%;
+            max-width: 446px;
+            height: auto;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
+            animation: pulse 3s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        @keyframes baseRotate {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(20deg); }
+            100% { transform: rotate(0deg); }
+        }
+        svg g {
+            animation: baseRotate 4s ease-in-out infinite;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Animated Robotic Arm</h1>
+        <div class="robotic-arm-wrapper" id="armWrapper">
+            <img src="robotic.svg" alt="Animated Robotic Arm" style="width: 100%; max-width: 446px;">
+        </div>
+        <div class="controls">
+            <button onclick="alert('Animation is playing!')">▶️ Start</button>
+            <button onclick="alert('Animation paused')">⏸️ Pause</button>
+            <button onclick="location.reload()">🔄 Reset</button>
+        </div>
+    </div>
+</body>
+</html>

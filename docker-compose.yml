@@ -1,0 +1,16 @@
+services:
+  cummawebfronttest:
+    build:
+      context: .
+    container_name: cummawebfronttest
+    restart: unless-stopped
+
+
+    volumes:
+       - .:/var/www/html/cumma2webnext
+
+    networks:
+      - nginxproxy_nginx_proxy
+networks:
+    nginxproxy_nginx_proxy:
+      external: true

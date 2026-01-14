@@ -1,0 +1,833 @@
+'use client'
+
+import React, { useEffect, useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatCurrency } from '@/lib/utils'
+import { useSession } from 'next-auth/react'
+import { Spinner } from '@/components/spinner'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { FileDown } from 'lucide-react'
+import Link from 'next/link'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts'
+
+interface Transaction {
+  _id: string
+  bookingId: string
+  date: string
+  amount: number
+  status: string
+  facility: string
+  facilityType: string
+  invoiceUrl?: string | null
+}
+
+interface EarningsData {
+  totalEarnings: number
+  monthlyEarnings: number
+  pendingPayouts: number
+  transactions: Transaction[]
+}
+
+interface MonthlyEarning {
+  month: string
+  earnings: number
+}
+
+interface FacilityTypeDistribution {
+  name: string
+  value: number
+  count: number
+}
+
+interface MonthlyData {
+  [key: string]: number;
+}
+
+interface FacilityData {
+  name: string;
+  monthlyData: MonthlyData;
+  totalEarnings: number;
+}
+
+interface FacilityTypeEarnings {
+  name: string
+  color: string
+  monthlyData: {
+    [month: string]: number
+  }
+  totalEarnings: number
+}
+
+interface FacilityBookingCounts {
+  name: string
+  color: string
+  gradient: string
+  monthlyData: {
+    [month: string]: number
+  }
+  totalBookings: number
+}
+
+export default function EarningsPage() {
+  const [isLoading, setIsLoading] = useState(true)
+  const { data: session } = useSession()
+  const [earnings, setEarnings] = useState<EarningsData>({
+    totalEarnings: 0,
+    monthlyEarnings: 0,
+    pendingPayouts: 4000, // Hardcoded value as requested
+    transactions: []
+  })
+
+  // Data for monthly earnings chart
+  const [monthlyEarningsData, setMonthlyEarningsData] = useState<MonthlyEarning[]>([])
+  
+  // Data for facility type distribution
+  const [facilityDistributionData, setFacilityDistributionData] = useState<FacilityTypeDistribution[]>([])
+  
+  // Data for facility type earnings by month - for line chart
+  const [facilityTypeEarnings, setFacilityTypeEarnings] = useState<FacilityTypeEarnings[]>([])
+  
+  // Data for facility booking counts by month - for bar chart
+  const [facilityBookingCounts, setFacilityBookingCounts] = useState<FacilityBookingCounts[]>([])
+
+  // Colors for charts
+  const COLORS = ['#FFAE4C', '#6FD195', '#7086FD', '#FF8042', '#8884d8'];
+  
+  // Gradients for bar chart
+  const BAR_GRADIENTS = [
+    'linear-gradient(180deg, #202BF6 0%, #41C6FF 100%)',
+    'linear-gradient(180deg, #76F217 0%, #4CFF58 100%)',
+    'linear-gradient(180deg, #12A454 0%, #47CC25 142.61%)'
+  ];
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchEarningsData()
+    }
+  }, [session])
+
+  const fetchEarningsData = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Use the new earnings API endpoint
+      const response = await fetch('/api/service-provider/earnings')
+      
+      if (!response.ok) {
+        throw new Error(`Error fetching earnings: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      
+      // Set earnings data with dynamic pending payouts
+      setEarnings({
+        totalEarnings: data.totalEarnings,
+        monthlyEarnings: data.monthlyEarnings,
+        pendingPayouts: data.pendingPayouts,
+        transactions: data.transactions
+      })
+      
+      // Create monthly earnings data for chart
+      const monthlyData = data.transactions
+        .filter((t: Transaction) => t.status === 'Completed')
+        .reduce((acc: {[key: string]: number}, curr: Transaction) => {
+          const date = new Date(curr.date)
+          const monthYear = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear().toString().slice(2)}`
+          
+          if (!acc[monthYear]) {
+            acc[monthYear] = 0
+          }
+          
+          acc[monthYear] += curr.amount
+          return acc
+        }, {})
+      
+      // Convert to array format for chart
+      const monthlyChartData: MonthlyEarning[] = Object.keys(monthlyData).map(month => ({
+        month,
+        earnings: monthlyData[month]
+      }))
+      
+      // Sort by date
+      monthlyChartData.sort((a, b) => {
+        const [monthA, yearA] = a.month.split(' ')
+        const [monthB, yearB] = b.month.split(' ')
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        
+        if (yearA !== yearB) return parseInt(yearA) - parseInt(yearB)
+        return months.indexOf(monthA) - months.indexOf(monthB)
+      })
+      
+      setMonthlyEarningsData(monthlyChartData)
+      
+      // Create facility type distribution data
+      const facilityTypes = data.transactions
+        .filter((t: Transaction) => t.status === 'Completed')
+        .reduce((acc: {[key: string]: FacilityTypeDistribution}, curr: Transaction) => {
+          const type = curr.facilityType
+          if (!acc[type]) {
+            acc[type] = {
+              name: type,
+              value: curr.amount,
+              count: 1
+            }
+          } else {
+            acc[type].value += curr.amount
+            acc[type].count += 1
+          }
+          return acc
+        }, {})
+      
+      setFacilityDistributionData(Object.values(facilityTypes))
+      
+      // Calculate monthly earnings for each facility type
+      const facilityMonthlyData = data.transactions
+        .filter((t: Transaction) => t.status === 'Completed')
+        .reduce((acc: {[key: string]: {[month: string]: number}}, curr: Transaction) => {
+          const type = curr.facilityType
+          const date = new Date(curr.date)
+          const monthYear = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear().toString().slice(2)}`
+          
+          if (!acc[type]) {
+            acc[type] = {}
+          }
+          
+          if (!acc[type][monthYear]) {
+            acc[type][monthYear] = 0
+          }
+          
+          acc[type][monthYear] += curr.amount
+          return acc
+        }, {})
+      
+      // Calculate total earnings per facility type
+      const facilityTotalEarnings: FacilityData[] = Object.keys(facilityMonthlyData).map(facilityType => {
+        const monthlyData = facilityMonthlyData[facilityType]
+        const values = Object.values(monthlyData) as number[]
+        const totalEarnings = values.reduce((sum, val) => sum + val, 0)
+        
+        return {
+          name: facilityType,
+          monthlyData,
+          totalEarnings
+        }
+      })
+      
+      // Sort by total earnings and get top 3
+      const top3FacilityTypes: FacilityTypeEarnings[] = facilityTotalEarnings
+        .sort((a, b) => b.totalEarnings - a.totalEarnings)
+        .slice(0, 3)
+        .map((facility, index) => ({
+          ...facility,
+          color: COLORS[index]
+        }))
+      
+      setFacilityTypeEarnings(top3FacilityTypes)
+      
+      // Create booking counts data by facility type and month
+      const facilityBookingsByMonth = data.transactions.reduce((acc: {[key: string]: {[month: string]: number}}, curr: Transaction) => {
+        const facility = curr.facilityType
+        const date = new Date(curr.date)
+        const monthYear = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear().toString().slice(2)}`
+        
+        if (!acc[facility]) {
+          acc[facility] = {}
+        }
+        
+        if (!acc[facility][monthYear]) {
+          acc[facility][monthYear] = 0
+        }
+        
+        acc[facility][monthYear] += 1
+        return acc
+      }, {})
+      
+      // Calculate total bookings per facility
+      const facilityBookingCounts: Array<{name: string; monthlyData: {[key: string]: number}; totalBookings: number}> = Object.keys(facilityBookingsByMonth).map(facilityType => {
+        const monthlyData = facilityBookingsByMonth[facilityType]
+        const values = Object.values(monthlyData) as number[]
+        const totalBookings = values.reduce((sum, val) => sum + val, 0)
+        
+        return {
+          name: facilityType,
+          monthlyData,
+          totalBookings
+        }
+      })
+      
+      // Sort by total bookings and get top 3
+      const top3FacilitiesByBookings: FacilityBookingCounts[] = facilityBookingCounts
+        .sort((a, b) => b.totalBookings - a.totalBookings)
+        .slice(0, 3)
+        .map((facility, index) => ({
+          ...facility,
+          color: COLORS[index],
+          gradient: BAR_GRADIENTS[index]
+        }))
+      
+      setFacilityBookingCounts(top3FacilitiesByBookings)
+      
+    } catch (error) {
+      console.error('Error fetching earnings data:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Get the last 6 months for the x-axis
+  const getLastSixMonths = () => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const today = new Date()
+    
+    // Create a Set to ensure uniqueness
+    const monthsSet = new Set<string>()
+    
+    // Start from 5 months ago (to get 6 months total including current)
+    for (let i = 5; i >= 0; i--) {
+      // Create a new date object to avoid modifying the original
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1)
+      const monthStr = months[date.getMonth()]
+      const yearStr = date.getFullYear().toString().slice(2)
+      monthsSet.add(`${monthStr} ${yearStr}`)
+    }
+    
+    // Convert Set back to Array and ensure proper order
+    return Array.from(monthsSet).sort((a, b) => {
+      // Sort by year first
+      const yearA = parseInt(a.split(' ')[1])
+      const yearB = parseInt(b.split(' ')[1])
+      if (yearA !== yearB) return yearA - yearB
+      
+      // Then sort by month
+      const monthA = months.indexOf(a.split(' ')[0])
+      const monthB = months.indexOf(b.split(' ')[0])
+      return monthA - monthB
+    })
+  }
+  
+  // Calculate maximum value for y-axis
+  const calculateMaxValue = () => {
+    if (facilityTypeEarnings.length === 0) return 30000
+    
+    const allValues = facilityTypeEarnings.flatMap(facility => 
+      Object.values(facility.monthlyData)
+    )
+    
+    const maxValue = Math.max(...allValues, 0)
+    // Round up to nearest 5000
+    return Math.ceil(maxValue / 5000) * 5000
+  }
+
+  // Calculate maximum booking count for y-axis in the bar chart
+  const calculateMaxBookingCount = () => {
+    if (facilityBookingCounts.length === 0) return 50
+    
+    const allCounts = facilityBookingCounts.flatMap(facility => 
+      Object.values(facility.monthlyData)
+    )
+    
+    const maxCount = Math.max(...allCounts, 0)
+    // Round up to nearest 10
+    return Math.ceil(maxCount / 10) * 10
+  }
+
+  return (
+    <div className="max-w-[1400px] mx-auto px-6">
+      <div className="py-6">
+        <h1 className="text-3xl font-bold text-gray-900">Earnings</h1>
+      </div>
+
+      {/* KPI Cards - Full width row - Exactly matching dashboard design */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+        {/* First KPI Card - Green with white decorative element */}
+        <div className="p-6 rounded-[30px] bg-green-500 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 opacity-30">
+            <div className="w-full h-full rounded-bl-[80px] bg-white"></div>
+          </div>
+          <div className="flex flex-col gap-4">
+            <p className="text-base font-medium">Total Earnings</p>
+            <p className="text-4xl font-medium">{formatCurrency(earnings.totalEarnings)}</p>
+            <div className="flex items-center gap-2">
+              <span className="bg-white/20 rounded-full px-3 py-1 text-sm">
+                All time earnings
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Second KPI Card - White with gradient decorative element */}
+        <div className="p-6 rounded-[30px] bg-white text-black relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
+            <div className="w-full h-full rounded-bl-[80px] bg-gradient-to-br from-[#FFF04B] to-[#22A146]"></div>
+          </div>
+          <div className="flex flex-col gap-4">
+            <p className="text-base font-medium text-gray-700">This Month Earnings</p>
+            <p className="text-4xl font-medium">{formatCurrency(earnings.monthlyEarnings)}</p>
+            <div className="flex items-center gap-2">
+              <div className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                Last 30 days
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Third KPI Card - White with gradient decorative element */}
+        <div className="p-6 rounded-[30px] bg-white text-black relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
+            <div className="w-full h-full rounded-bl-[80px] bg-gradient-to-br from-[#FFF04B] to-[#22A146]"></div>
+          </div>
+          <div className="flex flex-col gap-4">
+            <p className="text-base font-medium text-gray-700">Pending Payouts</p>
+            <p className="text-4xl font-medium">{formatCurrency(earnings.pendingPayouts)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Grid - Modified to give graphs more space */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+        {/* Table Section - Takes 7/12 width on large screens */}
+        <div className="lg:col-span-7">
+          <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+            <div className="overflow-x-auto">
+              <Table className="w-full">
+                <TableHeader className="bg-gray-50 border-b border-gray-200">
+                  <TableRow className="divide-x divide-gray-200">
+                    <TableHead className="py-5 font-semibold text-gray-600 px-6 text-left w-[80px]">S.NO</TableHead>
+                    <TableHead className="py-5 font-semibold text-gray-600 px-6 text-left">BOOKING ID</TableHead>
+                    <TableHead className="py-5 font-semibold text-gray-600 px-6 text-left">FACILITY NAME</TableHead>
+                    <TableHead className="py-5 font-semibold text-gray-600 px-6 text-left">FACILITY TYPE</TableHead>
+                    <TableHead className="py-5 font-semibold text-gray-600 px-6 text-right">AMOUNT</TableHead>
+                    <TableHead className="py-5 font-semibold text-gray-600 px-6 text-center w-[100px]">INVOICE</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-gray-200">
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-60">
+                        <div className="flex items-center justify-center h-full">
+                          <Spinner size="md" />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : earnings.transactions.length > 0 ? (
+                    earnings.transactions.map((transaction, index) => (
+                      <TableRow key={transaction._id} className="hover:bg-gray-50 divide-x divide-gray-200">
+                        <TableCell className="py-4 px-6 text-gray-700">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell className="py-4 px-6 font-medium text-gray-700">
+                          {transaction.bookingId}
+                        </TableCell>
+                        <TableCell className="py-4 px-6 text-gray-700">
+                          {transaction.facility}
+                        </TableCell>
+                        <TableCell className="py-4 px-6 text-gray-700">
+                          {transaction.facilityType}
+                        </TableCell>
+                        <TableCell className="py-4 px-6 text-right font-semibold">
+                          {formatCurrency(transaction.amount)}
+                        </TableCell>
+                        <TableCell className="py-4 px-6 text-center">
+                          {transaction.invoiceUrl ? (
+                            <button
+                              className="inline-flex justify-center items-center p-2 text-blue-600 hover:text-blue-800 transition-colors"
+                              aria-label="Download invoice"
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                if (!transaction.invoiceUrl) return;
+                                try {
+                                  const response = await fetch(transaction.invoiceUrl);
+                                  if (!response.ok) {
+                                    throw new Error(`Network response was not ok. Status: ${response.status}`);
+                                  }
+
+                                  const contentType = response.headers.get('content-type');
+
+                                  // If the server sends HTML, open it in a new tab.
+                                  if (contentType && contentType.includes('text/html')) {
+                                    const htmlContent = await response.text();
+                                    const newWindow = window.open();
+                                    if (newWindow) {
+                                      newWindow.document.write(htmlContent);
+                                      newWindow.document.close();
+                                    } else {
+                                      alert('Could not open invoice. Please disable your popup blocker.');
+                                    }
+                                    return;
+                                  }
+
+                                  // If the server sends a PDF, download it.
+                                  if (contentType && contentType.includes('application/pdf')) {
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `invoice-${transaction.bookingId || transaction._id}.pdf`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    a.remove();
+                                    window.URL.revokeObjectURL(url);
+                                  } else {
+                                    // Handle unexpected content types
+                                    console.error('Received unexpected content type:', contentType);
+                                    alert('Failed to download invoice: Unexpected file format received.');
+                                  }
+                                } catch (err) {
+                                  console.error('Failed to download invoice:', err);
+                                  alert('An error occurred while trying to download the invoice.');
+                                }
+                              }}
+                            >
+                              <FileDown className="h-5 w-5" />
+                            </button>
+                          ) : (
+                            <span className="inline-flex justify-center items-center p-2 text-gray-400 cursor-not-allowed">
+                              <FileDown className="h-5 w-5" />
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-60">
+                        <div className="flex flex-col items-center justify-center h-full">
+                          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-4 text-gray-300">
+                            <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M16 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M8 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          <p className="text-gray-500 font-medium text-lg mb-1">No transactions found</p>
+                          <p className="text-gray-400 text-sm">New transactions will appear here once created</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
+        
+        {/* Charts Section - Takes 5/12 width on large screens */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Custom Monthly Earnings Chart - Designed to match Figma */}
+          <div className="bg-white rounded-[30px] p-6 shadow-sm border border-gray-100">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">Monthly Earnings by Facility Type</h3>
+            
+            <div className="relative h-[320px] font-['Plus_Jakarta_Sans','Inter',sans-serif]">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Spinner size="md" />
+                </div>
+              ) : (
+                /* Main Chart Container */
+                <div className="flex flex-col justify-center items-center p-2 w-full h-full">
+                  {/* Chart & Axis */}
+                  <div className="flex flex-col items-start w-full h-[255px]">
+                    {/* Main Chart */}
+                    <div className="flex flex-row items-center w-full h-[234px] relative">
+                      {/* Y-Axis Left */}
+                      <div className="flex flex-col justify-between items-end py-0 px-1 h-[234px] w-[34px]">
+                        {Array.from({ length: 6 }).map((_, i) => {
+                          const maxValue = calculateMaxValue()
+                          const value = Math.round(maxValue * (5 - i) / 5)
+                          return (
+                            <span key={i} className="text-[10px] leading-[13px] text-black/70">
+                              {i === 5 ? '0' : `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+                            </span>
+                          )
+                        })}
+                      </div>
+                      
+                      {/* Graph & Grid */}
+                      <div className="relative flex-1 h-[234px]">
+                        {/* X Lines - Horizontal grid lines */}
+                        <div className="absolute inset-0 flex flex-col justify-between items-start py-[6px] px-[1px]">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className={`w-full border-t ${i === 5 ? 'border-solid border-black/50' : 'border-dashed border-black/25'}`}></div>
+                          ))}
+                        </div>
+                        
+                        {/* Custom Line Chart Implementation */}
+                        <div className="absolute inset-0 py-[7px]">
+                          {facilityTypeEarnings.map((facility, facilityIndex) => {
+                            const months = getLastSixMonths()
+                            const maxValue = calculateMaxValue()
+                            
+                            // Calculate positions for line segments and points
+                            const points = months.map((month, index) => {
+                              const value = facility.monthlyData[month] || 0
+                              const xPos = 8.33 + (index * (100 - 2*8.33) / 5) // Calculate x position (8.33% to 91.67%)
+                              const yPos = 100 - ((value / maxValue) * 95) // Calculate y position (5% to 100%)
+                              return { month, value, xPos, yPos }
+                            })
+                            
+                            // Areas for gradient fills
+                            const topPosition = Math.min(...points.map(p => p.yPos))
+                            const bottomPosition = 100  // Bottom of chart
+                            
+                            return (
+                              <React.Fragment key={facility.name}>
+                                {/* Gradient Area */}
+                                <div 
+                                  className={`absolute left-[8.33%] right-[8.33%] bg-gradient-to-b`}
+                                  style={{
+                                    top: `${topPosition}%`,
+                                    bottom: `0%`,
+                                    background: `linear-gradient(180deg, ${facility.color}4D 0%, ${facility.color}0D 100%)`
+                                  }}
+                                ></div>
+                                
+                                {/* Line connecting points */}
+                                {points.slice(0, -1).map((point, i) => {
+                                  const nextPoint = points[i + 1]
+                                  return (
+                                    <div 
+                                      key={i}
+                                      className="absolute border-t-2 z-10"
+                                      style={{
+                                        left: `${point.xPos}%`,
+                                        width: `${nextPoint.xPos - point.xPos}%`,
+                                        top: `${point.yPos}%`,
+                                        borderColor: facility.color
+                                      }}
+                                    ></div>
+                                  )
+                                })}
+                                
+                                {/* Data Points */}
+                                {points.map((point, i) => (
+                                  <div 
+                                    key={i} 
+                                    className="absolute z-20" 
+                                    style={{
+                                      left: `${point.xPos}%`,
+                                      top: `${point.yPos}%`
+                                    }}
+                                  >
+                                    <div 
+                                      className="absolute w-4 h-4 -left-2 -top-2 opacity-25 rounded-full"
+                                      style={{ background: facility.color }}
+                                    ></div>
+                                    <div 
+                                      className="absolute w-2 h-2 -left-1 -top-1 border border-white rounded-full"
+                                      style={{ background: facility.color }}
+                                    ></div>
+                                  </div>
+                                ))}
+                              </React.Fragment>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* X Axis */}
+                    <div className="flex flex-row items-start pl-[31px] pb-2 w-full h-[23px]">
+                      {getLastSixMonths().map((month, index) => (
+                        <div key={index} className="flex-1 text-center text-[12px] text-black/70">{month.split(' ')[0]}</div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Legends */}
+                  <div className="flex flex-row flex-wrap justify-center items-center w-full h-[24px]">
+                    <div className="flex flex-row flex-wrap justify-center items-center px-2 gap-x-2 h-[24px]">
+                      {facilityTypeEarnings.map((facility, index) => (
+                        <div key={index} className="flex flex-row items-center p-1 gap-1 h-6">
+                          <div className="relative w-4 h-4">
+                            <div 
+                              className="absolute w-4 h-0.5 left-0 top-[7px]"
+                              style={{ background: facility.color }}
+                            ></div>
+                            <div 
+                              className="absolute w-2 h-2 left-1 top-1 rounded-full border border-white"
+                              style={{ background: facility.color }}
+                            ></div>
+                            <div 
+                              className="absolute w-4 h-4 left-0 top-0 rounded-full opacity-25"
+                              style={{ background: facility.color }}
+                            ></div>
+                          </div>
+                          <span className="text-[12px] text-black/70">{facility.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Top Facilities Bar Chart - Designed to match Figma */}
+          <div className="bg-white rounded-[30px] p-6 shadow-sm border border-gray-100">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">Top Facilities</h3>
+            
+            <div className="relative h-[305px] font-['Plus_Jakarta_Sans','Inter',sans-serif]">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Spinner size="md" />
+                </div>
+              ) : (
+                /* Main Chart Container */
+                <div className="flex flex-col items-start p-2 w-full h-full">
+                  {/* Chart & Axis */}
+                  <div className="flex flex-col items-start w-full h-[265px]">
+                    {/* Main Chart */}
+                    <div className="flex flex-row items-center w-full h-[244px] relative">
+                      {/* Y-Axis Left */}
+                      <div className="flex flex-col justify-between items-end py-0 px-1 h-[244px] w-[25px]">
+                        {Array.from({ length: 6 }).map((_, i) => {
+                          const maxValue = calculateMaxBookingCount()
+                          const value = Math.round(maxValue * (5 - i) / 5)
+                          return (
+                            <span key={i} className="text-[12px] leading-[15px] text-[#222222] font-normal">
+                              {value}
+                            </span>
+                          )
+                        })}
+                      </div>
+                      
+                      {/* Graph & Grid */}
+                      <div className="relative flex-1 h-[244px]">
+                        {/* X Lines - Horizontal grid lines */}
+                        <div className="absolute inset-0 flex flex-col justify-between items-start py-[6px] px-[1px]">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className={`w-full border-t ${i === 5 ? 'border-solid border-black/50' : 'border-dashed border-black/25'}`}></div>
+                          ))}
+                        </div>
+                        
+                        {/* Bar Chart Implementation */}
+                        <div className="absolute inset-0 py-[6px]">
+                          {facilityBookingCounts.length > 0 && (
+                            <div className="w-full h-full relative">
+                              {getLastSixMonths().map((month, monthIndex) => {
+                                const maxValue = calculateMaxBookingCount()
+                                // Get the top facility for this month
+                                let topFacility: FacilityBookingCounts | null = null;
+                                let topBookingCount = 0;
+                                
+                                facilityBookingCounts.forEach(facility => {
+                                  const bookingCount = facility.monthlyData[month] || 0;
+                                  if (bookingCount > topBookingCount) {
+                                    topFacility = facility;
+                                    topBookingCount = bookingCount;
+                                  }
+                                });
+                                
+                                if (!topFacility || topBookingCount === 0) return null;
+                                
+                                // Calculate position for each month (evenly spaced)
+                                const xPos = 8.33 + (monthIndex * (100 - 2*8.33) / 5);
+                                // Calculate bar height based on booking count
+                                const barHeight = (topBookingCount / maxValue) * 100;
+                                
+                                // Determine gradient based on facility index
+                                const facilityIndex = facilityBookingCounts.findIndex(f => 
+                                  topFacility !== null && f.name === topFacility.name
+                                );
+                                const gradient = BAR_GRADIENTS[facilityIndex >= 0 ? facilityIndex : 0];
+                                
+                                return (
+                                  <div 
+                                    key={month} 
+                                    className="absolute"
+                                    style={{
+                                      left: `${xPos - 8}%`,
+                                      width: '16%',
+                                      bottom: '0',
+                                      height: `${barHeight}%`
+                                    }}
+                                  >
+                                    {/* Bar for this month */}
+                                    <div 
+                                      className="absolute w-full rounded-[10px] opacity-70"
+                                      style={{
+                                        top: '0',
+                                        bottom: '0',
+                                        background: gradient
+                                      }}
+                                    >
+                                      {/* White overlay on left side */}
+                                      <div 
+                                        className="absolute left-0 top-0 bottom-0 bg-white/30"
+                                        style={{ width: '50%' }}
+                                      ></div>
+                                      
+                                      {/* Booking count number */}
+                                      {topBookingCount > 0 && (
+                                        <div className="absolute w-full flex justify-center items-center" style={{ top: '20%' }}>
+                                          <span className="text-[30px] leading-[38px] font-semibold text-white">
+                                            {topBookingCount}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* X Axis */}
+                    <div className="flex flex-row items-start pl-[19px] pb-2 w-full h-[23px]">
+                      {getLastSixMonths().map((month, index) => (
+                        <div key={index} className="flex-1 flex justify-center">
+                          <span className="text-[12px] leading-[15px] font-medium text-[#222222]">
+                            {month.split(' ')[0]}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Legends */}
+                  <div className="flex flex-row flex-wrap justify-center items-center w-full h-[24px]">
+                    <div className="flex flex-row flex-wrap justify-center items-center px-2 gap-x-2 h-[24px]">
+                      {facilityBookingCounts.map((facility, index) => (
+                        <div key={index} className="flex flex-row items-center p-1 gap-1 h-6">
+                          <div className="relative w-4 h-4">
+                            <div 
+                              className="absolute w-2 h-2 left-1 top-1 rounded-none border border-white"
+                              style={{ 
+                                background: index === 0 ? "#41C6FF" : index === 1 ? "#4CFF58" : "#12A454"
+                              }}
+                            ></div>
+                          </div>
+                          <span className="text-[12px] leading-[15px] font-medium text-[#222222]">
+                            {facility.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+              </div>
+    </div>
+  )
+} 
