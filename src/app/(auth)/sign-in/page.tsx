@@ -56,14 +56,22 @@ function SignInContent() {
         redirect: false,
       })
 
-      if (result?.error) {
+     if (result?.error) {
+        let errorMessage = 'Failed to sign in. Please try again.';
+
+        // ✅ Updated Error Handling Logic
+        if (result.error === 'No user found with this email') {
+          errorMessage = 'No account found with this email address. Please check your email or create a new account.';
+        } else if (result.error === 'Invalid password') {
+          errorMessage = 'Incorrect password. Please try again or use the forgot password option.';
+        } else if (result.error === 'Account pending approval') {
+          // 🆕 This catches the error thrown from your NextAuth authorize function
+          errorMessage = 'Your account is currently under review. Please wait for admin approval.';
+        }
+
         setError('root', { 
           type: 'manual',
-          message: result.error === 'No user found with this email'
-            ? 'No account found with this email address. Please check your email or create a new account.'
-            : result.error === 'Invalid password'
-            ? 'Incorrect password. Please try again or use the forgot password option.'
-            : 'Failed to sign in. Please try again.'
+          message: errorMessage
         })
         return
       }

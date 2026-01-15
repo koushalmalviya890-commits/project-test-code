@@ -190,12 +190,18 @@ const serviceProviderSchema = new mongoose.Schema({
   serviceProviderType: {
     type: String,
     enum: [
-      'Incubator',
-      'Accelerator',
-      'Institution/University',
-      'Private Coworking Space',
-      'Community Space',
-      'Studio'
+      "Incubator",
+  "Accelerator",
+  "Institution/University",
+  "Private Coworking Space",
+  "Community Space",
+  // "Studio",
+  "R & D Labs",
+  "Communities",
+  "Investors",
+  "Creators",
+  "State Missions"
+
     ],
     required: false,
     default: null,
@@ -308,6 +314,11 @@ const serviceProviderSchema = new mongoose.Schema({
     type: String,
     enum: ['yes','no'],
     default: 'no',
+  },
+  isApproved: {
+    type: Boolean,
+    required: true,
+    default: false, // Default to false to prevent immediate login
   },
   // In your Service Provider schema
   invoiceType: {

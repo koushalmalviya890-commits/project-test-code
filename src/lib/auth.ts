@@ -6,6 +6,7 @@ import { clientPromise } from '@/lib/db'
 import User from '@/models/User'
 import connectDB from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import ServiceProviderModel from '@/models/ServiceProvider'
 
 export const authOptions: NextAuthOptions = {
   adapter: MongoDBAdapter(clientPromise, {
@@ -40,6 +41,7 @@ export const authOptions: NextAuthOptions = {
           if (!user) {
             throw new Error('No user found with this email')
           }
+console.log("User Type:", user.userType);
 
           // If the user signed up with Google, don't allow password login
           if (user.googleProfile && !user.password) {
@@ -54,6 +56,25 @@ export const authOptions: NextAuthOptions = {
           if (!isPasswordValid) {
             throw new Error('Invalid password')
           }
+
+         if (user.userType === 'Service Provider' || user.role === 'enabler') {
+       
+       const serviceProviderProfile = await ServiceProviderModel.findOne({ userId: user._id });
+
+       // Debug logs (keep these for now)
+       console.log("Found Profile:", serviceProviderProfile);
+       console.log("Approval Status:", serviceProviderProfile?.isApproved);
+
+       if (!serviceProviderProfile) {
+           throw new Error("Profile not found");
+       }
+
+       // ✅ CORRECT LOGIC: 
+       // Check if isApproved is false (or undefined/null)
+       if (!serviceProviderProfile.isApproved) {
+           throw new Error("Account pending approval"); 
+       }
+    }
 
           return {
             id: user._id.toString(),

@@ -63,32 +63,77 @@ const navigation = {
       name: "Workspaces",
       href: "/offices/about",
       dropdown: [
-        { name: "Meeting Area", href: "/SearchPage?type=Meeting Room", icon: "/icons/categories-gif/meeting.gif" },
-        { name: "Co-Working Space", href: "/SearchPage?type=Coworking space",  icon: "/icons/categories-gif/coworking.gif" },
-        { name: "Individual Cabin", href: "/SearchPage?type=Individual Cabin",  icon: "/icons/categories-gif/cabin.gif" },
-        { name: "Board Room", href: "/SearchPage?type=Board Rooms",  icon: "/icons/categories-gif/boardroom.gif" },
-        { name: "Raw space", href: "/SearchPage?type=Raw Space Office",  icon: "/icons/categories-gif/rawspace.gif" },
+        {
+          name: "Meeting Area",
+          href: "/SearchPage?type=Meeting Room",
+          icon: "/icons/categories-gif/meeting.gif",
+        },
+        {
+          name: "Co-Working Space",
+          href: "/SearchPage?type=Coworking space",
+          icon: "/icons/categories-gif/coworking.gif",
+        },
+        {
+          name: "Individual Cabin",
+          href: "/SearchPage?type=Individual Cabin",
+          icon: "/icons/categories-gif/cabin.gif",
+        },
+        {
+          name: "Board Room",
+          href: "/SearchPage?type=Board Rooms",
+          icon: "/icons/categories-gif/boardroom.gif",
+        },
+        {
+          name: "Raw space",
+          href: "/SearchPage?type=Raw Space Office",
+          icon: "/icons/categories-gif/rawspace.gif",
+        },
       ],
     },
     {
       name: "Facilities",
       href: "/sciences/about",
       dropdown: [
-        { name: "Labs", href: "/SearchPage?type=Bio Allied",  icon: "/icons/categories-gif/labspace.gif"},
-        { name: "Equipment", href: "/SearchPage?type=Lab Equipment",  icon: "/icons/categories-gif/equipment.gif" },
-        { name: "Lab space", href: "/SearchPage?type=Raw Space Lab",  icon: "/icons/categories-gif/lab.gif" },
-        { name: "Production", href: "/SearchPage?type=Production",  icon: "/icons/categories-gif/production.gif" },
-        { name: "Machines", href: "/SearchPage?type=Manufacturing",  icon: "/icons/categories-gif/machine.gif" },
+        {
+          name: "Labs",
+          href: "/SearchPage?type=Bio Allied",
+          icon: "/icons/categories-gif/labspace.gif",
+        },
+        {
+          name: "Equipment",
+          href: "/SearchPage?type=Lab Equipment",
+          icon: "/icons/categories-gif/equipment.gif",
+        },
+        {
+          name: "Lab space",
+          href: "/SearchPage?type=Raw Space Lab",
+          icon: "/icons/categories-gif/lab.gif",
+        },
+        {
+          name: "Production",
+          href: "/SearchPage?type=Production",
+          icon: "/icons/categories-gif/production.gif",
+        },
+        {
+          name: "Machines",
+          href: "/SearchPage?type=Manufacturing",
+          icon: "/icons/categories-gif/machine.gif",
+        },
         {
           name: "Manufacturing space",
           href: "/SearchPage?type=Manufacturing Raw Space",
-           icon: "/icons/categories-gif/manufacturing.gif"
+          icon: "/icons/categories-gif/manufacturing.gif",
         },
       ],
     },
     {
       name: "Events",
       href: "/events-page",
+    },
+    {
+      name: "Partner Connect",
+      href: "/partnerconnection",
+      newTab: true,
     },
   ],
 };
@@ -237,6 +282,7 @@ export default function LandingLayout({
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
+     {pathname !== "/partnerconnection" &&
       <header
         ref={headerRef}
         className={cn(
@@ -298,6 +344,8 @@ export default function LandingLayout({
                   >
                     <Link
                       href={item.href}
+                      target={item.newTab ? "_blank" : undefined}
+                      rel={item.newTab ? "noopener noreferrer" : undefined}
                       className={cn(
                         "header-nav-item flex items-center h-20 px-2 relative",
                         pathname.startsWith(item.href) ||
@@ -485,7 +533,7 @@ export default function LandingLayout({
             </div>
           </div>
         </div>
-      </header>
+      </header>}
 
       {/* Mobile Menu */}
       <MobileMenu
@@ -500,7 +548,7 @@ export default function LandingLayout({
       {/* Page Content */}
       <main className="flex-grow">{children}</main>
 
-      <Footer />
+      {pathname !== "/partnerconnection" && <Footer />}
     </div>
   );
 }
