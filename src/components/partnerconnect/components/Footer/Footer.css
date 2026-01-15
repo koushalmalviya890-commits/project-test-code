@@ -1,0 +1,202 @@
+/* Removed Inter import since we are using your global fonts */
+
+:root {
+  --bg-blue: #1e3a8a; 
+  --text-grey: #cbd5e1;
+  /* Removed --font-main, we will use your global variables */
+}
+
+.footer {
+  background-color: var(--bg-blue);
+  color: white;
+  padding: 80px 5% 40px; 
+  position: relative;
+  /* Uses --font-secondary by default via your global body/div rules */
+  font-family: var(--font-secondary); 
+  overflow: hidden; 
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* --- Top Section --- */
+.footer-top {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 60px;
+  margin-bottom: 60px;
+}
+
+/* Brand Column */
+.footer-brand {
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.logo-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 24px;
+  border-radius: 8px; 
+  background: linear-gradient(90deg, #10b981 0%, #2dd4bf 100%);
+  
+  /* Using Primary Font (Poppins) for Brand Name */
+  font-family: var(--font-primary); 
+  font-weight: 700;
+  font-size: 16px;
+  
+  margin-bottom: 24px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.brand-desc {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #e2e8f0;
+  margin-bottom: 24px;
+  font-weight: 400;
+  font-family: var(--font-secondary);
+}
+
+.footer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-grey);
+  font-family: var(--font-secondary);
+}
+
+.meta-item .icon {
+  opacity: 0.8;
+}
+
+/* --- Navigation Links --- */
+.footer-nav-group {
+  display: flex;
+  gap: 80px; 
+}
+
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.footer-links h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 8px;
+  /* Using Primary Font (Poppins) for Headings */
+  font-family: var(--font-primary); 
+}
+
+.footer-links a {
+  color: var(--text-grey);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+  font-family: var(--font-secondary);
+}
+
+.footer-links a:hover {
+  color: white;
+}
+
+/* --- Divider --- */
+.footer-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+  margin-bottom: 30px;
+}
+
+/* --- Bottom Section --- */
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-grey);
+  flex-wrap: wrap;
+  gap: 20px; 
+  margin-bottom: 50px; 
+  font-family: var(--font-secondary);
+}
+
+.email-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-grey);
+  text-decoration: none;
+}
+
+.email-link:hover {
+  color: white;
+}
+
+.scroll-top {
+  position: absolute;
+  right: 18px;
+  bottom: 18px; 
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+  transition: transform 0.2s;
+}
+
+.scroll-top:hover {
+  transform: translateY(-4px);
+}
+
+@media (max-width: 768px) {
+  .footer-top {
+    flex-direction: column;
+    gap: 40px;
+  }
+  
+  .footer-nav-group {
+    flex-direction: column; 
+    gap: 40px;
+    width: 100%;
+  }
+
+  .footer-brand {
+    max-width: 100%;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 60px; /* Space for scroll button on mobile */
+  }
+  
+  .scroll-top {
+    bottom: 20px;
+    right: 20px;
+  }
+}

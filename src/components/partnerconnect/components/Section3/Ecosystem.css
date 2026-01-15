@@ -1,0 +1,94 @@
+.ecosystem {
+  padding: 120px 60px;
+  text-align: center;
+  background: #fafcff;
+}
+
+.ecosystem h2 {
+  font-family: var(--font-primary);
+  font-size: 32px;
+  font-weight: 600;
+  color: #1f3aa8;
+  margin-bottom: 60px;
+}
+
+/* Grid */
+.ecosystem-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  max-width: 1100px;
+  margin: auto;
+}
+
+/* Card */
+.ecosystem-card {
+  background: #ffffff;
+  height: 200px;
+  width: 220px;
+  border-radius: 24px;
+  padding: 30px 24px;
+ box-shadow:
+    0 12px 25px rgba(0,0,0,0.06),
+    0 25px 50px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ecosystem-card:hover {
+  transform: scale(1.05);
+  box-shadow:
+    0 16px 35px rgba(0,0,0,0.08),
+    0 35px 70px rgba(0,0,0,0.06);
+}
+
+/* Icon */
+.icon-box {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  margin: 0 auto 16px;
+  background: linear-gradient(135deg, #1d4ed8, #06b6d4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin-bottom: 6px;
+}
+
+.icon-box svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Text */
+.ecosystem-card h3 {
+  font-family: var(--font-primary);
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f3aa8;
+  margin-bottom: 6px;
+}
+
+.ecosystem-card p {
+  font-family: var(--font-secondary);
+  font-size: 13px;
+   color: #9aa7c7;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .ecosystem-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .ecosystem-grid {
+    grid-template-columns: 1fr;
+  }
+}
