@@ -1,5 +1,4 @@
 
-// export default mongoose.models['Service Provider'] || mongoose.model('Service Provider', serviceProviderSchema, 'Service Provider') 
 import mongoose from 'mongoose'
 
 const serviceProviderSchema = new mongoose.Schema({
