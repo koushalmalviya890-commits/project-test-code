@@ -36,7 +36,12 @@ const SERVICE_PROVIDER_TYPES = [
   "Institution/University",
   "Private Coworking Space",
   "Community Space",
-  "Studio",
+  // "Studio",
+  "R & D Labs",
+  "Communities",
+  "Investors",
+  "Creators",
+  "State Missions"
 ] as const;
 
 // Update the form schema to include invoice type and proper types
@@ -63,12 +68,17 @@ const serviceProviderSignUpSchema = z
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(1, "Confirm password is required"),
     serviceProviderType: z.enum([
-      "Incubator",
-      "Accelerator",
-      "Institution/University",
-      "Private Coworking Space",
-      "Community Space",
-      "Studio",
+    "Incubator",
+  "Accelerator",
+  "Institution/University",
+  "Private Coworking Space",
+  "Community Space",
+  // "Studio",
+  "R & D Labs",
+  "Communities",
+  "Investors",
+  "Creators",
+  "State Missions"
     ]),
     serviceName: z.string().min(1, "Organization name is required"),
     address: z.string().optional(),
@@ -152,6 +162,8 @@ export default function ServiceProviderSignUp() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isRegistrationSuccess, setIsRegistrationSuccess] = useState(false);
+
 
   // ⭐️ New State for OTP
   const [isCodeSent, setIsCodeSent] = useState(false);
@@ -330,32 +342,35 @@ export default function ServiceProviderSignUp() {
       const result = await registerServiceProvider(formData);
 
       if (result.success) {
-        fetch("/api/auth/send-welcome-whatsapp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phoneNumber: formData.primaryContactNumber,
-            name: formData.primaryContact1Name,
-            // You can also send other parameters or templateId, according to your messaging needs
-          }),
-        });
+        setIsRegistrationSuccess(true);
+        window.scrollTo(0, 0); // Scroll to top to see message
+        return;
+        // fetch("/api/auth/send-welcome-whatsapp", {
+        //   method: "POST",
+        //   headers: { "Content-Type": "application/json" },
+        //   body: JSON.stringify({
+        //     phoneNumber: formData.primaryContactNumber,
+        //     name: formData.primaryContact1Name,
+            
+        //   }),
+        // });
       }
 
       if (result.error) {
         throw new Error(result.error);
       }
 
-      const signInResult = await signIn("credentials", {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-      });
+      // const signInResult = await signIn("credentials", {
+      //   email: data.email,
+      //   password: data.password,
+      //   redirect: false,
+      // });
 
-      if (signInResult?.error) {
-        throw new Error(signInResult.error);
-      }
+      // if (signInResult?.error) {
+      //   throw new Error(signInResult.error);
+      // }
 
-      router.push("/service-provider/dashboard");
+      // router.push("/service-provider/dashboard");0
     } catch (error) {
       console.error("Registration error:", error);
       setError("root", {
@@ -410,6 +425,35 @@ export default function ServiceProviderSignUp() {
   //     console.error("Google sign-up error:", error);
   //   }
   // };
+
+
+  if (isRegistrationSuccess) {
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4 text-center py-10">
+        <div className="rounded-full bg-green-100 p-3">
+          <svg
+            className="h-10 w-10 text-green-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold">Application Submitted!</h2>
+        <p className="text-muted-foreground max-w-md">
+          Thank you for registering as a Service Provider. Your account is currently 
+          <strong> pending approval</strong>. 
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Our team will review your details. Once approved, you will be able to log in.
+        </p>
+        <Button onClick={() => router.push('/')} variant="outline">
+          Return to Home
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -603,7 +647,7 @@ export default function ServiceProviderSignUp() {
                 )}
               </div>
               <div className="space-y-3">
-                <label className="text-sm font-medium">Apply GST *</label>
+                {/* <label className="text-sm font-medium">Apply GST *</label>
                 <Controller
                   name="applyGst"
                   control={control}
@@ -633,11 +677,11 @@ export default function ServiceProviderSignUp() {
                     </RadioGroup>
                   )}
                 />
-                {errors.applyGst && (
-                  <p className="text-sm text-destructive">
-                    {errors.applyGst.message}
-                  </p>
-                )}
+                    {errors.applyGst && (
+                      <p className="text-sm text-destructive">
+                        {errors.applyGst.message}
+                      </p>
+                    )} */}
               </div>
                <div className="flex items-center space-x-2 mt-6">
                 <Checkbox
