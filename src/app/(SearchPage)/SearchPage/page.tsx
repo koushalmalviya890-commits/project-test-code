@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider'
 import { AlertCircle } from 'lucide-react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+// import { useSession } from 'next-auth/react'
+import { useAuth } from '@/context/AuthContext'
 import { toast } from 'sonner'
 import { FacilityCard, FacilityCardSkeleton } from '@/components/ui/facility-card'
 import {
@@ -176,7 +177,8 @@ function SearchPageClient() {
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const router = useRouter()
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const { user } = useAuth()
 
   // URL Parameters
 
@@ -465,7 +467,8 @@ function SearchPageClient() {
     e.preventDefault()
     e.stopPropagation()
     
-    if (session?.user?.userType === 'Service Provider') {
+    // if (session?.user?.userType === 'Service Provider') {
+    if (user?.userType === 'Service Provider') {
       toast.error('Facility Partners cannot make bookings. Please use a startup account to book facilities.', {
         duration: 5000,
         icon: <AlertCircle className="h-5 w-5 text-red-500" />

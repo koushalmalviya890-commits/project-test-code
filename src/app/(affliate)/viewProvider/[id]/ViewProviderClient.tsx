@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { FacilityCard } from "@/components/ui/facility-card-affliate";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, MapPin, Clock, Wifi, Coffee, CheckCircle, Phone, Mail, Globe, UserCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { AMENITY_ICONS } from "@/components";
 import { AnimatePresence, motion } from "framer-motion";
-
+import { useAuth } from "@/context/AuthContext";
 // Define interfaces
 interface DayTiming {
   isOpen: boolean;
@@ -98,7 +98,9 @@ export default function ViewProviderClient({
   providerId: string;
   affiliateId: string;
 }) {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+   const { user } = useAuth();
+    const session = user ? { user } : null;
   const [provider, setProvider] = useState<ServiceProvider | null>(null);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);

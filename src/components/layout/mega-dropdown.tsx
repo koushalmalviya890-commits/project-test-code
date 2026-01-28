@@ -7,7 +7,8 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { getPropertyTypesForCategory } from "@/lib/category-mappings";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { AlertCircle, Rocket } from "lucide-react";
 
@@ -30,7 +31,9 @@ export function MegaDropdown({
   const [mounted, setMounted] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const router = useRouter();
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user } = useAuth();
+  // const session = user ? { user } : null;
 
   // Preload the background image
   useEffect(() => {
@@ -260,10 +263,10 @@ export function MegaDropdown({
                     <button
                       className="bg-transparent text-[20px] text-green-500 border border-green-500 px-4 py-2 rounded-lg ml-20"
                       onClick={() => {
-                        if (!session) {
+                        if (!user) {
                           router.push("/sign-up/service-provider");
                         } else if (
-                          session.user?.userType === "Service Provider"
+                          user?.userType === "Service Provider"
                         ) {
                           router.push("/service-provider/my-facilities");
                         } else {

@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react"; // Assuming you use lucide-react, or replace with your SVG
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AlertCircle, Rocket } from "lucide-react";
@@ -70,7 +71,8 @@ export default function IncubationDevices({
     else setLocalRole(r);
   };
 
-   const { data: session } = useSession();
+  //  const { data: session } = useSession();
+  const { user } = useAuth();
      const router = useRouter();
 
 
@@ -316,10 +318,12 @@ export default function IncubationDevices({
          {currentRole === "enabler" ? (
           <button className="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-8 rounded-full shadow-lg shadow-green-200 transition-all"
            onClick={() => {
-                        if (!session) {
+                        // if (!session) {
+                        if (!user) {
                           router.push("/sign-up/service-provider");
                         } else if (
-                          session.user?.userType === "Service Provider"
+                          // session.user?.userType === "Service Provider"
+                          user?.userType === "Service Provider"
                         ) {
                           router.push("/service-provider/my-facilities");
                         } else {
@@ -341,10 +345,12 @@ export default function IncubationDevices({
          ):(
           <button className="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-8 rounded-full shadow-lg shadow-green-200 transition-all"
            onClick={() => {
-                        if (!session) {
+                        // if (!session) {
+                        if (!user) {
                           router.push("/sign-up/startup");
                         } else if (
-                          session.user?.userType === "startup"
+                          // session.user?.userType === "startup"
+                        user?.userType === "startup"
                         ) {
                           router.push("/SearchPage");
                         } else {

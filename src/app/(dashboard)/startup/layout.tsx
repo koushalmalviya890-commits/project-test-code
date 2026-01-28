@@ -4,10 +4,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { useSession, signOut } from 'next-auth/react'
+// import { useSession, signOut } from 'next-auth/react'
 import { CalendarDays, UserCircle, LogOut, Home, Menu, X } from 'lucide-react'
 import { useState } from 'react'
-
+import ProtectedRoute from '@/components/auth/ProtectedRoute'
+import { useAuth } from '@/context/AuthContext'
 // Define the navigation item type
 interface NavigationItem {
   name: string
@@ -22,11 +23,14 @@ export default function StartupLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const { user, logout } = useAuth();
+  const session = user ? { user } : null;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/sign-in' })
+    // await signOut({ callbackUrl: '/sign-in' })
+    await logout();
   }
 
   const navigation: {
@@ -159,7 +163,7 @@ export default function StartupLayout({
           </nav>
         </div>
       </aside>
-
+<ProtectedRoute>
       {/* Main Content */}
       <main className={cn(
         "flex-1 p-8 overflow-y-auto bg-[#F8F9FC]",
@@ -168,6 +172,7 @@ export default function StartupLayout({
       )}>
         {children}
       </main>
+      </ProtectedRoute>
     </div>
   )
 }

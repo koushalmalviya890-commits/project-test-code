@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
 import {
   Card,
   CardContent,
@@ -27,6 +27,7 @@ import { AlertCircle, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/context/AuthContext";
 
 interface StartupProfile {
   startupName: string | null;
@@ -68,7 +69,8 @@ interface StartupProfile {
 }
 
 export default function StartupProfile() {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user } = useAuth();
   const [profile, setProfile] = useState<StartupProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);

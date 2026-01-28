@@ -1,12 +1,14 @@
 "use client";
 import React from 'react';
 import { Rocket, AlertCircle, Star } from 'lucide-react';
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from '@/context/AuthContext';
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 const HeroSection = () => {
-     const { data: session } = useSession();
+    //  const { data: session } = useSession();
+    const { user } = useAuth();
      const router = useRouter();
   return (
     <section className="w-full bg-white pt-28 md:pt-10 pb-16 px-4 md:px-8 flex flex-col items-center text-center font-sans">
@@ -43,10 +45,12 @@ const HeroSection = () => {
       <div className="flex flex-col items-center gap-3">
         <button className="group relative bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-8 rounded-full shadow-lg shadow-green-200 transition-all duration-300 flex items-center gap-2 transform hover:-translate-y-1"
         onClick={() => {
-                                if (!session) {
+                                // if (!session) {
+                                if (!user) {
                                   router.push("/sign-up/startup");
                                 } else if (
-                                  session.user?.userType === "startup"
+                                  // session.user?.userType === "startup"
+                                  user?.userType === "startup"
                                 ) {
                                   router.push("/SearchPage");
                                 } else {

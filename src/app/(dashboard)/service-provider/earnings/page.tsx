@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/utils'
-import { useSession } from 'next-auth/react'
+// import { useSession } from 'next-auth/react'
+import { useAuth } from '@/context/AuthContext'
 import { Spinner } from '@/components/spinner'
 import {
   Table,
@@ -86,7 +87,8 @@ interface FacilityBookingCounts {
 
 export default function EarningsPage() {
   const [isLoading, setIsLoading] = useState(true)
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const { user } = useAuth();
   const [earnings, setEarnings] = useState<EarningsData>({
     totalEarnings: 0,
     monthlyEarnings: 0,
@@ -117,10 +119,12 @@ export default function EarningsPage() {
   ];
 
   useEffect(() => {
-    if (session?.user?.id) {
+    // if (session?.user?.id) {
+      if (user?.id) {
       fetchEarningsData()
     }
-  }, [session])
+  // }, [session])
+}, [user?.id])
 
   const fetchEarningsData = async () => {
     try {

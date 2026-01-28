@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useSession } from 'next-auth/react';
+// import { useSession } from 'next-auth/react';
+import { useAuth} from "@/context/AuthContext"
 import { Download, ExternalLink, Calendar, ChevronDown, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -71,7 +72,8 @@ interface PaymentSummary {
 }
 
 export default function RevenueTab({ eventData }: RevenueTabProps) {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user } = useAuth();
   const [allBookings, setAllBookings] = useState<BookingData[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<BookingData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -311,12 +313,14 @@ export default function RevenueTab({ eventData }: RevenueTabProps) {
   // Fetch bookings data
   useEffect(() => {
     const fetchBookings = async () => {
-      if (!eventData._id || !session?.user?.id) return;
+      // if (!eventData._id || !session?.user?.id) return;
+      if (!eventData._id || !user?.id) return;
 
       try {
         setLoading(true);
-        const response = await EventService.getBookingsByEvent(eventData._id, session.user.id);
-        
+        // const response = await EventService.getBookingsByEvent(eventData._id, session.user.id);
+        const response = await EventService.getBookingsByEvent(eventData._id, user.id);
+ 
         if (response.success) {
           const data = response.data as { bookings: BookingData[]; ticketSummary: TicketSummary; paymentSummary: PaymentSummary };
           setAllBookings(data.bookings || []);
@@ -335,7 +339,8 @@ export default function RevenueTab({ eventData }: RevenueTabProps) {
     };
 
     fetchBookings();
-  }, [eventData._id, session?.user?.id]);
+  // }, [eventData._id, session?.user?.id]);
+  }, [eventData._id, user?.id]);
 
   // Filter bookings by month
   useEffect(() => {

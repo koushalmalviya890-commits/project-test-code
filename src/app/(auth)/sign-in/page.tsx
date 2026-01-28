@@ -4,11 +4,12 @@ import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { signIn, useSession } from 'next-auth/react'
+// import { signIn, useSession } from 'next-auth/react'
+import { useAuth } from "@/context/AuthContext"
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
-
+import PublicRoute from "@/components/auth/PublicRoute";
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { LoadingButton } from '@/components/ui/loading-button'
@@ -24,19 +25,18 @@ type FormData = z.infer<typeof signInSchema>
 function SignInContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { data: session, status } = useSession()
+  // const { data: session, status } = useSession()
+  const { user, login } = useAuth()
   const from = searchParams.get('from')
   const [googleLoading, setGoogleLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  useEffect(() => {
-    // Only redirect if we have a session and the status is "authenticated"
-    if (session?.user && status === "authenticated") {
-      const redirectTo = from || 
-        (session.user.userType === 'startup' ? '/landing' : '/landing')
+useEffect(() => {
+    if (user) {
+      const redirectTo = from || '/landing'; // Default redirect
       router.replace(redirectTo)
     }
-  }, [session, status, from, router])
+  }, [user, from, router])
 
   const {
     register,
@@ -50,59 +50,83 @@ function SignInContent() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      const result = await signIn('credentials', {
+     await login({
         email: data.email,
         password: data.password,
-        redirect: false,
       })
 
-     if (result?.error) {
-        let errorMessage = 'Failed to sign in. Please try again.';
+      const redirectTo = from || '/landing';
+      router.push(redirectTo);
 
-        // ✅ Updated Error Handling Logic
-        if (result.error === 'No user found with this email') {
-          errorMessage = 'No account found with this email address. Please check your email or create a new account.';
-        } else if (result.error === 'Invalid password') {
-          errorMessage = 'Incorrect password. Please try again or use the forgot password option.';
-        } else if (result.error === 'Account pending approval') {
-          // 🆕 This catches the error thrown from your NextAuth authorize function
-          errorMessage = 'Your account is currently under review. Please wait for admin approval.';
-        }
+    //  if (result?.error) {
+    //     let errorMessage = 'Failed to sign in. Please try again.';
 
-        setError('root', { 
-          type: 'manual',
-          message: errorMessage
-        })
-        return
-      }
+        
+    //     if (result.error === 'No user found with this email') {
+    //       errorMessage = 'No account found with this email address. Please check your email or create a new account.';
+    //     } else if (result.error === 'Invalid password') {
+    //       errorMessage = 'Incorrect password. Please try again or use the forgot password option.';
+    //     } else if (result.error === 'Account pending approval') {
+    //       errorMessage = 'Your account is currently under review. Please wait for admin approval.';
+    //     }
+
+        // setError('root', { 
+        //   type: 'manual',
+        //   message: errorMessage
+        // })
+        // return
+      // }
 
       // If sign-in was successful
-      if (result?.ok) {
-        // Trigger a session update
-        const updatedSession = await fetch('/api/auth/session')
-        const sessionData = await updatedSession.json()
+      // if (result?.ok) {
+      //   Trigger a session update
+      //   const updatedSession = await fetch('/api/auth/session')
+      //   const sessionData = await updatedSession.json()
         
-        // Redirect based on user type or the 'from' parameter
-        const redirectTo = from || 
-          (sessionData?.user?.userType === 'startup' ? '/landing' : '/landing')
-        router.push(redirectTo)
-      }
+      //   Redirect based on user type or the 'from' parameter
+      //   const redirectTo = from || 
+      //     (sessionData?.user?.userType === 'startup' ? '/landing' : '/landing')
+      //   router.push(redirectTo)
+      // }
     } catch (error: any) {
+      // setError('root', { 
+      //   type: 'manual',
+      //   message: 'An unexpected error occurred. Please try again.'
+      // })
+
+      // ✅ 3. New Error Handling (Axios throws errors)
+      let errorMessage = 'Failed to sign in. Please try again.';
+      
+      // Get the message sent from your Express Backend (res.status(401).json({ message: ... }))
+      const serverError = error.response?.data?.message;
+
+      if (serverError) {
+        if (serverError === 'No user found with this email') {
+          errorMessage = 'No account found with this email address. Please check your email or create a new account.';
+        } else if (serverError === 'Invalid credentials' || serverError === 'Invalid password') {
+          errorMessage = 'Incorrect password. Please try again or use the forgot password option.';
+        } else if (serverError === 'Account pending approval') {
+          errorMessage = 'Your account is currently under review. Please wait for admin approval.';
+        } else {
+          errorMessage = serverError; // Fallback to whatever the server sent
+        }
+      }
+
       setError('root', { 
         type: 'manual',
-        message: 'An unexpected error occurred. Please try again.'
+        message: errorMessage
       })
     }
   }
 
-  const handleGoogleSignIn = async () => {
-    try {
-      setGoogleLoading(true)
-      await signIn('google', { callbackUrl: from || '/landing' })
-    } catch (error) {
-      console.error('Google sign-in error:', error)
-    }
-  }
+  // const handleGoogleSignIn = async () => {
+  //   try {
+  //     setGoogleLoading(true)
+  //     await signIn('google', { callbackUrl: from || '/landing' })
+  //   } catch (error) {
+  //     console.error('Google sign-in error:', error)
+  //   }
+  // }
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword)
@@ -239,8 +263,11 @@ function SignInContent() {
 
 export default function SignIn() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <SignInContent />
-    </Suspense>
+  <PublicRoute>
+  <Suspense fallback={<div>Loading...</div>}>
+    <SignInContent />
+  </Suspense>
+</PublicRoute>
+
   )
 } 

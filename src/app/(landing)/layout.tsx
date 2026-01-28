@@ -5,7 +5,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useSession, signOut } from "next-auth/react";
+// import { useSession, signOut } from "next-auth/react";
+import { useAuth } from "@/context/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ import { ProfilePicture } from "@/components/ui/profile-picture";
 import { Footer } from "@/components/layout/footer";
 import { is } from "date-fns/locale";
 import Cummaicon from "../../../public/cummasymbol.svg";
+import { log } from "console";
 
 // Define dropdown background images
 const dropdownBackgrounds = {
@@ -144,7 +146,9 @@ export default function LandingLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user, logout } = useAuth();
+  const session = { user }; // Adapted to match useSession structure
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -159,6 +163,8 @@ export default function LandingLayout({
   const isJobPage = pathname.startsWith("/jobs");
   const isworkspace = pathname.startsWith("/offices");
   const isSciences = pathname.startsWith("/sciences");
+
+  const apiUrl = "http://localhost:3001";
 
   // Function to handle dropdown opening with no delay
   const handleDropdownOpen = (name: string) => {
@@ -233,18 +239,28 @@ export default function LandingLayout({
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        if (!session?.user) return;
+        // if (!session?.user) return;
 
-        const response = await fetch(
-          session.user.userType === "startup"
-            ? "/api/startup/profile"
-            : "/api/service-provider/profile"
-        );
+        if (!user) return;
+
+        const endpoint =
+          user.userType === "startup"
+            ? `${apiUrl}/api/startup/profile`
+            : `${apiUrl}/api/service-provider/profile`;
+
+        const response = await fetch(endpoint, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // ✅ 3. CRITICAL: This allows the browser to send the 'token' cookie to Express
+          credentials: "include",
+        });
 
         if (response.ok) {
           const data = await response.json();
           // Assign profile depending on user type to match shared types
-          if (session?.user?.userType === "startup") {
+          if (user?.userType === "startup") {
             setProfile({
               startupName: data.startupName ?? null,
               logoUrl: data.logoUrl ?? null,
@@ -256,284 +272,298 @@ export default function LandingLayout({
             });
           }
         } else {
-          console.error("Failed to fetch profile:", await response.text());
+          const errorText = await response.text();
+          console.error("Failed to fetch profile:", errorText);
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
       }
     };
 
-    if (session?.user) {
+    if (user) {
       fetchProfile();
     }
-  }, [session]);
+  }, [user]);
 
   const getBookingLink = () => {
-    if (!session?.user) return "/sign-up";
-    return session.user.userType === "startup"
+    // if (!session?.user) return "/sign-up";
+    // return session.user.userType === "startup"
+     if (!user) return "/sign-up";
+    return user.userType === "startup"
       ? "/startup/bookings"
       : "/service-provider/dashboard";
   };
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/" });
+    await logout();
   };
 
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-     {pathname !== "/partnerconnection" &&
-      <header
-        ref={headerRef}
-        className={cn(
-          "site-header",
-          isCareerPage ? "force-black" : isScrolled ? "scrolled" : "",
-          isTeamPage ? "force-black" : isScrolled ? "scrolled" : "",
-          isJobPage ? "force-black" : isScrolled ? "scrolled" : "",
-          isworkspace ? "force-black" : isScrolled ? "scrolled" : "",
-          isSciences ? "force-black" : isScrolled ? "scrolled" : "",
-          activeDropdown ? "with-dropdown" : ""
-        )}
-      >
-        <div className="container px-12 md:px-16">
-          <div className="flex h-20 items-center justify-between">
-            <button
-              className="md:hidden text-white p-2"
-              onClick={() => setMobileMenuOpen(true)}
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-            {/* Logo */}
-            <Link
-              href="/"
-              className="flex-shrink-0 relative"
-              onMouseEnter={() => setLogoHovered(true)}
-              onMouseLeave={() => setLogoHovered(false)}
-            >
-              <div className="relative h-10 w-[140px]">
-                <Image
-                  src="/logo-white.png"
-                  alt="Cumma Logo"
-                  fill
-                  className={cn(
-                    "object-contain transition-opacity duration-200 ease-in-out",
-                    logoHovered ? "opacity-0" : "opacity-100"
-                  )}
-                />
-                <Image
-                  src="/logo-green.png"
-                  alt="Cumma Logo"
-                  fill
-                  className={cn(
-                    "object-contain transition-opacity duration-200 ease-in-out",
-                    logoHovered ? "opacity-100" : "opacity-0"
-                  )}
-                />
-              </div>
-            </Link>
-
-            {/* Navigation */}
-            <nav className="hidden md:flex items-center">
-              <div className="flex items-center space-x-10">
-                {navigation.main.map((item) => (
-                  <div
-                    key={item.name}
-                    className="relative group"
-                    onMouseEnter={() => handleDropdownOpen(item.name)}
-                    onMouseLeave={handleDropdownClose}
-                  >
-                    <Link
-                      href={item.href}
-                      target={item.newTab ? "_blank" : undefined}
-                      rel={item.newTab ? "noopener noreferrer" : undefined}
-                      className={cn(
-                        "header-nav-item flex items-center h-20 px-2 relative",
-                        pathname.startsWith(item.href) ||
-                          activeDropdown === item.name
-                          ? "text-green-400 active"
-                          : "text-white hover:text-green-400"
-                      )}
-                      aria-label={item.name}
-                      title={item.name}
-                    >
-                      <span className="font-jakarta text-base font-medium transition-colors duration-200 flex items-center">
-                        {item.name}
-                        <Image
-                          src="/cummasymbol.svg"
-                          alt=""
-                          width={16}
-                          height={16}
-                          className="mt-4 ml-1 inline-block"
-                        />
-                      </span>
-                    </Link>
-
-                    {/* Mega Dropdown */}
-                    {item.dropdown && activeDropdown === item.name && (
-                      <MegaDropdown
-                        isOpen={true}
-                        title={item.name}
-                        items={item.dropdown}
-                        backgroundImage={
-                          dropdownBackgrounds[
-                            item.name as keyof typeof dropdownBackgrounds
-                          ] || "/auth-bg.jpg"
-                        }
-                      />
+      {pathname !== "/partnerconnection" && (
+        <header
+          ref={headerRef}
+          className={cn(
+            "site-header",
+            isCareerPage ? "force-black" : isScrolled ? "scrolled" : "",
+            isTeamPage ? "force-black" : isScrolled ? "scrolled" : "",
+            isJobPage ? "force-black" : isScrolled ? "scrolled" : "",
+            isworkspace ? "force-black" : isScrolled ? "scrolled" : "",
+            isSciences ? "force-black" : isScrolled ? "scrolled" : "",
+            activeDropdown ? "with-dropdown" : "",
+          )}
+        >
+          <div className="container px-12 md:px-16">
+            <div className="flex h-20 items-center justify-between">
+              <button
+                className="md:hidden text-white p-2"
+                onClick={() => setMobileMenuOpen(true)}
+              >
+                <Menu className="h-6 w-6" />
+              </button>
+              {/* Logo */}
+              <Link
+                href="/"
+                className="flex-shrink-0 relative"
+                onMouseEnter={() => setLogoHovered(true)}
+                onMouseLeave={() => setLogoHovered(false)}
+              >
+                <div className="relative h-10 w-[140px]">
+                  <Image
+                    src="/logo-white.png"
+                    alt="Cumma Logo"
+                    fill
+                    className={cn(
+                      "object-contain transition-opacity duration-200 ease-in-out",
+                      logoHovered ? "opacity-0" : "opacity-100",
                     )}
-                  </div>
-                ))}
-              </div>
-            </nav>
+                  />
+                  <Image
+                    src="/logo-green.png"
+                    alt="Cumma Logo"
+                    fill
+                    className={cn(
+                      "object-contain transition-opacity duration-200 ease-in-out",
+                      logoHovered ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                </div>
+              </Link>
 
-            {/* Auth Buttons / Profile */}
-            <div className="md:flex items-center gap-4">
-              {session?.user ? (
-                <div className="flex items-center gap-4">
-                  <Link
-                    href={
-                      session.user.userType === "startup"
-                        ? "/startup/bookings"
-                        : "/service-provider/dashboard"
-                    }
-                  >
-                    <Button
-                      size="sm"
-                      className="hidden md:block h-10 px-6 bg-green-500 hover:bg-green-600 text-white rounded-md font-medium"
+              {/* Navigation */}
+              <nav className="hidden md:flex items-center">
+                <div className="flex items-center space-x-10">
+                  {navigation.main.map((item) => (
+                    <div
+                      key={item.name}
+                      className="relative group"
+                      onMouseEnter={() => handleDropdownOpen(item.name)}
+                      onMouseLeave={handleDropdownClose}
                     >
-                      Dashboard
-                    </Button>
-                  </Link>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="h-10 w-10 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/40 transition-colors">
-                        <ProfilePicture imageUrl={profile?.logoUrl} size={40} />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-[220px] p-5 bg-white rounded-[25px] shadow-lg mt-2 border-none font-jakarta"
-                      sideOffset={12}
-                      alignOffset={0}
-                      avoidCollisions={true}
-                    >
-                      {/* Header with logo */}
-                      <div className="mb-4 flex justify-center">
-                        <Image
-                          src="/logo-green.png"
-                          alt="Cumma"
-                          width={90}
-                          height={24}
-                          priority
-                        />
-                      </div>
-
-                      {/* Account section */}
-                      <div className="space-y-4 mb-4">
-                        <Link
-                          href={
-                            session.user.userType === "startup"
-                              ? "/startup/profile"
-                              : "/service-provider/profile"
-                          }
-                          className="block w-full"
-                        >
-                          <div className="font-bold text-[16px] tracking-tight text-[#222222] hover:text-green-600 transition-colors">
-                            Profile
-                          </div>
-                        </Link>
-                        <Link
-                          href={
-                            session.user.userType === "startup"
-                              ? "/startup/bookings"
-                              : "/service-provider/dashboard"
-                          }
-                          className="block w-full"
-                        >
-                          <div className="font-bold text-[16px] tracking-tight text-[#222222] hover:text-green-600 transition-colors">
-                            Dashboard
-                          </div>
-                        </Link>
-                      </div>
-
-                      {/* Logout section */}
-                      <DropdownMenuSeparator className="my-3 bg-gray-200" />
-                      <button
-                        onClick={handleSignOut}
-                        className="flex items-center gap-3 w-full hover:opacity-70 transition-opacity group"
+                      <Link
+                        href={item.href}
+                        target={item.newTab ? "_blank" : undefined}
+                        rel={item.newTab ? "noopener noreferrer" : undefined}
+                        className={cn(
+                          "header-nav-item flex items-center h-20 px-2 relative",
+                          pathname.startsWith(item.href) ||
+                            activeDropdown === item.name
+                            ? "text-green-400 active"
+                            : "text-white hover:text-green-400",
+                        )}
+                        aria-label={item.name}
+                        title={item.name}
                       >
-                        <div className="opacity-60 group-hover:opacity-80 transition-opacity">
+                        <span className="font-jakarta text-base font-medium transition-colors duration-200 flex items-center">
+                          {item.name}
                           <Image
-                            src="/icons/signout-icon.svg"
-                            alt="Sign out"
-                            width={20}
-                            height={20}
+                            src="/cummasymbol.svg"
+                            alt=""
+                            width={16}
+                            height={16}
+                            className="mt-4 ml-1 inline-block"
+                          />
+                        </span>
+                      </Link>
+
+                      {/* Mega Dropdown */}
+                      {item.dropdown && activeDropdown === item.name && (
+                        <MegaDropdown
+                          isOpen={true}
+                          title={item.name}
+                          items={item.dropdown}
+                          backgroundImage={
+                            dropdownBackgrounds[
+                              item.name as keyof typeof dropdownBackgrounds
+                            ] || "/auth-bg.jpg"
+                          }
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </nav>
+
+              {/* Auth Buttons / Profile */}
+              <div className="md:flex items-center gap-4">
+            {/*    {session?.user ? ( */}
+                    {user ? (
+                  <div className="flex items-center gap-4">
+                    <Link
+                      href={
+                        // session.user.userType === "startup"
+user.userType === "startup"
+                        ? "/startup/bookings"
+                          : "/service-provider/dashboard"
+                      }
+                    >
+                      <Button
+                        size="sm"
+                        className="hidden md:block h-10 px-6 bg-green-500 hover:bg-green-600 text-white rounded-md font-medium"
+                      >
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="h-10 w-10 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/40 transition-colors">
+                          <ProfilePicture
+                            imageUrl={profile?.logoUrl}
+                            size={40}
+                          />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-[220px] p-5 bg-white rounded-[25px] shadow-lg mt-2 border-none font-jakarta"
+                        sideOffset={12}
+                        alignOffset={0}
+                        avoidCollisions={true}
+                      >
+                        {/* Header with logo */}
+                        <div className="mb-4 flex justify-center">
+                          <Image
+                            src="/logo-green.png"
+                            alt="Cumma"
+                            width={90}
+                            height={24}
+                            priority
                           />
                         </div>
-                        <span className="font-medium text-[16px] tracking-tight text-[#222222] opacity-60 group-hover:opacity-80 transition-opacity">
-                          Sign out
-                        </span>
-                      </button>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              ) : (
-                <div className="flex items-center">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="h-10 w-10 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/40 transition-colors">
-                        <div className="w-full h-full bg-white/10 flex items-center justify-center">
-                          <UserCircle className="w-7 h-7 text-white" />
-                        </div>
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-[220px] p-5 bg-white rounded-[25px] shadow-lg mt-2 border-none font-jakarta"
-                      sideOffset={12}
-                      alignOffset={0}
-                      avoidCollisions={true}
-                    >
-                      {/* Header with logo */}
-                      <div className="mb-4 flex justify-center">
-                        <Image
-                          src="/logo-green.png"
-                          alt="Cumma"
-                          width={90}
-                          height={24}
-                          priority
-                        />
-                      </div>
 
-                      {/* Account section */}
-                      <div className="space-y-4 mb-4">
-                        <Link href="/sign-up/startup" className="block w-full">
-                          <div className="font-bold text-[16px] tracking-tight text-[#222222] hover:text-green-600 transition-colors">
-                            Sign Up
-                          </div>
-                        </Link>
-                        <Link href="/sign-in" className="block w-full">
-                          <div className="font-bold text-[16px] tracking-tight text-[#222222] hover:text-green-600 transition-colors">
-                            Login
-                          </div>
-                        </Link>
-                        <Link
-                          href="/sign-up/service-provider"
-                          className="block w-full"
+                        {/* Account section */}
+                        <div className="space-y-4 mb-4">
+                          <Link
+                            href={
+                              // session.user.userType === "startup"
+                              user.userType === "startup"
+                              ? "/startup/profile"
+                                : "/service-provider/profile"
+                            }
+                            className="block w-full"
+                          >
+                            <div className="font-bold text-[16px] tracking-tight text-[#222222] hover:text-green-600 transition-colors">
+                              Profile
+                            </div>
+                          </Link>
+                          <Link
+                            href={
+                              // session.user.userType === "startup"
+                               user.userType === "startup"
+                                ? "/startup/bookings"
+                                : "/service-provider/dashboard"
+                            }
+                            className="block w-full"
+                          >
+                            <div className="font-bold text-[16px] tracking-tight text-[#222222] hover:text-green-600 transition-colors">
+                              Dashboard
+                            </div>
+                          </Link>
+                        </div>
+
+                        {/* Logout section */}
+                        <DropdownMenuSeparator className="my-3 bg-gray-200" />
+                        <button
+                          onClick={handleSignOut}
+                          className="flex items-center gap-3 w-full hover:opacity-70 transition-opacity group"
                         >
-                          <div className="font-bold text-[16px] tracking-tight text-[#222222] hover:text-green-600 transition-colors">
-                            Become an Enabler
+                          <div className="opacity-60 group-hover:opacity-80 transition-opacity">
+                            <Image
+                              src="/icons/signout-icon.svg"
+                              alt="Sign out"
+                              width={20}
+                              height={20}
+                            />
                           </div>
-                        </Link>
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
+                          <span className="font-medium text-[16px] tracking-tight text-[#222222] opacity-60 group-hover:opacity-80 transition-opacity">
+                            Sign out
+                          </span>
+                        </button>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="h-10 w-10 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/40 transition-colors">
+                          <div className="w-full h-full bg-white/10 flex items-center justify-center">
+                            <UserCircle className="w-7 h-7 text-white" />
+                          </div>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-[220px] p-5 bg-white rounded-[25px] shadow-lg mt-2 border-none font-jakarta"
+                        sideOffset={12}
+                        alignOffset={0}
+                        avoidCollisions={true}
+                      >
+                        {/* Header with logo */}
+                        <div className="mb-4 flex justify-center">
+                          <Image
+                            src="/logo-green.png"
+                            alt="Cumma"
+                            width={90}
+                            height={24}
+                            priority
+                          />
+                        </div>
+
+                        {/* Account section */}
+                        <div className="space-y-4 mb-4">
+                          <Link
+                            href="/sign-up/startup"
+                            className="block w-full"
+                          >
+                            <div className="font-bold text-[16px] tracking-tight text-[#222222] hover:text-green-600 transition-colors">
+                              Sign Up
+                            </div>
+                          </Link>
+                          <Link href="/sign-in" className="block w-full">
+                            <div className="font-bold text-[16px] tracking-tight text-[#222222] hover:text-green-600 transition-colors">
+                              Login
+                            </div>
+                          </Link>
+                          <Link
+                            href="/sign-up/service-provider"
+                            className="block w-full"
+                          >
+                            <div className="font-bold text-[16px] tracking-tight text-[#222222] hover:text-green-600 transition-colors">
+                              Become an Enabler
+                            </div>
+                          </Link>
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </header>}
+        </header>
+      )}
 
       {/* Mobile Menu */}
       <MobileMenu
@@ -541,7 +571,7 @@ export default function LandingLayout({
         onClose={() => setMobileMenuOpen(false)}
         navigation={navigation.main}
         pathname={pathname}
-        session={session}
+        session={user}
         profile={profile}
       />
 

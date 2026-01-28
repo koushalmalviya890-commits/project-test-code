@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ProfilePicture } from "@/components/ui/profile-picture";
 import type { Profile } from "@/types/profile";
-
+import { useAuth } from '@/context/AuthContext'
 import {
   X,
   ChevronDown,
@@ -28,8 +28,8 @@ import {
   Armchair,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Session } from "next-auth";
-import { signOut } from "next-auth/react";
+// import { Session } from "next-auth";
+// import { signOut } from "next-auth/react";
 
 interface NavigationItem {
   name: string;
@@ -43,12 +43,19 @@ interface NavigationItem {
 
 // Using shared Profile type from src/types/profile.ts
 
+interface User { 
+  id: string; 
+  email: string; 
+  name: string; 
+  userType?: string; 
+}
+
 interface MobileMenuProps {
   isOpen: boolean;
   onClose: () => void;
   navigation: NavigationItem[];
   pathname: string;
-  session: Session | null;
+  session: User | null;
   profile?: Profile;
 }
 
@@ -64,7 +71,7 @@ export function MobileMenu({
   // State to track which accordion is open. 'Workspace' is open by default to match image.
   const [openSection, setOpenSection] = useState<string | null>("Workspace");
   const [showAllGrid, setShowAllGrid] = useState(false);
-
+const {logout} = useAuth();
   // Extract Workspaces and Facilities from navigation for mapping
   const workspacesNav =
     navigation.find((n) => n.name === "Workspaces")?.dropdown || [];
@@ -113,11 +120,12 @@ export function MobileMenu({
   };
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/" });
+    // await signOut({ callbackUrl: "/" });
+    await logout();
+    onClose(); // Close menu after logout
   };
 
-  if (!mounted) return null;
-  if (!isOpen) return null;
+if (!mounted || !isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[200] bg-white flex flex-col h-[705px] overflow-hidden font-jakarta">
@@ -147,7 +155,7 @@ export function MobileMenu({
         </Link>
         {/* Profile Icon (Right) */}
         <div className="md:flex items-center gap-4">
-          {session?.user ? (
+          {session ? (
             <div className="flex items-center gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -177,7 +185,7 @@ export function MobileMenu({
                   <div className="space-y-4 mb-4">
                     <Link
                       href={
-                        session.user.userType === "startup"
+                        session.userType === "startup"
                           ? "/startup/profile"
                           : "/service-provider/profile"
                       }
@@ -189,7 +197,7 @@ export function MobileMenu({
                     </Link>
                     <Link
                       href={
-                        session.user.userType === "startup"
+                        session.userType === "startup"
                           ? "/startup/bookings"
                           : "/service-provider/dashboard"
                       }

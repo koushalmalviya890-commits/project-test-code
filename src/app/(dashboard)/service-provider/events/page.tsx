@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import  { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
 import {
   Pencil,
@@ -182,7 +183,10 @@ interface EarningsData {
 // CONTENT COMPONENT: This is the main component (wrapped by provider)
 const MyEventsContent = () => {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  // const { data: session, status } = useSession();
+  const { user, loading } = useAuth();
+  const status = loading ? "loading" : user ? "authenticated" : "unauthenticated";
+  
   const [events, setEvents] = useState<Event[]>([]);
   const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [earningsData, setEarningsData] = useState<EarningsData | null>(null);
@@ -522,8 +526,10 @@ const MyEventsContent = () => {
       setIsLoading(true);
       setError(null);
 
-      if (!session?.user?.id) {
-       // console.log("No user session found");
+      // if (!session?.user?.id) {
+      if (!user?.id) {
+
+      // console.log("No user session found");
         setAllEvents([]);
         return;
       }
@@ -539,7 +545,8 @@ const MyEventsContent = () => {
 
      // console.log("Fetching events with filters:", filters);
       const response = await EventService.getAllEventsByServiceProvider(
-        session.user.id,
+        // session.user.id,
+        user.id,
         filters
       );
      // console.log("Fetched events response:", response);
@@ -572,8 +579,10 @@ const MyEventsContent = () => {
       return;
     }
 
-    fetchEvents();
-  }, [status, session, selectedMonth, selectedDate]);
+   if (user?.id) {
+        fetchEvents();
+    }
+  }, [status, user?.id, selectedMonth, selectedDate]);
 
   // Debug logging
   useEffect(() => {
@@ -587,7 +596,7 @@ const MyEventsContent = () => {
     //   session: session?.user?.id,
     //   earningsData,
     // });
-  }, [isLoading, allEvents, events, error, session, earningsData]);
+  }, [isLoading, allEvents, events, error, user?.id, earningsData]);
 
   // Loading state
   if (isLoading) {
@@ -728,7 +737,7 @@ const MyEventsContent = () => {
       method: "POST",
       body: JSON.stringify({
         'event_ids': 'all',
-        'facility_id': session?.user?.id
+        'facility_id': user?.id
       }),
       headers: {
         "Content-Type": "application/json",

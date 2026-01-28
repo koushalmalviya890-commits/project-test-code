@@ -37,7 +37,8 @@ import {
   FileIcon,
   Loader2,
 } from "lucide-react";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from "@/context/AuthContext"
 import { useEventForm } from "../../services/contexts/EventFormContext";
 import { toast } from "sonner";
 
@@ -65,7 +66,8 @@ interface ValidationErrors {
 }
 
 const EventDetailsTab: React.FC<{ onNext: () => void }> = ({ onNext }) => {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user } = useAuth();
   // 🕒 USING: Context helper functions as specified
   const { formData, updateFormData, formatDateTimeLocalIST } = useEventForm() as unknown as {
     formData: EventFormData;
@@ -131,11 +133,18 @@ const EventDetailsTab: React.FC<{ onNext: () => void }> = ({ onNext }) => {
     const [amenitiesOthersOpen, setAmenitiesOthersOpen] = useState(false);
     const [amenitiesOthersValue, setAmenitiesOthersValue] = useState("");
 
+  // useEffect(() => {
+  //   if (session?.user.id && !formData.serviceProviderId) {
+  //     updateFormData("serviceProviderId", session.user.id);
+  //   }
+  // }, [session, formData.serviceProviderId, updateFormData]);
+
   useEffect(() => {
-    if (session?.user.id && !formData.serviceProviderId) {
-      updateFormData("serviceProviderId", session.user.id);
+    if (user?.id && !formData.serviceProviderId) {
+      updateFormData("serviceProviderId",user.id);
     }
-  }, [session, formData.serviceProviderId, updateFormData]);
+  }, [user?.id, formData.serviceProviderId, updateFormData]);
+
 
   // Clear sectors and amenities when switching to online mode
 useEffect(() => {

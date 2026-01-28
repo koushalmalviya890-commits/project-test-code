@@ -22,7 +22,8 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useSession } from 'next-auth/react'
+// import { useSession } from 'next-auth/react'
+import { useAuth } from '@/context/AuthContext'
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { useRouter } from 'next/navigation'
@@ -150,7 +151,8 @@ interface FeaturedFacility {
 }
 
 export default function StudiosPage() {
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [featuredStudios, setFeaturedStudios] = useState<FeaturedFacility[]>([])

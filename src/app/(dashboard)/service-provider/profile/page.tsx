@@ -22,12 +22,13 @@ import {
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { ProfilePicture } from "@/components/ui/profile-picture";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from "@/context/AuthContext";
 import { Pencil, Save, Info, Clock, UserCircle } from "lucide-react";
-import {
-  getServiceProviderProfile,
-  updateServiceProviderProfile,
-} from "@/lib/actions/service-provider";
+// import {
+//   getServiceProviderProfile,
+//   updateServiceProviderProfile,
+// } from "@/lib/actions/service-provider";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -222,7 +223,8 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function ServiceProviderProfile() {
   const [templateDay, setTemplateDay] = useState<string>("monday");
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
   const tabs = ['basic', 'contact', 'bank', 'amenities'];
@@ -233,6 +235,7 @@ export default function ServiceProviderProfile() {
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [incompleteFields, setIncompleteFields] = useState<string[]>([]);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
+    const apiUrl = "http://localhost:3001";
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -286,9 +289,26 @@ export default function ServiceProviderProfile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const result = await getServiceProviderProfile();
-        if (result.error) {
-          throw new Error(result.error);
+        // const result = await getServiceProviderProfile();
+        // if (result.error) {
+        //   throw new Error(result.error);
+        // }
+
+        if (!user?.id) return;
+
+        // ✅ Point to Express Backend
+      
+        
+        const response = await fetch(`${apiUrl}/service-provider/profile`, {
+            method: 'GET',
+            credentials: 'include', // ⬅️ Critical for Auth
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Failed to fetch profile");
         }
 
         if (result.data) {
@@ -373,12 +393,11 @@ export default function ServiceProviderProfile() {
     };
 
     fetchProfile();
-  }, [form]);
+  }, [user?.id, form]);
 
   const calculateProfileCompletion = (
     profileData: Partial<ProfileFormValues>
   ) => {
-    // Make sure we have valid data to work with
     if (!profileData) return;
 
     const requiredFields = [
@@ -525,11 +544,26 @@ export default function ServiceProviderProfile() {
       // console.log("Submitting profile with images:", submissionData.images);
       // console.log("Submitting profile with timings:", submissionData.timings);
 
-      const result = await updateServiceProviderProfile(submissionData);
+      // const result = await updateServiceProviderProfile(submissionData);
 
-      if (result.error) {
-        throw new Error(result.error);
+// const  = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+
+      const response = await fetch(`${apiUrl}/service-provider/profile`, {
+          method: 'PATCH', // Matches the route defined in Step 2
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // ⬅️ Critical
+          body: JSON.stringify(submissionData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to update profile");
       }
+
+      // if (result.error) {
+      //   throw new Error(result.error);
+      // }
 
       // Recalculate profile completion
       calculateProfileCompletion(submissionData);

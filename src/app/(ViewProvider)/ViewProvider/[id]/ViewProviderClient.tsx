@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useSession } from 'next-auth/react'
+// import { useSession } from 'next-auth/react'
+import { useAuth } from '@/context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { FacilityCard } from '@/components/ui/facility-card'
@@ -190,7 +191,8 @@ export default function ViewProviderClient({
 }: {
   providerId: string
 }) {
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const { user } = useAuth();
   const [provider, setProvider] = useState<ServiceProvider | null>(null)
   const [facilities, setFacilities] = useState<Facility[]>([])
   const [loading, setLoading] = useState(true)

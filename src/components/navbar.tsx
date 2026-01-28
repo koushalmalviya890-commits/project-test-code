@@ -3,10 +3,12 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { useSession, signOut } from 'next-auth/react'
+// import { useSession, signOut } from 'next-auth/react'
+import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const { user, logout } = useAuth(); 
 
   return (
     <nav className="w-full border-b bg-white">
@@ -24,9 +26,10 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-4">
-          {session ? (
+          {/* {session ? ( */}
+          {user ? (
             <>
-              <Button variant="ghost" onClick={() => signOut()}>
+              <Button variant="ghost" onClick={() => logout()}>
                 Sign Out
               </Button>
             </>

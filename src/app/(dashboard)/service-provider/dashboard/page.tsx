@@ -1,6 +1,7 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { formatCurrency } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -124,7 +125,7 @@ const facilityTypeColors: Record<string, string> = {
   "bio-allied-labs": "#EF4444", // Red
   "manufacturing-labs": "#8B5CF6", // Purple
   "prototyping-labs": "#EC4899", // Pink
-  software: "#06B6D4", // Cyan
+  "software": "#06B6D4", // Cyan
   "saas-allied": "#F97316", // Orange
   "raw-space-office": "#6366F1", // Indigo
   "raw-space-lab": "#14B8A6", // Teal
@@ -140,7 +141,7 @@ const facilityTypeNames: Record<string, string> = {
   "bio-allied-labs": "Bio-Allied Lab",
   "manufacturing-labs": "Manufacturing Lab",
   "prototyping-labs": "Prototyping Lab",
-  software: "Software Development",
+  "software": "Software Development",
   "saas-allied": "SaaS Allied",
   "raw-space-office": "Raw Space Office",
   "raw-space-lab": "Raw Space Lab",
@@ -148,7 +149,9 @@ const facilityTypeNames: Record<string, string> = {
 };
 
 export default function ServiceProviderDashboard() {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user } = useAuth();
+  // const session = user ? { user } : null;
   const [activeTab, setActiveTab] = useState<"bookings" | "earnings">(
     "bookings"
   );
@@ -209,14 +212,14 @@ export default function ServiceProviderDashboard() {
   }, [activeTab]);
 
   useEffect(() => {
-    if (session?.user?.id) {
+    if (user?.id) {
       fetchServiceProviderProfile();
       fetchDashboardData();
       fetchRecentNotifications();
       // Add new function call to fetch earnings data directly
       fetchEarningsApiData();
     }
-  }, [session]);
+  }, [user?.id]);
 
   // New function to fetch data directly from earnings API
   const fetchEarningsApiData = async () => {
@@ -268,14 +271,28 @@ export default function ServiceProviderDashboard() {
 
       const dateStr = date.toISOString().split("T")[0];
 
-      const serviceProviderId = userId || session?.user?.id;
-
+      // const serviceProviderId = userId || session?.user?.id;
+const serviceProviderId = userId || user?.id;
       if (!serviceProviderId) {
         console.error("No service provider ID available");
         setIsLoading(false);
         return;
       }
 
+      // const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+
+      // // ✅ 3. Fetch with Credentials
+      // // We pass serviceProviderId if your backend needs it, otherwise the cookie handles auth
+      // const response = await fetch(
+      //   `${API_URL}/service-provider/dashboard-data?date=${dateStr}&userId=${serviceProviderId}`, 
+      //   {
+      //     method: "GET",
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //     credentials: "include", // ⬅️ CRITICAL: Sends the auth cookie
+      //   }
+      // );
       const response = await fetch(
         `/api/dashboard?date=${dateStr}&serviceProviderId=${serviceProviderId}`
       );
@@ -480,8 +497,11 @@ export default function ServiceProviderDashboard() {
   const handleDateChange = (newDate: Date) => {
     setSelectedDate(newDate);
 
-    if (session?.user?.id) {
-      fetchDashboardData(newDate, session.user.id);
+    // if (session?.user?.id) {
+    //   fetchDashboardData(newDate, user.id);
+    // }
+     if (user?.id) {
+      fetchDashboardData(newDate, user?.id);
     }
   };
 
@@ -690,12 +710,27 @@ export default function ServiceProviderDashboard() {
   // New function to fetch recent notifications
   const fetchRecentNotifications = async () => {
     try {
-      if (!session?.user?.id) return;
+      // if (!session?.user?.id) return;
+      if (!user?.id) return;
 
+
+      const apiUrl = "http://localhost:3001";
       // Updated API call with correct parameters
-      const response = await fetch(
-        "/api/notifications?limit=3&type=booking&status=approved"
-      );
+      // const response = await fetch(
+      //   "/api/notifications?limit=3&type=booking&status=approved"
+      // );
+
+   const response = await fetch(
+      `${apiUrl}/notifications?limit=3&type=booking&status=approved`,
+      {
+         // ✅ 3. CRITICAL: Allow Express to read the cookie
+         credentials: 'include', 
+         headers: {
+           "Content-Type": "application/json",
+         }
+      }
+    );
+
 
       if (response.ok) {
         const data = await response.json();
@@ -704,8 +739,8 @@ export default function ServiceProviderDashboard() {
         const transformedNotifications = data.notifications.map(
           (notification: any) => ({
             _id: notification._id,
-            userName: notification.metadata.startupName || "A startup",
-            facilityName: notification.metadata.facilityName || "your facility",
+            userName: notification.metadata?.startupName || "A startup",
+            facilityName: notification.metadata?.facilityName || "your facility",
             status: "approved",
             createdAt: notification.createdAt,
             isRead: notification.isRead,

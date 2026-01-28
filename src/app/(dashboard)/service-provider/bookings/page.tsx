@@ -1,7 +1,8 @@
 'use client'
 import * as XLSX from 'xlsx';
 import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
+// import { useSession } from 'next-auth/react'
+import { useAuth } from "@/context/AuthContext"
 import Image from 'next/image'
 import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
@@ -48,7 +49,9 @@ interface KPIData {
 }
 
 export default function BookingsPage() {
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const { user } = useAuth();
+  const session = user ? { user } : null;
   const [bookings, setBookings] = useState<Booking[]>([])
   const [kpiData, setKpiData] = useState<KPIData>({
     totalBookingsThisMonth: 0,

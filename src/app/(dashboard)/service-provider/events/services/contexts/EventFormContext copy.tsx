@@ -1,7 +1,8 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+// import { useSession } from 'next-auth/react';
+import { useAuth } from "@/context/AuthContext"
 import EventService from '../event-api-services';
 import { toast } from 'sonner';
 import { set } from 'lodash';
@@ -191,7 +192,8 @@ const EventFormContext = createContext<EventFormContextType | undefined>(undefin
 
 export const EventFormProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [formData, setFormData] = useState<GlobalEventFormData>(initialFormData);
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user } = useAuth();
 
   // NEW EDIT MODE STATES
   const [isEditMode, setIsEditMode] = useState(false);
@@ -417,7 +419,8 @@ const loadEventForEdit = async (eventId: string) => {
       const eventFormData = new FormData();
 
       // Event Details
-      eventFormData.append('serviceProviderId', session?.user.id || '');
+      // eventFormData.append('serviceProviderId', session?.user.id || '');
+      eventFormData.append('serviceProviderId', user?.id || '');
       eventFormData.append('serviceProviderName', formData.serviceProviderName || '');
       eventFormData.append('title', formData.title);
       eventFormData.append('status', formData.status);

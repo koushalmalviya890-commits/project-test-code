@@ -35,7 +35,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
@@ -223,7 +224,8 @@ interface FeaturedFacility {
 }
 
 export default function Home() {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user } = useAuth();
   // const [activeTab, setActiveTab] = useState("facility");
     const [activeTab, setActiveTab] = useState<string[]>(["facility"])
     const toggleTab = (value: string) => {
@@ -349,8 +351,8 @@ export default function Home() {
   };
 
   const getBookingLink = () => {
-    if (!session?.user) return "/sign-up";
-    return session.user.userType === "startup"
+    if (!user) return "/sign-up";
+    return user.userType === "startup"
       ? "/startup/bookings"
       : "/service-provider/dashboard";
   };

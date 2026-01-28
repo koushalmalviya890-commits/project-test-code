@@ -1,12 +1,21 @@
 "use client";
 import React from "react";
-import { User, Mail, CreditCard,Rocket, Star, AlertCircle } from "lucide-react";
+import {
+  User,
+  Mail,
+  CreditCard,
+  Rocket,
+  Star,
+  AlertCircle,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 const HowItWorks = () => {
-    const router = useRouter();
-    const { data: session } = useSession();
+  const router = useRouter();
+  // const { data: session } = useSession();
+  const { user } = useAuth();
 
   const steps = [
     {
@@ -148,26 +157,27 @@ const HowItWorks = () => {
               <p className="text-base lg:text-lg text-gray-600 leading-relaxed">
                 {step.description}
               </p>
-              <button className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-lg shadow-green-500/30"
-               onClick={() => {
-                                      if (!session) {
-                                        router.push("/sign-up/service-provider");
-                                      } else if (
-                                        session.user?.userType === "Service Provider"
-                                      ) {
-                                        router.push("/service-provider/my-facilities");
-                                      } else {
-                                        toast.error(
-                                          "A Service Provider account is required to list facilities",
-                                          {
-                                            duration: 5000,
-                                            icon: (
-                                              <AlertCircle className="h-5 w-5 text-red-500" />
-                                            ),
-                                          }
-                                        );
-                                      }
-                                    }}
+              <button
+                className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-lg shadow-green-500/30"
+                onClick={() => {
+                  // if (!session) {
+                  if (!user) {
+                    router.push("/sign-up/service-provider");
+                  } else if (
+                    // session.user?.userType === "Service Provider"
+                    user?.userType === "Service Provider"
+                  ) {
+                    router.push("/service-provider/my-facilities");
+                  } else {
+                    toast.error(
+                      "A Service Provider account is required to list facilities",
+                      {
+                        duration: 5000,
+                        icon: <AlertCircle className="h-5 w-5 text-red-500" />,
+                      },
+                    );
+                  }
+                }}
               >
                 Take the first step
               </button>

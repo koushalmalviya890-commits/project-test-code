@@ -5,7 +5,8 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { useSession, signOut } from 'next-auth/react'
+// import { useSession, signOut } from 'next-auth/react'
+import { useAuth } from '@/context/AuthContext'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -113,7 +114,8 @@ export default function ViewDetailsLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const { user, logout } = useAuth();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -163,13 +165,26 @@ export default function ViewDetailsLayout({
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        if (!session?.user) return
+        // if (!session?.user) return
+        if (!user?.id) return
 
         const response = await fetch(
-          session.user.userType === 'startup' 
+          // session.user.userType === 'startup' 
+          user.userType === 'startup'
             ? '/api/startup/profile'
             : '/api/service-provider/profile'
         )
+
+        // const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+        // const endpoint = user.userType === 'startup' 
+        //     ? '/startup/profile' 
+        //     : '/service-provider/profile';
+
+        // const response = await fetch(`${API_URL}${endpoint}`, {
+        //      method: 'GET',
+        //      credentials: 'include', // ⬅️ Critical for Express Auth
+        //      headers: { 'Content-Type': 'application/json' }
+        // })
         
         if (response.ok) {
           const data = await response.json()
@@ -187,20 +202,37 @@ export default function ViewDetailsLayout({
       }
     }
 
-    if (session?.user) {
-      fetchProfile()
-    }
-  }, [session])
+  //   if (session?.user) {
+  //     fetchProfile()
+  //   }
+  // }, [session])
+
+  if(user?.id){
+    fetchProfile()
+  }
+}, [user?.id, user?.userType])
+
+  // const toggleDropdown = (name: string) => {
+  //   if (activeDropdown === name) {
+  //     setActiveDropdown(null)
+  //   } else {
+  //     setActiveDropdown(name)
+  //   }
+  // }
 
   const getBookingLink = () => {
-    if (!session?.user) return '/sign-up'
-    return session.user.userType === 'startup' 
+    // if (!session?.user) return '/sign-up'
+    // return session.user.userType === 'startup' 
+      if (!user) return '/sign-up'
+    return user.userType === 'startup' 
       ? '/startup/bookings' 
       : '/service-provider/dashboard'
   }
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' })
+    // await signOut({ callbackUrl: '/' })
+    await logout();
+    window.location.href = '/'
   }
 
   return (
@@ -238,9 +270,11 @@ export default function ViewDetailsLayout({
 
             {/* Auth Buttons / Profile */}
             <div className="hidden md:flex items-center gap-4">
-              {session?.user ? (
+              {/* {session?.user ? ( */}
+              {user ? (
                 <div className="flex items-center gap-4">
-                  <Link href={session.user.userType === 'startup' ? '/startup/bookings' : '/service-provider/dashboard'}>
+                  {/* <Link href={session.user.userType === 'startup' ? '/startup/bookings' : '/service-provider/dashboard'}> */}
+                  <Link href={user.userType === 'startup' ? '/startup/bookings' : '/service-provider/dashboard'}>
                     <Button size="sm" className="h-10 px-6 bg-green-500 hover:bg-green-600 text-white rounded-md font-medium">
                       Dashboard
                     </Button>
@@ -275,7 +309,8 @@ export default function ViewDetailsLayout({
                       {/* Account section */}
                       <div className="space-y-4 mb-4">
                         <Link 
-                          href={session.user.userType === 'startup' ? '/startup/profile' : '/service-provider/profile'}
+                          // href={session.user.userType === 'startup' ? '/startup/profile' : '/service-provider/profile'}
+                          href={user.userType === 'startup' ? '/startup/profile' : '/service-provider/profile'}
                           className="block w-full"
                         >
                           <div className="font-bold text-[16px] tracking-tight text-[#222222] hover:text-green-600 transition-colors">
@@ -283,7 +318,8 @@ export default function ViewDetailsLayout({
                           </div>
                         </Link>
                         <Link 
-                          href={session.user.userType === 'startup' ? '/startup/bookings' : '/service-provider/dashboard'}
+                          // href={session.user.userType === 'startup' ? '/startup/bookings' : '/service-provider/dashboard'}
+                          href={user.userType === 'startup' ? '/startup/bookings' : '/service-provider/dashboard'}
                           className="block w-full"
                         >
                           <div className="font-bold text-[16px] tracking-tight text-[#222222] hover:text-green-600 transition-colors">
@@ -391,7 +427,9 @@ export default function ViewDetailsLayout({
         onClose={() => setMobileMenuOpen(false)} 
         navigation={navigation.main}
         pathname={pathname}
-        session={session}
+        // session={session}
+        session={user} // ⬅️ Pass 'user' directly here. It matches the interface.
+        profile={profile as any}
       />
 
       {/* Page Content */}

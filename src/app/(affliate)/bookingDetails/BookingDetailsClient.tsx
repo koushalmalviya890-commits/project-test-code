@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
 import {
   Calendar,
   Clock,
@@ -20,6 +20,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { getFixedServiceFee } from "@/lib/pricing";
+import { useAuth } from "@/context/AuthContext";
 
 interface FacilityDetails {
   _id: string;
@@ -64,7 +65,8 @@ interface BookingDetails {
 export default function BookingDetailsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status } = useSession();
+  // const { data: session, status } = useSession();
+  const {user, loading: authLoading} = useAuth();
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(
     null
   );
@@ -75,6 +77,12 @@ export default function BookingDetailsClient() {
     message: string;
     redirect: string;
   } | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/sign-in");
+    }
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -129,7 +137,7 @@ export default function BookingDetailsClient() {
         redirect: "/",
       });
     }
-  }, [searchParams, router, status]);
+  }, [searchParams, router]);
 
   useEffect(() => {
     if (error && errorDetails) {

@@ -22,7 +22,8 @@ import {
   Check,
 } from "lucide-react";
 import { BookingModal } from "@/components/booking/BookingModal";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import Link from "next/link";
 import DatePicker from "react-datepicker";
@@ -153,7 +154,9 @@ export default function ViewDetailsClient({
 }: {
   facilityId: string;
 }) {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user } = useAuth();
+  const session = user ? { user } : null;
   const [facility, setFacility] = useState<Facility | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -406,10 +409,10 @@ const gstAmount = (priceDetails?.hasGST && priceDetails?.hasGST === true && (pri
   // Fetch startup profile
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!session) return;
+      if (!user) return;
 
       // Check if user is a service provider
-      if (session.user?.userType === "Service Provider") {
+      if (user?.userType === "Service Provider") {
         setIsProfileLoading(false);
         return; // Don't try to fetch startup profile for service providers
       }
@@ -440,10 +443,10 @@ const gstAmount = (priceDetails?.hasGST && priceDetails?.hasGST === true && (pri
       }
     };
 
-    if (session) {
+    if (user?.id) {
       fetchProfile();
     }
-  }, [session]);
+  }, [user?.id]);
 
   // Reset coupon when booking period changes
   useEffect(() => {
@@ -681,7 +684,7 @@ const gstAmount = (priceDetails?.hasGST && priceDetails?.hasGST === true && (pri
 
   const handleBookingSubmit = async () => {
     // Check if user is signed in
-    if (!session) {
+    if (!user) {
       toast.error("Please sign in to book this facility", {
         duration: 3000,
         icon: <AlertCircle className="h-5 w-5 text-red-500" />,
@@ -690,7 +693,7 @@ const gstAmount = (priceDetails?.hasGST && priceDetails?.hasGST === true && (pri
     }
 
     // Check if user is a service provider
-    if (session.user?.userType === "Service Provider") {
+    if (user?.userType === "Service Provider") {
       toast.error(
         "Facility Partners cannot make bookings. Please use a startup account to book facilities.",
         {
@@ -1056,7 +1059,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
   // Check for failed payments related to this facility for the current user
   useEffect(() => {
     const checkFailedPayments = async () => {
-      if (!session?.user?.id) return;
+      if (!user?.id) return;
 
       try {
         const response = await fetch(
@@ -1074,7 +1077,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
     };
 
     checkFailedPayments();
-  }, [facilityId, session]);
+  }, [facilityId, user?.id]);
 
   if (loading) {
     return (
@@ -1134,7 +1137,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
 
   const handleBookNowClick = () => {
     // Check if user is a service provider
-    if (session?.user?.userType === "Service Provider") {
+    if (user?.userType === "Service Provider") {
       toast.error(
         "Facility Partners cannot make bookings. Please use a startup account to book facilities.",
         {
@@ -2139,7 +2142,8 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
 
                     {/* Booking Form for Event Workspace */}
                     <div className="p-4 sm:p-6">
-                      {!session && (
+                      {/* {!session && ( */}
+                        {!user && (
                         <div className="mb-4 p-3 sm:p-4 bg-gray-50 rounded-lg text-center">
                           <p className="text-xs sm:text-sm text-gray-600 mb-3">
                             Sign in to book this event space
@@ -2167,7 +2171,8 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                         </div>
                       )}
 
-                      {session?.user?.userType === "Service Provider" && (
+                      {/* {session?.user?.userType === "Service Provider" && ( */}
+                       {user?.userType === "Service Provider" && (
                         <div className="mb-4 p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg">
                           <p className="text-xs sm:text-sm text-amber-800">
                             Facility Partners cannot make bookings. Please use a
@@ -2440,8 +2445,10 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                         className="w-full text-sm sm:text-base font-semibold py-4 sm:py-6"
                         onClick={handleBookingSubmit}
                         disabled={
-                          !session ||
-                          session?.user?.userType === "Service Provider" ||
+                          // !session ||
+                          // session?.user?.userType === "Service Provider" ||
+                           !user ||
+                          user?.userType === "Service Provider" ||
                           !selectedDate ||
                           !selectedTime ||
                           !contactNumber ||
@@ -2455,7 +2462,9 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                             <span className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></span>
                             Processing...
                           </span>
-                        ) : session ? (
+                        ) : 
+                        // session ? (
+                        user ? (
                           // selectedRooms.length === 0 ? (
                           //   "Select Rooms to Continue"
                           // ) :
@@ -2602,7 +2611,8 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                   {/* Booking Form */}
                   <div className="p-4 sm:p-6">
                     {/* Auth Overlay */}
-                    {!session && (
+                    {/* {!session && ( */}
+                    {!user && (
                       <div className="mb-4 p-3 sm:p-4 bg-gray-50 rounded-lg text-center">
                         <p className="text-xs sm:text-sm text-gray-600 mb-3">
                           Sign in to book this facility
@@ -2631,7 +2641,8 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                     )}
 
                     {/* Service Provider Warning */}
-                    {session?.user?.userType === "Service Provider" && (
+                    {/* {session?.user?.userType === "Service Provider" && ( */}
+                    {user?.userType === "Service Provider" && (
                       <div className="mb-4 p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg">
                         <p className="text-xs sm:text-sm text-amber-800">
                           Facility Partners cannot make bookings. Please use a
@@ -2653,7 +2664,8 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                           facility?.facilityType || ""
                         );
                         let planServiceFee = 0;
-                        if (session?.user && isExisting === true) {
+                        // if (session?.user && isExisting === true) {
+                        if (user && isExisting === true) {
                           planServiceFee = fixedFeePerUnit;
                         } else {
                           planServiceFee = basePrice * 0.07;
@@ -3359,8 +3371,10 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                       className="w-full text-sm sm:text-base font-semibold py-4 sm:py-6"
                       onClick={handleBookingSubmit}
                       disabled={
-                        !session ||
-                        session?.user?.userType === "Service Provider" ||
+                        // !session ||
+                        // session?.user?.userType === "Service Provider" ||
+                        !user ||
+                        user.userType === "Service Provider" ||
                         !selectedDate ||
                         !selectedTime ||
                         !contactNumber ||
@@ -3373,7 +3387,9 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                           <span className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></span>
                           Processing...
                         </span>
-                      ) : session ? (
+                      ) : 
+                      // session ? (
+                      user ? (
                         "Reserve"
                       ) : (
                         "Sign in to Book"
