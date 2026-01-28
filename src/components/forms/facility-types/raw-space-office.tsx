@@ -126,6 +126,9 @@ interface AreaDetail {
 }
 
 export function RawSpaceOfficeForm({ onSubmit, onChange, initialData }: FacilityFormProps) {
+
+  const base_url = "http://localhost:3001";
+
   const [images, setImages] = useState<string[]>(initialData?.images || [])
   const [templateDay, setTemplateDay] = useState<string>('monday')
   const [areaDetails, setAreaDetails] = useState<AreaDetail[]>(
@@ -160,7 +163,8 @@ const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
   useEffect(() => {
     const fetchSectors = async () => {
       try {
-        const res = await fetch("/api/sector");
+        // const res = await fetch("/api/sector");
+        const res = await fetch(`${base_url}/api/sectors`);
         const json = await res.json();
         if (json.success) {
           setSectorTags(json.data.map((s: any) => s.name));
@@ -261,7 +265,8 @@ const handleSectorToggle = (slug: string) => {
     setSectorError(null);
 
     try {
-      const res = await fetch("/api/sector", {
+      // const res = await fetch("/api/sector", {
+      const res = await fetch(`${base_url}/api/sectors`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: raw }),

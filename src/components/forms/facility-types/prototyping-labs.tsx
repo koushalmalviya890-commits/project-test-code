@@ -176,6 +176,7 @@ export function PrototypingLabsForm({ onSubmit, onChange, initialData }: Facilit
   //   pincode: initialData?.pincode,
   //   country: initialData?.country
   // });
+  const base_url = "http://localhost:3001";
 
   const [images, setImages] = useState<string[]>(initialData?.images || [])
   const [templateDay, setTemplateDay] = useState<string>('monday')
@@ -210,7 +211,8 @@ export function PrototypingLabsForm({ onSubmit, onChange, initialData }: Facilit
   useEffect(() => {
     const fetchSectors = async () => {
       try {
-        const res = await fetch("/api/sector");
+        //const res = await fetch("/api/sector");
+        const res = await fetch(`${base_url}/api/sectors`);
         const json = await res.json();
         if (json.success) {
           setSectorTags(json.data.map((s: any) => s.name));
@@ -347,7 +349,8 @@ export function PrototypingLabsForm({ onSubmit, onChange, initialData }: Facilit
     setSectorError(null);
 
     try {
-      const res = await fetch("/api/sector", {
+      //const res = await fetch("/api/sector", {
+      const res = await fetch(`${base_url}/api/sectors`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: raw }),

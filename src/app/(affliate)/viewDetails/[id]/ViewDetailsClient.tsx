@@ -2223,6 +2223,8 @@ export default function ViewDetailsClient({
     bookingSeats: number;
   } | null>(null);
 
+  const base_url = "http://localhost:3001";
+
   useEffect(() => {
     const calculatePrices = async () => {
       if (!selectedPlan) return;
