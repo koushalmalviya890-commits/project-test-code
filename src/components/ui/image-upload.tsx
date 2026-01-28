@@ -13,7 +13,7 @@ interface ImageUploadProps {
   value: string[]
   disabled?: boolean
 }
-
+const apiUrl = "http://localhost:3001";
 export function ImageUpload({
   onChange,
   onRemove,
@@ -25,8 +25,8 @@ export function ImageUpload({
   const uploadToS3 = async (file: File) => {
     try {
       // First, get a presigned URL from our API
-      const response = await fetch('/api/upload', {
-        method: 'POST',
+      const response = await fetch(`${apiUrl}/api/uploads`, {
+        method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileType: file.type })
       })
@@ -49,6 +49,7 @@ export function ImageUpload({
       if (!uploadResponse.ok) {
         throw new Error('Failed to upload file')
       }
+      console.log('Uploaded file key:', key);
 
       // Construct the public URL for the uploaded image
       return `https://${process.env.NEXT_PUBLIC_AWS_BUCKET_NAME}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${key}`
@@ -85,13 +86,15 @@ export function ImageUpload({
       const urlObj = new URL(url);
       const key = urlObj.pathname.substring(1); // Remove the leading slash
       
+      console.log('Deleting file with key:', key);      
+
       if (!key) throw new Error('Invalid URL');
 
       // Call the API to delete the file from S3
-      const response = await fetch('/api/upload', {
+      const response = await fetch(`${apiUrl}/api/uploads`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileKey: key })
+        body: JSON.stringify({ key })
       });
 
       if (!response.ok) {

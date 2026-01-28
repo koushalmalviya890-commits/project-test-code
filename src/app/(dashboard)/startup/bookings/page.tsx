@@ -81,7 +81,8 @@ export default function StartupBookings() {
       try {
        // console.log('Fetching bookings with session ID:', session?.user?.id)
         const response = await fetch('/api/startup/bookings')
-       // console.log(response  , `this is for booking things`)
+        // Gunjan
+        // const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/startup/bookings/${session.user.id}`);
         const data = await response.json()
        // console.log(data , " for booking section in startup")
         if (!response.ok) {

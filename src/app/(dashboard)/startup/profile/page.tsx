@@ -61,12 +61,14 @@ interface StartupProfile {
   category: string | null;
   logoUrl: string | null;
   bankName: string | null;
-  accountNumber: string | number ;
+  accountNumber: string | number;
   confirmAccountNumber: string | number | null;
   accountHolderName: string | null;
   bankBranch: string | null;
   ifscCode: string | null;
 }
+
+
 
 export default function StartupProfile() {
   // const { data: session } = useSession();
@@ -78,7 +80,9 @@ export default function StartupProfile() {
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [incompleteFields, setIncompleteFields] = useState<string[]>([]);
   const [accountMismatchError, setAccountMismatchError] = useState(false);
-  
+
+  // const apiUrl = "http://localhost:3001";
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -94,6 +98,30 @@ export default function StartupProfile() {
         setIsLoading(false);
       }
     };
+    //     gunjan
+    //     const fetchProfile = async () => {
+    //       if (!session?.user?.id) return;
+
+    //       try {
+    //         const response = await fetch(
+    //           `${process.env.NEXT_PUBLIC_API_URL}/api/startup/profile/${session.user.id}`,
+    //         );
+    //         if (!response.ok) throw new Error("Failed to fetch profile");
+    //         const data = await response.json();
+    //         setProfile(data);
+    //         calculateProfileCompletion(data);
+    //       } catch (error) {
+    //         console.error("Error fetching profile:", error);
+    //         toast.error("Failed to load profile");
+    //       } finally {
+    //         setIsLoading(false);
+    //       }
+    //     };
+
+    //     if (session?.user?.id) {
+    //     fetchProfile();
+    //   }
+    // }, [session]);
 
     fetchProfile();
   }, []);
@@ -140,7 +168,7 @@ export default function StartupProfile() {
 
     const filledFields = requiredFields.filter(
       (field) =>
-        field.value !== null && field.value !== undefined && field.value !== ""
+        field.value !== null && field.value !== undefined && field.value !== "",
     ).length;
 
     const percentage = Math.round((filledFields / requiredFields.length) * 100);
@@ -163,34 +191,52 @@ export default function StartupProfile() {
   // Validation function - validates account numbers during editing
   const validateAccountNumbers = (formData: StartupProfile): boolean => {
     // If account number is provided, confirm account number must also be provided and match
-    if (formData.accountNumber && formData.accountNumber.toString().trim() !== "") {
-      if (!formData.confirmAccountNumber || formData.confirmAccountNumber.toString().trim() === "") {
+    if (
+      formData.accountNumber &&
+      formData.accountNumber.toString().trim() !== ""
+    ) {
+      if (
+        !formData.confirmAccountNumber ||
+        formData.confirmAccountNumber.toString().trim() === ""
+      ) {
         toast.error("Please re-enter the account number to confirm");
         setActiveTab("banking"); // Switch to banking tab to show the error
         return false;
       }
-      
-      if (formData.accountNumber.toString() !== formData.confirmAccountNumber.toString()) {
-        toast.error("Account numbers do not match. Please verify and try again.");
+
+      if (
+        formData.accountNumber.toString() !==
+        formData.confirmAccountNumber.toString()
+      ) {
+        toast.error(
+          "Account numbers do not match. Please verify and try again.",
+        );
         setActiveTab("banking"); // Switch to banking tab to show the error
         setAccountMismatchError(true);
         return false;
       }
     }
-    
+
     // If confirm account number is provided, account number must also be provided
-    if (formData.confirmAccountNumber && formData.confirmAccountNumber.toString().trim() !== "") {
-      if (!formData.accountNumber || formData.accountNumber.toString().trim() === "") {
+    if (
+      formData.confirmAccountNumber &&
+      formData.confirmAccountNumber.toString().trim() !== ""
+    ) {
+      if (
+        !formData.accountNumber ||
+        formData.accountNumber.toString().trim() === ""
+      ) {
         toast.error("Please enter the account number");
         setActiveTab("banking"); // Switch to banking tab to show the error
         return false;
       }
     }
-    
+
     return true;
   };
 
   const handleSave = async (formData: StartupProfile) => {
+    if (!session?.user?.id) return;
     // Only validate account numbers if user is in editing mode
     if (isEditing && !validateAccountNumbers(formData)) {
       return; // Stop execution if validation fails during editing
@@ -216,6 +262,30 @@ export default function StartupProfile() {
       toast.error("Failed to update profile");
     }
   };
+  //gunjan
+  // try {
+  //     const response = await fetch(
+  //       `${process.env.NEXT_PUBLIC_API_URL}/api/startup/profile/${session.user.id}`,
+  //       {
+  //         method: "PATCH",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify(formData),
+  //       }
+  //     );
+
+  //     if (!response.ok) throw new Error("Failed to update profile");
+
+  //     const updatedProfile = await response.json();
+  //     setProfile(updatedProfile);
+  //     calculateProfileCompletion(updatedProfile);
+  //     setIsEditing(false);
+  //     setAccountMismatchError(false);
+  //     toast.success("Profile updated successfully");
+  //   } catch (error) {
+  //     console.error("Error updating profile:", error);
+  //     toast.error("Failed to update profile");
+  //   }
+  // };
 
   const handleLookingForChange = (option: string) => {
     if (!profile) return;
@@ -245,7 +315,7 @@ export default function StartupProfile() {
   }
 
   return (
-   <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold">My Profile</h1>
@@ -267,7 +337,9 @@ export default function StartupProfile() {
               <Info className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
               <div className="space-y-2 flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                  <span className="font-medium text-sm sm:text-base">Complete your profile:</span>
+                  <span className="font-medium text-sm sm:text-base">
+                    Complete your profile:
+                  </span>
                   <span className="text-sm">
                     {completionPercentage}% complete
                   </span>
@@ -296,29 +368,51 @@ export default function StartupProfile() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="overflow-x-auto sm:h-[70px]">
           <TabsList className="h-[85px] grid grid-cols-3 sm:grid-cols-3 sm:h-[83px] lg:grid-cols-5 lg:h-[50px] w-full min-w-max">
-            <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-4">
+            <TabsTrigger
+              value="profile"
+              className="text-xs sm:text-sm px-2 sm:px-4"
+            >
               Basic Info
             </TabsTrigger>
-            <TabsTrigger value="business" className="text-xs sm:text-sm px-2 sm:px-4">
+            <TabsTrigger
+              value="business"
+              className="text-xs sm:text-sm px-2 sm:px-4"
+            >
               Business
             </TabsTrigger>
-            <TabsTrigger value="banking" className="text-xs sm:text-sm px-2 sm:px-4">
+            <TabsTrigger
+              value="banking"
+              className="text-xs sm:text-sm px-2 sm:px-4"
+            >
               Banking
             </TabsTrigger>
-            <TabsTrigger value="social" className="text-xs sm:text-sm px-2 sm:px-4">
+            <TabsTrigger
+              value="social"
+              className="text-xs sm:text-sm px-2 sm:px-4"
+            >
               Social
             </TabsTrigger>
-            <TabsTrigger value="preferences" className="text-xs sm:text-sm px-2 sm:px-4">
+            <TabsTrigger
+              value="preferences"
+              className="text-xs sm:text-sm px-2 sm:px-4"
+            >
               Preferences
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="profile" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+        <TabsContent
+          value="profile"
+          className="space-y-4 sm:space-y-6 mt-4 sm:mt-6"
+        >
           <Card>
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg sm:text-xl">Profile Picture</CardTitle>
-              <CardDescription className="text-sm">Upload your startup logo</CardDescription>
+              <CardTitle className="text-lg sm:text-xl">
+                Profile Picture
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Upload your startup logo
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
@@ -332,7 +426,8 @@ export default function StartupProfile() {
                 <div className="space-y-1 text-center sm:text-left">
                   <h4 className="text-sm font-medium">Startup Logo</h4>
                   <p className="text-sm text-muted-foreground">
-                    This will be displayed on your profile and in search results.
+                    This will be displayed on your profile and in search
+                    results.
                   </p>
                   {isEditing && (
                     <p className="text-xs text-muted-foreground">
@@ -346,7 +441,9 @@ export default function StartupProfile() {
 
           <Card>
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg sm:text-xl">Basic Information</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">
+                Basic Information
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -447,7 +544,9 @@ export default function StartupProfile() {
 
           <Card>
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg sm:text-xl">Founder Information</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">
+                Founder Information
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -466,7 +565,9 @@ export default function StartupProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Founder Designation</Label>
+                  <Label className="text-sm font-medium">
+                    Founder Designation
+                  </Label>
                   <Input
                     value={profile.founderDesignation || ""}
                     disabled={!isEditing}
@@ -487,11 +588,18 @@ export default function StartupProfile() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="business" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+        <TabsContent
+          value="business"
+          className="space-y-4 sm:space-y-6 mt-4 sm:mt-6"
+        >
           <Card>
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg sm:text-xl">Business Classification</CardTitle>
-              <CardDescription className="text-sm">Industry and sector information</CardDescription>
+              <CardTitle className="text-lg sm:text-xl">
+                Business Classification
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Industry and sector information
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -576,7 +684,9 @@ export default function StartupProfile() {
 
           <Card>
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg sm:text-xl">Address Information</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">
+                Address Information
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -645,15 +755,22 @@ export default function StartupProfile() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="banking" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+        <TabsContent
+          value="banking"
+          className="space-y-4 sm:space-y-6 mt-4 sm:mt-6"
+        >
           <Card>
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg sm:text-xl">Banking Details</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">
+                Banking Details
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Bank Name (optional)</Label>
+                  <Label className="text-sm font-medium">
+                    Bank Name (optional)
+                  </Label>
                   <Input
                     value={profile.bankName || ""}
                     disabled={!isEditing}
@@ -665,7 +782,9 @@ export default function StartupProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Account Number (optional)</Label>
+                  <Label className="text-sm font-medium">
+                    Account Number (optional)
+                  </Label>
                   <Input
                     value={profile.accountNumber || ""}
                     disabled={!isEditing}
@@ -677,13 +796,15 @@ export default function StartupProfile() {
                         setAccountMismatchError(
                           Boolean(
                             updated.confirmAccountNumber &&
-                            updated.confirmAccountNumber !== value
-                          )
+                              updated.confirmAccountNumber !== value,
+                          ),
                         );
                         return updated;
                       });
                     }}
-                    placeholder={isEditing ? "Enter account number" : "Not provided"}
+                    placeholder={
+                      isEditing ? "Enter account number" : "Not provided"
+                    }
                     className="w-full"
                   />
                 </div>
@@ -700,32 +821,44 @@ export default function StartupProfile() {
                       const value = e.target.value;
                       setProfile((prev) => {
                         if (!prev) return prev;
-                        const updated = { ...prev, confirmAccountNumber: value };
+                        const updated = {
+                          ...prev,
+                          confirmAccountNumber: value,
+                        };
                         setAccountMismatchError(
                           Boolean(
                             updated.accountNumber &&
-                            updated.confirmAccountNumber &&
-                            updated.accountNumber !== updated.confirmAccountNumber
-                          )
+                              updated.confirmAccountNumber &&
+                              updated.accountNumber !==
+                                updated.confirmAccountNumber,
+                          ),
                         );
                         return updated;
                       });
                     }}
-                    placeholder={isEditing ? "Re-enter account number" : "Not provided"}
+                    placeholder={
+                      isEditing ? "Re-enter account number" : "Not provided"
+                    }
                     className="w-full"
                   />
                   {isEditing && accountMismatchError && (
-                    <p className="text-sm text-red-500">Account numbers do not match.</p>
-                  )}
-                  {isEditing && profile.accountNumber && profile.accountNumber.toString().trim() !== "" && (
-                    <p className="text-xs text-muted-foreground">
-                      Required when account number is provided
+                    <p className="text-sm text-red-500">
+                      Account numbers do not match.
                     </p>
                   )}
+                  {isEditing &&
+                    profile.accountNumber &&
+                    profile.accountNumber.toString().trim() !== "" && (
+                      <p className="text-xs text-muted-foreground">
+                        Required when account number is provided
+                      </p>
+                    )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">IFSC Code (optional)</Label>
+                  <Label className="text-sm font-medium">
+                    IFSC Code (optional)
+                  </Label>
                   <Input
                     value={profile.ifscCode || ""}
                     disabled={!isEditing}
@@ -737,7 +870,9 @@ export default function StartupProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Account Holder Name (optional)</Label>
+                  <Label className="text-sm font-medium">
+                    Account Holder Name (optional)
+                  </Label>
                   <Input
                     value={profile.accountHolderName || ""}
                     disabled={!isEditing}
@@ -754,7 +889,9 @@ export default function StartupProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Bank Branch (optional)</Label>
+                  <Label className="text-sm font-medium">
+                    Bank Branch (optional)
+                  </Label>
                   <Input
                     value={profile.bankBranch || ""}
                     disabled={!isEditing}
@@ -772,10 +909,15 @@ export default function StartupProfile() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="social" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+        <TabsContent
+          value="social"
+          className="space-y-4 sm:space-y-6 mt-4 sm:mt-6"
+        >
           <Card>
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg sm:text-xl">Contact Information</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">
+                Contact Information
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -808,7 +950,9 @@ export default function StartupProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Secondary Contact Name</Label>
+                  <Label className="text-sm font-medium">
+                    Secondary Contact Name
+                  </Label>
                   <Input
                     value={profile.secondarycontactname || ""}
                     disabled={!isEditing}
@@ -827,7 +971,9 @@ export default function StartupProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Secondary Contact Designation</Label>
+                  <Label className="text-sm font-medium">
+                    Secondary Contact Designation
+                  </Label>
                   <Input
                     value={profile.secondarycontactdesignation || ""}
                     disabled={!isEditing}
@@ -846,7 +992,9 @@ export default function StartupProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Secondary Contact Number</Label>
+                  <Label className="text-sm font-medium">
+                    Secondary Contact Number
+                  </Label>
                   <Input
                     value={profile.secondarycontactnumber || ""}
                     disabled={!isEditing}
@@ -904,7 +1052,9 @@ export default function StartupProfile() {
             <CardContent className="space-y-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">LinkedIn Company URL</Label>
+                  <Label className="text-sm font-medium">
+                    LinkedIn Company URL
+                  </Label>
                   <Input
                     value={profile.linkedinStartupUrl || ""}
                     disabled={!isEditing}
@@ -921,7 +1071,9 @@ export default function StartupProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Founder's LinkedIn URL</Label>
+                  <Label className="text-sm font-medium">
+                    Founder's LinkedIn URL
+                  </Label>
                   <Input
                     value={profile.linkedinFounderUrl || ""}
                     disabled={!isEditing}
@@ -972,7 +1124,10 @@ export default function StartupProfile() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="preferences" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+        <TabsContent
+          value="preferences"
+          className="space-y-4 sm:space-y-6 mt-4 sm:mt-6"
+        >
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="text-lg sm:text-xl">Looking For</CardTitle>
@@ -1013,13 +1168,20 @@ export default function StartupProfile() {
           </Card>
         </TabsContent>
       </Tabs>
-      
+
       {isEditing && (
         <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-4 border-t">
-          <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto order-2 sm:order-1">
+          <Button
+            variant="outline"
+            onClick={handleCancel}
+            className="w-full sm:w-auto order-2 sm:order-1"
+          >
             Cancel
           </Button>
-          <Button onClick={() => handleSave(profile)} className="w-full sm:w-auto order-1 sm:order-2">
+          <Button
+            onClick={() => handleSave(profile)}
+            className="w-full sm:w-auto order-1 sm:order-2"
+          >
             Save Changes
           </Button>
         </div>
