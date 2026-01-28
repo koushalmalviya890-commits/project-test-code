@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from "@/providers/auth-provider";
+// import { AuthProvider } from "@/providers/auth-provider";
+import { AuthProvider } from "@/context/AuthContext";
+
 import { Toaster } from "sonner";
 import { ChatButton } from "@/components/chat/ChatButton";
 import WhatsappChat from "@/components/whatsapp/whatsapp";

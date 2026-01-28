@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { signIn } from "next-auth/react";
+// import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useWatch } from "react-hook-form";
@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { registerServiceProvider } from "@/lib/actions/auth";
+// import { registerServiceProvider } from "@/lib/actions/auth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,7 @@ import { Separator } from "@/components/ui/separator";
 import { AMENITIES } from "@/components/forms/types/index";
 import { Eye, EyeOff } from "lucide-react";
 import { Controller } from "react-hook-form";
+import axios from "axios";
 // Define the service provider types
 const SERVICE_PROVIDER_TYPES = [
   "Incubator",
@@ -337,11 +338,15 @@ export default function ServiceProviderSignUp() {
           sunday: { isOpen: false },
         },
       };
+
+      const apiUrl = "http://localhost:3001"
       //// console.log("Submitting data:", formData);
       //// console.log("Submitting data:", formData.applyGst);
-      const result = await registerServiceProvider(formData);
+      // const result = await registerServiceProvider(formData);
 
-      if (result.success) {
+      const response = await axios.post(`${apiUrl}/api/affiliate/register-service-provider`, formData);
+
+      if (response.data.success) {
         setIsRegistrationSuccess(true);
         window.scrollTo(0, 0); // Scroll to top to see message
         return;
@@ -356,9 +361,9 @@ export default function ServiceProviderSignUp() {
         // });
       }
 
-      if (result.error) {
-        throw new Error(result.error);
-      }
+                  // if (result.error) {
+                  //   throw new Error(result.error);
+                  // }
 
       // const signInResult = await signIn("credentials", {
       //   email: data.email,
@@ -371,13 +376,25 @@ export default function ServiceProviderSignUp() {
       // }
 
       // router.push("/service-provider/dashboard");0
-    } catch (error) {
+    } 
+    // catch (error) {
+    //   console.error("Registration error:", error);
+    //   setError("root", {
+    //     message:
+    //       error instanceof Error
+    //         ? error.message
+    //         : "Registration failed. Please try again.",
+    //   });
+    catch (error: any) {
       console.error("Registration error:", error);
+
+      // 5. Robust Error Handling (Matches your Express Backend)
+      // Your backend sends { error: "User already exists" }
+      const serverMessage = error.response?.data?.error || error.response?.data?.message;
+      const displayMessage = serverMessage || error.message || "Registration failed. Please try again.";
+
       setError("root", {
-        message:
-          error instanceof Error
-            ? error.message
-            : "Registration failed. Please try again.",
+        message: displayMessage,
       });
     }
   };

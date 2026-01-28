@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from "@/context/AuthContext"
 import {
   Calendar,
   Clock,
@@ -87,7 +88,9 @@ interface BookingDetails {
 export default function BookingDetailsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status } = useSession();
+  // const { data: session, status } = useSession();
+  const {user, loading: authLoading} = useAuth();
+  const status = authLoading ? "loading" : user ? "authenticated" : "unauthenticated";
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(
     null
   );
@@ -232,7 +235,7 @@ useEffect(() => {
 
 
   const handleProceedToPayment = async () => {
-    if (!bookingDetails || !session?.user?.id) return;
+    if (!bookingDetails || !user?.id) return;
 
     try {
       setProcessingPayment(true);
@@ -243,6 +246,8 @@ useEffect(() => {
         headers: {
           "Content-Type": "application/json",
         },
+        //added credentials try to check it again if not required remove it
+        credentials: "include",
         body: JSON.stringify({
           facilityId: bookingDetails.facilityId,
           rentalPlan: bookingDetails.rentalPlan,
@@ -282,7 +287,7 @@ useEffect(() => {
       // Configure Razorpay
       const options = {
         key: orderData.keyId,
-        amount: orderData.amount, // API already returns amount in paise
+        amount: orderData.amount, // already returns amount in paise
         currency: "INR",
         name: "Cumma",
         description: `Booking for ${bookingDetails.facility?.details?.name || "Facility"}`,
@@ -293,8 +298,8 @@ useEffect(() => {
           verifyPayment(response, orderData.bookingId);
         },
         prefill: {
-          name: session.user?.name || "",
-          email: session.user?.email || "",
+          name: user.name || "",
+          email: user.email || "",
           contact: bookingDetails.contactNumber,
         },
         notes: {

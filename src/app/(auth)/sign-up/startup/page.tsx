@@ -1,43 +1,49 @@
-"use client"
-import Link from 'next/link'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { Input } from '@/components/ui/input'
-import { LoadingButton } from '@/components/ui/loading-button'
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { startupSignUpSchema } from '@/lib/validations/auth'
-import { registerStartup } from '@/lib/actions/auth'
-import { SECTORS, ENTITY_TYPES, LOOKING_FOR, CATEGORY } from '@/lib/constants'
-import { INDUSTRIES, STAGES_COMPLETED } from '@/lib/constants/dropdowns'
+"use client";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+// import { signIn } from 'next-auth/react'
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { startupSignUpSchema } from "@/lib/validations/auth";
+// import { registerStartup } from '@/lib/actions/auth'
+import { SECTORS, ENTITY_TYPES, LOOKING_FOR, CATEGORY } from "@/lib/constants";
+import { INDUSTRIES, STAGES_COMPLETED } from "@/lib/constants/dropdowns";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { ExclamationTriangleIcon } from '@radix-ui/react-icons'
-import { cn } from '@/lib/utils'
-import { Separator } from '@/components/ui/separator'
-import { Eye, EyeOff } from 'lucide-react'
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
+import { Eye, EyeOff } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/context/AuthContext";
+import axios from "axios";
+import { error } from "console";
 
-type FormData = z.infer<typeof startupSignUpSchema>
+type FormData = z.infer<typeof startupSignUpSchema>;
 
 export default function StartupSignUp() {
-  const router = useRouter()
-  const [activeTab, setActiveTab] = useState('basic')
-  const [googleLoading, setGoogleLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const router = useRouter();
+  const { login } = useAuth();
+  const [activeTab, setActiveTab] = useState("basic");
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const apiUrl = "http://localhost:3001";
 
   const {
     register,
@@ -58,19 +64,19 @@ export default function StartupSignUp() {
     //   category: undefined,
     //   // invoiceType: undefined,
     // },
-  })
+  });
 
   const validateAllFields = async () => {
     const basicValid = await trigger([
-      'email', 
-      'password', 
-      'confirmPassword', 
-      'contactNumber', 
-        'startupName',
-        'terms'
+      "email",
+      "password",
+      "confirmPassword",
+      "contactNumber",
+      "startupName",
+      "terms",
       // 'category'
     ]);
-    
+
     // const companyValid = await trigger([
     //   'startupName',
     //   // 'entityType',
@@ -80,7 +86,7 @@ export default function StartupSignUp() {
     //   // 'pincode',
     //   // 'country'
     // ]);
-    
+
     // const additionalValid = await trigger([
     //   // 'industry',
     //   // 'sector',
@@ -89,62 +95,72 @@ export default function StartupSignUp() {
     //   // 'invoiceType',
     //   'terms'
     // ]);
-    
+
     return basicValid;
     // && companyValid && additionalValid;
   };
 
-  
-const onSubmit = async (data: FormData) => {
-  try {
-    // First validate all fields
-    const isValid = await validateAllFields();
-    if (!isValid) {
-      setError('root', {
-        message: 'Please fill all required fields correctly'
+  const onSubmit = async (data: FormData) => {
+    try {
+      // First validate all fields
+      const isValid = await validateAllFields();
+      if (!isValid) {
+        setError("root", {
+          message: "Please fill all required fields correctly",
+        });
+        return;
+      }
+
+      // const response = await fetch(`https://api.postalpincode.in/pincode/${data.pincode}`);
+      // const result = await response.json();
+
+      // if (!result || result[0]?.Status !== 'Success') {
+      //   setError('pincode', {
+      //     type: 'manual',
+      //     message: 'This pincode does not exist in India.',
+      //   });
+      //   return;
+      // }
+
+      // ✅ Step 3: Register the startup with all form data
+      // const registerResult = await registerStartup(data);
+      // if (registerResult?.error) {
+      //   throw new Error(registerResult.error);
+      // }
+
+      await axios.post(`${apiUrl}/api/affiliate/register`, data);
+
+      // ✅ Step 4: Sign in the user
+      // const signInResult = await signIn('credentials', {
+      //   email: data.email,
+      //   password: data.password,
+      //   redirect: false,
+      // });
+
+      await login({
+        email: data.email,
+        password: data.password,
       });
-      return;
-    }
 
-    // const response = await fetch(`https://api.postalpincode.in/pincode/${data.pincode}`);
-    // const result = await response.json();
+      // if (signInResult?.error) {
+      //   throw new Error(signInResult.error);
+      // }
 
-    // if (!result || result[0]?.Status !== 'Success') {
-    //   setError('pincode', {
-    //     type: 'manual',
-    //     message: 'This pincode does not exist in India.',
-    //   });
-    //   return;
-    // }
+      // ✅ Step 5: Redirect to dashboard
+      router.push("/startup/profile");
+    } catch (error: any) {
+      console.error("Registration error:", error);
 
-    // ✅ Step 3: Register the startup with all form data
-    const registerResult = await registerStartup(data);
-    if (registerResult?.error) {
-      throw new Error(registerResult.error);
-    }
+     const serverMessage = error.response?.data?.message || error.response?.data?.error;
+    
+    // 2. Fallback to the generic error if the server didn't send a custom message
+    const displayMessage = serverMessage || error.message || "Registration failed. Please try again.";
 
-    // ✅ Step 4: Sign in the user
-    const signInResult = await signIn('credentials', {
-      email: data.email,
-      password: data.password,
-      redirect: false,
+    setError("root", {
+      message: displayMessage,
     });
-
-    if (signInResult?.error) {
-      throw new Error(signInResult.error);
     }
-
-    // ✅ Step 5: Redirect to dashboard
-    router.push('/startup/dashboard');
-
-  } catch (error: any) {
-    console.error('Registration error:', error);
-    setError('root', {
-      message: error.message || 'Registration failed. Please try again.',
-    });
-  }
-};
-
+  };
 
   // const handleIndustryChange = (value: string) => {
   //   setValue('industry', value)
@@ -181,25 +197,30 @@ const onSubmit = async (data: FormData) => {
   //   const newValues = currentValues.includes(option)
   //     ? currentValues.filter(item => item !== option)
   //     : [...currentValues, option]
-    
+
   //   setValue('lookingFor', newValues)
   //   trigger('lookingFor')
   // }
 
   const handleNext = async () => {
-    let canProceed = false
-    
-    if (activeTab === 'basic') {
-      const emailValid = await trigger('email')
-      const passwordValid = await trigger('password')
-      const confirmPasswordValid = await trigger('confirmPassword')
-      const contactNumberValid = await trigger('contactNumber')
+    let canProceed = false;
+
+    if (activeTab === "basic") {
+      const emailValid = await trigger("email");
+      const passwordValid = await trigger("password");
+      const confirmPasswordValid = await trigger("confirmPassword");
+      const contactNumberValid = await trigger("contactNumber");
       // const categoryValid = await trigger('category')
-       const startupNameValid = await trigger('startupName')
-      canProceed = emailValid && passwordValid && confirmPasswordValid && contactNumberValid && startupNameValid
+      const startupNameValid = await trigger("startupName");
+      canProceed =
+        emailValid &&
+        passwordValid &&
+        confirmPasswordValid &&
+        contactNumberValid &&
+        startupNameValid;
       // && categoryValid
       // } else if (activeTab === 'company') {
-     
+
       // const entityTypeValid = await trigger('entityType')
       // const addressValid = await trigger('address')
       // const cityValid = await trigger('city')
@@ -227,15 +248,15 @@ const onSubmit = async (data: FormData) => {
       //   }
       // }
       // const countryValid = await trigger('country')
-      
+
       // canProceed = startupNameValid && entityTypeValid && addressValid && cityValid && stateValid && pincodeValid && countryValid
     }
-    
+
     // if (canProceed) {
     //   if (activeTab === 'basic') setActiveTab('company')
     //   else if (activeTab === 'company') setActiveTab('additional')
     // }
-  }
+  };
 
   // const handleBack = () => {
   //   if (activeTab === 'company') setActiveTab('basic')
@@ -258,28 +279,24 @@ const onSubmit = async (data: FormData) => {
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold">Create a Startup Account</h1>
         <p className="text-muted-foreground text-sm">
-          Join our platform to connect with service providers and grow your startup.
+          Join our platform to connect with service providers and grow your
+          startup.
         </p>
       </div>
 
       {errors.root && (
         <Alert variant="destructive" className="text-left">
           <ExclamationTriangleIcon className="h-4 w-4" />
-          <AlertDescription>
-            {errors.root.message}
-          </AlertDescription>
+          <AlertDescription>{errors.root.message}</AlertDescription>
         </Alert>
       )}
 
-      <form   onSubmit={handleSubmit(
-    async (data) => {
-      //// console.log("✅ handleSubmit triggered:", data)
-      await onSubmit(data)
-    },
-    (errors) => {
-      //// console.log("❌ Validation errors:", errors)
-    }
-  )} className="space-y-4">
+      <form
+        onSubmit={handleSubmit(async (data) => {
+          await onSubmit(data);
+        })}
+        className="space-y-4"
+      >
         {/* <Tabs
          value={activeTab} onValueChange={setActiveTab}
           className="space-y-6">
@@ -287,71 +304,77 @@ const onSubmit = async (data: FormData) => {
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
             {/* <TabsTrigger value="company">Company Details</TabsTrigger>
             <TabsTrigger value="additional">Additional Info</TabsTrigger> */}
-          {/* </TabsList> */}
+        {/* </TabsList> */}
 
-         {/* <TabsContent value="basic" className="space-y-4"> */}
-            {/* <div className="space-y-4"> */}
-              <div className="space-y-2">
-                <Input
-                  {...register('email')}
-                  type="email"
-                  placeholder="Your Email *"
-                  className="h-12"
-                />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
-                )}
-              </div>
-              <div className="space-y-2 relative">
-                <Input
-                  {...register('password')}
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create Password *"
-                  className="h-12 pr-10"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password.message}</p>
-                )}
-              </div>
-              <div className="space-y-2 relative">
-                <Input
-                  {...register('confirmPassword')}
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm Password *"
-                  className="h-12 pr-10"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-                {errors.confirmPassword && (
-                  <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-                )}
-              </div>
+        {/* <TabsContent value="basic" className="space-y-4"> */}
+        {/* <div className="space-y-4"> */}
+        <div className="space-y-2">
+          <Input
+            {...register("email")}
+            type="email"
+            placeholder="Your Email *"
+            className="h-12"
+          />
+          {errors.email && (
+            <p className="text-sm text-destructive">{errors.email.message}</p>
+          )}
+        </div>
+        <div className="space-y-2 relative">
+          <Input
+            {...register("password")}
+            type={showPassword ? "text" : "password"}
+            placeholder="Create Password *"
+            className="h-12 pr-10"
+          />
+          <button
+            type="button"
+            className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+          {errors.password && (
+            <p className="text-sm text-destructive">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-2 relative">
+          <Input
+            {...register("confirmPassword")}
+            type={showConfirmPassword ? "text" : "password"}
+            placeholder="Confirm Password *"
+            className="h-12 pr-10"
+          />
+          <button
+            type="button"
+            className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+          >
+            {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+          {errors.confirmPassword && (
+            <p className="text-sm text-destructive">
+              {errors.confirmPassword.message}
+            </p>
+          )}
+        </div>
 
-              <h3 className="font-medium pt-2">Contact Details</h3>
-              <div className="space-y-2">
-                <Input
-                  {...register('contactNumber')}
-                  type="tel"
-                  placeholder="Contact Number *"
-                  className="h-12"
-                />
-                {errors.contactNumber && (
-                  <p className="text-sm text-destructive">{errors.contactNumber.message}</p>
-                )}
-              </div>
-              {/* <div className="space-y-2">
+        <h3 className="font-medium pt-2">Contact Details</h3>
+        <div className="space-y-2">
+          <Input
+            {...register("contactNumber")}
+            type="tel"
+            placeholder="Contact Number *"
+            className="h-12"
+          />
+          {errors.contactNumber && (
+            <p className="text-sm text-destructive">
+              {errors.contactNumber.message}
+            </p>
+          )}
+        </div>
+        {/* <div className="space-y-2">
                 <Select
                   onValueChange={handleCategoryChange}
                   value={watch('category') || undefined}
@@ -371,45 +394,48 @@ const onSubmit = async (data: FormData) => {
                   <p className="text-sm text-destructive">{errors.category.message}</p>
                 )}
               </div> */}
-                 <div className="space-y-2">
-                <Input
-                  {...register('startupName')}
-                  type="text"
-                  placeholder="Company Name *"
-                  className="h-12"
-                />
-                {errors.startupName && (
-                  <p className="text-sm text-destructive">{errors.startupName.message}</p>
-                )}
-              </div>
-               <div className="space-y-4">
-                <div className="flex items-start space-x-3 bg-muted/50 rounded-lg p-4">
-                  <Checkbox
-                    id="terms"
-                    onCheckedChange={(checked) => {
-                      if (checked) setValue('terms', true)
-                    }}
-                    className="mt-0.5"
-                  />
-                  <label
-                    htmlFor="terms"
-                    className="text-sm leading-tight text-muted-foreground"
-                  >
-                    By signing up, you agree to our terms of service and privacy policy. *
-                  </label>
-                </div>
-                {errors.terms && (
-                  <p className="text-sm text-destructive">{errors.terms.message}</p>
-                )}
-              </div>
-            {/* </div>
+        <div className="space-y-2">
+          <Input
+            {...register("startupName")}
+            type="text"
+            placeholder="Company Name *"
+            className="h-12"
+          />
+          {errors.startupName && (
+            <p className="text-sm text-destructive">
+              {errors.startupName.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-4">
+          <div className="flex items-start space-x-3 bg-muted/50 rounded-lg p-4">
+            <Checkbox
+              id="terms"
+              onCheckedChange={(checked) => {
+                if (checked) setValue("terms", true);
+              }}
+              className="mt-0.5"
+            />
+            <label
+              htmlFor="terms"
+              className="text-sm leading-tight text-muted-foreground"
+            >
+              By signing up, you agree to our terms of service and privacy
+              policy. *
+            </label>
+          </div>
+          {errors.terms && (
+            <p className="text-sm text-destructive">{errors.terms.message}</p>
+          )}
+        </div>
+        {/* </div>
           </TabsContent> */}
 
-          {/* <TabsContent 
+        {/* <TabsContent 
           value="basic" 
           className="space-y-4">
             <div className="space-y-4"> */}
-              {/* <div className="space-y-2">
+        {/* <div className="space-y-2">
                 <Select
                   onValueChange={handleEntityTypeChange}
                   value={watch('entityType') || undefined}
@@ -429,8 +455,8 @@ const onSubmit = async (data: FormData) => {
                   <p className="text-sm text-destructive">{errors.entityType.message}</p>
                 )}
               </div> */}
-           
-              {/* <div className="space-y-2">
+
+        {/* <div className="space-y-2">
                 <Input
                   {...register('founderName')}
                   type="text"
@@ -526,14 +552,14 @@ const onSubmit = async (data: FormData) => {
                   <p className="text-sm text-destructive">{errors.country.message}</p>
                 )}
               </div> */}
-              
-            {/* </div>
+
+        {/* </div>
           </TabsContent> */}
 
-          {/* <TabsContent value="basic" className="space-y-6">
+        {/* <TabsContent value="basic" className="space-y-6">
             <div className="space-y-6"> */}
-              {/* <div className="space-y-4"> */}
-               {/*   <h3 className="font-medium">Startup Details</h3>
+        {/* <div className="space-y-4"> */}
+        {/*   <h3 className="font-medium">Startup Details</h3>
                 <div className="grid gap-4">
                   <div className="space-y-2">
                     <Select onValueChange={handleIndustryChange} value={watch('industry') || undefined}>
@@ -622,7 +648,7 @@ const onSubmit = async (data: FormData) => {
               <div className="space-y-4">
                 <h3 className="font-medium">Social Links (at least one required)</h3>
                 <div className="grid gap-4"> */}
-                  {/* <div className="space-y-2">
+        {/* <div className="space-y-2">
                     <Input
                       {...register('website')}
                       type="url"
@@ -633,7 +659,7 @@ const onSubmit = async (data: FormData) => {
                       <p className="text-sm text-destructive">{errors.website.message}</p>
                     )}
                   </div> */}
-                  {/* <div className="space-y-2">
+        {/* <div className="space-y-2">
                     <Input
                       {...register('linkedinStartupUrl')}
                       type="url"
@@ -644,7 +670,7 @@ const onSubmit = async (data: FormData) => {
                       <p className="text-sm text-destructive">{errors.linkedinStartupUrl.message}</p>
                     )}
                   </div> */}
-                  {/* <div className="space-y-2">
+        {/* <div className="space-y-2">
                     <Input
                       {...register('instagramurl')}
                       type="url"
@@ -677,10 +703,10 @@ const onSubmit = async (data: FormData) => {
                       <p className="text-sm text-destructive">{errors.linkedinFounderUrl.message}</p>
                     )}
                   </div> */}
-                {/* </div>
+        {/* </div>
               </div> */}
 
-              {/* <div className="space-y-4">
+        {/* <div className="space-y-4">
                 <h3 className="font-medium">Invoice Type *</h3>
                 <div className="bg-muted/50 rounded-lg p-4">
                   <RadioGroup
@@ -704,7 +730,7 @@ const onSubmit = async (data: FormData) => {
                 )}
               </div> */}
 
-              {/* <div className="space-y-4">
+        {/* <div className="space-y-4">
                 <div className="flex items-start space-x-3 bg-muted/50 rounded-lg p-4">
                   <Checkbox
                     id="terms"
@@ -727,8 +753,8 @@ const onSubmit = async (data: FormData) => {
             </div>
           </TabsContent> */}
 
-          <div className="flex gap-4 justify-end mt-6">
-            {/* {activeTab !== 'basic' && (
+        <div className="flex gap-4 justify-end mt-6">
+          {/* {activeTab !== 'basic' && (
               <Button
                 type="button"
                 variant="outline"
@@ -738,8 +764,8 @@ const onSubmit = async (data: FormData) => {
                 Back
               </Button>
             )} */}
-            
-            {/* {activeTab !== 'additional' ? (
+
+          {/* {activeTab !== 'additional' ? (
               <Button
                 type="button"
                 onClick={handleNext}
@@ -748,16 +774,16 @@ const onSubmit = async (data: FormData) => {
                 Next <span className="ml-2">→</span>
               </Button>
             ) : ( */}
-              <LoadingButton 
-                type="submit" 
-                className="h-12" 
-                //  onClick={handleNext}
-                loading={isSubmitting}
-              >
-                Create Account <span className="ml-2">→</span>
-              </LoadingButton>
-            {/* )} */}
-          </div>
+          <LoadingButton
+            type="submit"
+            className="h-12"
+            //  onClick={handleNext}
+            loading={isSubmitting}
+          >
+            Create Account <span className="ml-2">→</span>
+          </LoadingButton>
+          {/* )} */}
+        </div>
         {/* </Tabs> */}
       </form>
 
@@ -794,12 +820,12 @@ const onSubmit = async (data: FormData) => {
 
       <div className="text-center text-sm">
         <p className="text-muted-foreground">
-          Already have an account?{' '}
+          Already have an account?{" "}
           <Link href="/sign-in" className="text-primary hover:underline">
             Sign in
           </Link>
         </p>
       </div>
     </div>
-  )
+  );
 }

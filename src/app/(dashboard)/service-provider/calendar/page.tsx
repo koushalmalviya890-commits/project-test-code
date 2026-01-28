@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+// import { useSession } from 'next-auth/react'
+import { useAuth } from "@/context/AuthContext"
 import Image from 'next/image'
 import Link from 'next/link'
 import { format, addDays, subDays, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, isSameDay, isAfter } from 'date-fns'
@@ -93,7 +94,9 @@ interface FacilityGroup {
 }
 
 export default function CalendarPage() {
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const { user } = useAuth();
+  const session = user ? { user } : null;
   
   // Initialize with saved date or current date
   const [selectedDate, setSelectedDate] = useState(() => {

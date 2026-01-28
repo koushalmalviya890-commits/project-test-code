@@ -23,7 +23,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useSession } from 'next-auth/react';
+// import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import EventService from '../../services/event-api-services';
 
@@ -51,7 +52,9 @@ interface FeedbackTabProps {
 }
 
 export default function FeedbackTab({ eventData }: FeedbackTabProps) {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const {user} = useAuth();
+  
   const [feedbacks, setFeedbacks] = useState<FeedbackData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +68,7 @@ export default function FeedbackTab({ eventData }: FeedbackTabProps) {
 
   // Fetch feedback data with filters and pagination
   const fetchFeedbacks = async (page = 1, sort = sortBy, filter = filterBy) => {
-    if (!eventData?._id || !session?.user?.id) return;
+    if (!eventData?._id || !user?.id) return;
 
     try {
       setLoading(true);
@@ -73,7 +76,7 @@ export default function FeedbackTab({ eventData }: FeedbackTabProps) {
 
       const response = await EventService.getFeedback(
         eventData._id,
-        session.user.id,
+        user.id,
         sort,
         filter,
         page,
@@ -104,7 +107,7 @@ export default function FeedbackTab({ eventData }: FeedbackTabProps) {
   // Initial fetch
   useEffect(() => {
     fetchFeedbacks();
-  }, [eventData?._id, session?.user?.id]);
+  }, [eventData?._id, user?.id]);
 
   // Handle sort change
   const handleSortChange = (newSort: string) => {

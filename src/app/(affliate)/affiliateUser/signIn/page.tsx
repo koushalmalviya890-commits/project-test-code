@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { signIn } from "next-auth/react";
+// import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 // Minimal schema for initial email submission
 const startupEmailSignUpSchema = z.object({
@@ -45,12 +46,15 @@ type SetPasswordFormData = z.infer<typeof setPasswordSchema>;
 
 export default function StartupSignUpAffiliate() {
   const router = useRouter();
+  const { login } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasswordField, setShowPasswordField] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSetPasswordOpen, setIsSetPasswordOpen] = useState(false);
   const [currentEmail, setCurrentEmail] = useState("");
+const apiUrl = "http://localhost:3001";
+
 
   const {
     register: registerEmail,
@@ -85,8 +89,9 @@ export default function StartupSignUpAffiliate() {
   const onEmailSubmit = async (data: EmailFormData) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/affiliate/affiliate-startup-check`, {
-        method: "POST",
+      // const response = await fetch(`/api/affiliate/affiliate-startup-check`, {
+      const response = await fetch(`${apiUrl}/api/affiliate/check`, {
+      method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: data.email }),
       });
@@ -118,21 +123,24 @@ export default function StartupSignUpAffiliate() {
   const onPasswordSubmit = async (data: PasswordFormData) => {
     setIsSubmitting(true);
     try {
-      const signInResult = await signIn("credentials", {
+      // const signInResult = await signIn("credentials", {
+       await login({
         email: currentEmail,
         password: data.password,
         redirect: false,
       });
 
-      if (signInResult?.error) {
-        throw new Error(signInResult.error);
-      }
+      // if (signInResult?.error) {
+      //   throw new Error(signInResult.error);
+      // }
 
       router.push("/startup/dashboard");
     } catch (error: any) {
-      setEmailError("root", {
-        message: error.message || "Login failed. Please try again.",
-      });
+      // setEmailError("root", {
+      //   message: error.message || "Login failed. Please try again.",
+      // });
+      const msg = error.response?.data?.message || "Login failed. Please try again.";
+      setEmailError("root", { message: msg });
     } finally {
       setIsSubmitting(false);
       resetPassword();
@@ -142,8 +150,9 @@ export default function StartupSignUpAffiliate() {
   const onSetPasswordSubmit = async (data: SetPasswordFormData) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/affiliate/affiliate-startup-set-password", {
-        method: "POST",
+      // const response = await fetch("/api/affiliate/affiliate-startup-set-password", {
+      const response = await fetch(`${apiUrl}/api/affiliate/set-password`, {
+      method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: currentEmail, password: data.password }),
       });
@@ -153,21 +162,21 @@ export default function StartupSignUpAffiliate() {
         throw new Error(result.error || "Failed to set password");
       }
 
-      const signInResult = await signIn("credentials", {
+      // const signInResult = await login({
+      await login({
         email: currentEmail,
         password: data.password,
         redirect: false,
       });
 
-      if (signInResult?.error) {
-        throw new Error(signInResult.error);
-      }
+      // if (signInResult?.error) {
+      //   throw new Error(signInResult.error);
+      // }
 
       router.push("/startup/dashboard");
     } catch (error: any) {
-      setEmailError("root", {
-        message: error.message || "Failed to set password",
-      });
+     const msg = error.response?.data?.message || error.message || "Failed to set password";
+      setEmailError("root", { message: msg });
     } finally {
       setIsSubmitting(false);
       setIsSetPasswordOpen(false);

@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useSession } from 'next-auth/react'
+// import { useSession } from 'next-auth/react'
+import { useAuth } from '@/context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { FacilityCard } from '@/components/ui/facility-card'
@@ -13,6 +14,7 @@ import { AMENITY_ICONS } from '@/components'
 import { AnimatePresence, motion } from 'framer-motion'
 import EventService from "@/app/(dashboard)/service-provider/events/services/event-api-services"
 import EventCards from '@/app/(landing)/events-page/components/eventcard'
+import axios from 'axios'
 
 // Define interfaces
 interface DayTiming {
@@ -185,12 +187,15 @@ interface Pagination {
   hasMore: boolean
 }
 
+const apiUrl = "http://localhost:3001";
+
 export default function ViewProviderClient({
   providerId
 }: {
   providerId: string
 }) {
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const { user } = useAuth();
   const [provider, setProvider] = useState<ServiceProvider | null>(null)
   const [facilities, setFacilities] = useState<Facility[]>([])
   const [loading, setLoading] = useState(true)
@@ -306,11 +311,11 @@ export default function ViewProviderClient({
             provider.pincode
           ].filter(Boolean).join(', ')
           
-          const mapResponse = await fetch(`/api/maps?query=${encodeURIComponent(fullAddress)}`)
-          if (mapResponse.ok) {
-            const mapData = await mapResponse.json()
-            setMapUrl(mapData.embedUrl)
-          }
+          const mapResponse = await axios.get(`${apiUrl}/api/maps?query=${encodeURIComponent(fullAddress)}`)
+          if (mapResponse.data && mapResponse.data.embedUrl) {
+    setMapUrl(mapResponse.data.embedUrl); 
+  }
+
         }
       } catch (error) {
         console.error('Error fetching service provider:', error)

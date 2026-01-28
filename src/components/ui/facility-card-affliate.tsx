@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { FacilityBadge } from "@/components/ui/facility-badge";
 import { cn } from "@/lib/utils";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from "@/context/AuthContext";
 import { getFixedServiceFee } from "@/lib/pricing";
 
 export interface FacilityCardProps {
@@ -46,7 +47,9 @@ export function FacilityCard({
   isFeatured = true,
   className,
 }: FacilityCardProps) {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user } = useAuth();
+  // const session = user; // For compatibility with previous code
   const [finalPrice, setFinalPrice] = React.useState<number | null>(null);
 const [reviewStats, setReviewStats] = React.useState<{
   totalReviews: number;

@@ -1,7 +1,8 @@
 import { FiSearch } from 'react-icons/fi';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSession, signOut } from 'next-auth/react';
+// import { useSession, signOut } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
 import { UserCircle } from 'lucide-react';
 import {
@@ -17,20 +18,34 @@ interface SearchHeaderProps {
 }
 
 export default function SearchHeader({ onSearch }: SearchHeaderProps) {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();\
+  const { user, logout } = useAuth();
+  const session = user ? { user } : null;
   const [profile, setProfile] = useState<any>(null);
 
   // Fetch user profile data
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        if (!session?.user) return;
+        // if (!session?.user) return;
+        if (!user) return;
+// const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
         const response = await fetch(
-          session.user.userType === 'startup' 
+          // session.user.userType === 'startup' 
+          user.userType === 'startup' 
             ? '/api/startup/profile'
             : '/api/service-provider/profile'
         );
+        // const endpoint = user.userType === 'startup' 
+        //     ? '/startup/profile' 
+        //     : '/service-provider/profile';
+
+        // const response = await fetch(`${API_URL}${endpoint}`, {
+        //     method: 'GET',
+        //     credentials: 'include', // ⬅️ Critical: Send cookies to Express
+        //     headers: { 'Content-Type': 'application/json' }
+        // });
         
         if (response.ok) {
           const data = await response.json();
@@ -43,13 +58,17 @@ export default function SearchHeader({ onSearch }: SearchHeaderProps) {
       }
     };
 
-    if (session?.user) {
+    // if (session?.user) {
+        if (user) {
       fetchProfile();
     }
-  }, [session]);
+  // }, [session]);
+  }, [user]);
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
+    // await signOut({ callbackUrl: '/' });
+    await logout();
+    window.location.href = '/'
   };
 
   return (

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+// import { useSession } from 'next-auth/react'
+import {useAuth } from "@/context/AuthContext";
 import { useRouter } from 'next/navigation'
 import { Button, ButtonProps } from '@/components/ui/button'
 import { IncompleteProfileModal } from '@/components/ui/incomplete-profile-modal'
@@ -22,7 +23,8 @@ export function BookNowButton({
   children = 'Book Now',
   ...props 
 }: BookNowButtonProps) {
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const {user} = useAuth();
   const router = useRouter()
   const [profile, setProfile] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -32,13 +34,15 @@ export function BookNowButton({
 
   const handleClick = async () => {
     // If not authenticated, redirect to sign in
-    if (!session) {
+    // if (!session) {
+       if (!user) {
       router.push('/sign-in')
       return
     }
 
     // If not a startup, don't allow booking
-    if (session.user.userType !== 'startup') {
+    // if (session.user.userType !== 'startup') {
+     if (user.userType !== 'startup') {
       return
     }
 

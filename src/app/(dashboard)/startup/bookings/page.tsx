@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
+// import { useSession } from 'next-auth/react'
+import { useAuth } from '@/context/AuthContext'
 import Image from 'next/image'
 import {
   Table,
@@ -70,7 +71,8 @@ export interface Booking {
 
 
 export default function StartupBookings() {
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -79,7 +81,8 @@ export default function StartupBookings() {
       try {
        // console.log('Fetching bookings with session ID:', session?.user?.id)
         const response = await fetch('/api/startup/bookings')
-       // console.log(response  , `this is for booking things`)
+        // Gunjan
+        // const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/startup/bookings/${session.user.id}`);
         const data = await response.json()
        // console.log(data , " for booking section in startup")
         if (!response.ok) {
@@ -110,12 +113,14 @@ export default function StartupBookings() {
       }
     }
 
-    if (session?.user?.id) {
+    // if (session?.user?.id) {
+        if (user?.id) {
       fetchBookings()
     } else {
      // console.log('No session available yet')
     }
-  }, [session])
+  // }, [session])
+  }, [user])
 
   const handleExtensionRequested = (bookingId: string, extentDays: number) => {
     // Update the booking state to mark as extension requested

@@ -51,7 +51,7 @@ export default function Header({ mode, setMode }: HeaderProps) {
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center space-x-8 md:space-x-12 gap-12">
           <nav className="flex space-x-6 xl:space-x-8 text-gray-700">
-            <Link href="/sciences/about" legacyBehavior>
+            <Link href="/sciences/about">
               <a
                 className={`${baseLink} ${
                   pathname === "/sciences/about" ? activeLink : ""
@@ -61,7 +61,7 @@ export default function Header({ mode, setMode }: HeaderProps) {
               </a>
             </Link>
 
-            <Link href="/sciences/user" legacyBehavior>
+            <Link href="/sciences/user" >
               <a
                 className={`${baseLink} ${
                   pathname === "/sciences/user" ? activeLink : ""
@@ -71,7 +71,7 @@ export default function Header({ mode, setMode }: HeaderProps) {
               </a>
             </Link>
 
-            <Link href="/sciences/enabler" legacyBehavior>
+            <Link href="/sciences/enabler" >
               <a
                 className={`${baseLink} ${
                   pathname === "/sciences/enabler" ? activeLink : ""
@@ -81,7 +81,7 @@ export default function Header({ mode, setMode }: HeaderProps) {
               </a>
             </Link>
 
-            <Link href="/sciences/features" legacyBehavior>
+            <Link href="/sciences/features" >
               <a
                 className={`${baseLink} ${
                   pathname === "/sciences/features" ? activeLink : ""
@@ -167,7 +167,7 @@ export default function Header({ mode, setMode }: HeaderProps) {
       {mobileMenuOpen && (
         <div className="hidden lg:hidden border-t border-gray-200 bg-white">
           <nav className="flex flex-col px-4 py-4 space-y-3">
-            <Link href="/sciences/about" legacyBehavior>
+            <Link href="/sciences/about" >
               <a
                 className="text-gray-700 hover:text-green-600 py-2 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
@@ -175,7 +175,7 @@ export default function Header({ mode, setMode }: HeaderProps) {
                 About
               </a>
             </Link>
-            <Link href="/sciences/user" legacyBehavior>
+            <Link href="/sciences/user" >
               <a
                 className="text-gray-700 hover:text-green-600 py-2 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
@@ -183,7 +183,7 @@ export default function Header({ mode, setMode }: HeaderProps) {
                 User
               </a>
             </Link>
-            <Link href="/sciences/enabler" legacyBehavior>
+            <Link href="/sciences/enabler" >
               <a
                 className="text-gray-700 hover:text-green-600 py-2 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
@@ -191,7 +191,7 @@ export default function Header({ mode, setMode }: HeaderProps) {
                 Enabler
               </a>
             </Link>
-            <Link href="/sciences/features" legacyBehavior>
+            <Link href="/sciences/features" >
               <a
                 className="text-gray-700 hover:text-green-600 py-2 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}

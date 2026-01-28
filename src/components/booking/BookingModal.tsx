@@ -3,7 +3,8 @@
 import * as React from 'react'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useSession } from 'next-auth/react'
+// import { useSession } from 'next-auth/react'
+import {useAuth} from '@/context/AuthContext';
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,7 +53,8 @@ interface BookingModalProps {
 }
 
 export function BookingModal({ isOpen, onClose, facility }: BookingModalProps) {
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedTime, setSelectedTime] = useState<string>('')
   const [contactNumber, setContactNumber] = useState<string>('')
@@ -67,16 +69,32 @@ export function BookingModal({ isOpen, onClose, facility }: BookingModalProps) {
   // Fetch startup profile
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!session) return;
+      // if (!session) return;
+      if (!user) return;
       
       // Check if user is a service provider
-      if (session.user.userType === 'Service Provider') {
+      // if (session.user.userType === 'Service Provider') {
+      //   setIsProfileLoading(false);
+      //   return; // Don't try to fetch startup profile for service providers
+      // }
+        if (user.userType === 'Service Provider') {
         setIsProfileLoading(false);
         return; // Don't try to fetch startup profile for service providers
       }
-      
+
       try {
         setIsProfileLoading(true)
+
+        // // ✅ FIX 2: Point to Express Backend & Include Credentials
+        // const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+        
+        // const response = await fetch(`${API_URL}/startup/profile`, {
+        //     method: 'GET',
+        //     credentials: 'include', // ⬅️ Sends the cookie
+        //     headers: { 'Content-Type': 'application/json' }
+        // });
+
+
         const response = await fetch('/api/startup/profile')
         if (!response.ok) throw new Error('Failed to fetch profile')
         
@@ -101,10 +119,14 @@ export function BookingModal({ isOpen, onClose, facility }: BookingModalProps) {
       }
     }
 
-    if (isOpen && session) {
+  //   if (isOpen && session) {
+  //     fetchProfile()
+  //   }
+  // }, [isOpen, session])
+     if (isOpen && user?.id) {
       fetchProfile()
     }
-  }, [isOpen, session])
+  }, [isOpen, user?.id])
 
   // Debug logging
   useEffect(() => {
@@ -294,7 +316,8 @@ export function BookingModal({ isOpen, onClose, facility }: BookingModalProps) {
 
   // Service Provider overlay
   const ServiceProviderOverlay = () => {
-    if (!session || session.user.userType !== 'Service Provider') return null;
+    // if (!session || session.user.userType !== 'Service Provider') return null;
+     if (!user || user.userType !== 'Service Provider') return null;
     
     return (
       <div className="absolute inset-0 bg-white/95 flex flex-col items-center justify-center p-6 text-center z-50">
@@ -319,10 +342,17 @@ export function BookingModal({ isOpen, onClose, facility }: BookingModalProps) {
           <DialogTitle>Book {facility.details.name}</DialogTitle>
         </DialogHeader>
         <div className="grid md:grid-cols-2 h-full relative">
-          {!session && <AuthOverlay />}
+          {/* {!session && <AuthOverlay />}
           {session && session.user.userType === 'service-provider' && <ServiceProviderOverlay />}
           {session && session.user.userType !== 'service-provider' && <ProfileCompletionOverlay />}
+           */}
+
+ {!user && <AuthOverlay />}
+          {user && user.userType === 'Service Provider' && <ServiceProviderOverlay />}
+          {user && user.userType !== 'Service Provider' && <ProfileCompletionOverlay />}
           
+
+
           {/* Left Section - Slot Selection */}
           <div className="p-4 border-r">
             <div className="flex items-center gap-2 mb-4">
@@ -563,10 +593,12 @@ export function BookingModal({ isOpen, onClose, facility }: BookingModalProps) {
             <div className="space-y-3">
               <Button 
                 className="w-full py-4 text-base font-semibold"
-                disabled={!session || !selectedDate || !selectedTime || !contactNumber || !bookingPeriod}
+                // disabled={!session || !selectedDate || !selectedTime || !contactNumber || !bookingPeriod}
+                 disabled={!user || !selectedDate || !selectedTime || !contactNumber || !bookingPeriod}
                 onClick={handleBookingSubmit}
               >
-                {session ? 'Proceed to Pay' : 'Sign in to Book'}
+                {/* {session ? 'Proceed to Pay' : 'Sign in to Book'} */}
+                {user ? 'Proceed to Pay' : 'Sign in to Book'}
               </Button>
 
               <div className="bg-white p-3 rounded-lg">

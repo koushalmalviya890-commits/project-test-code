@@ -2,28 +2,36 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
+// import { useSession, signOut } from 'next-auth/react'
+import { useAuth } from "@/context/AuthContext"
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { LoadingButton } from '@/components/ui/loading-button'
+import axios from 'axios'
 
 // Create a client component that uses useSearchParams
 function ChooseAccountTypeContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { data: session, status, update } = useSession()
+  // const { data: session, status, update } = useSession()
+  const {user, loading} = useAuth();
   const [isLoading, setIsLoading] = useState(false)
   const [selectedType, setSelectedType] = useState<'startup' | 'Service Provider' | null>(null)
   const email = searchParams.get('email')
 
   useEffect(() => {
     // If user is not authenticated and no email is provided, redirect to sign-in
-    if (status === 'unauthenticated' && !email) {
+  //   if (status === 'unauthenticated' && !email) {
+  //     router.push('/sign-in')
+  //   }
+  // }, [status, email, router])
+
+    if (!loading && !user && !email){
       router.push('/sign-in')
     }
-  }, [status, email, router])
+  }, [user, loading, email, router])
 
   const handleContinue = async () => {
     if (!selectedType) return
@@ -32,33 +40,41 @@ function ChooseAccountTypeContent() {
 
     try {
       // Call API to update user type
-      const response = await fetch('/api/auth/update-user-type', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const apiUrl = "http://localhost:3001"
+      await axios.post(`${apiUrl}/auth/update-user-type`, 
+        {
           email,
           userType: selectedType,
-        }),
-      })
+        },
+        { withCredentials: true } // Important if route is protected
+      )
+      // const response = await fetch('/api/auth/update-user-type', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     email,
+      //     userType: selectedType,
+      //   }),
+      // })
 
-      if (!response.ok) {
-        throw new Error('Failed to update user type')
-      }
+      // if (!response.ok) {
+      //   throw new Error('Failed to update user type')
+      // }
 
-      const data = await response.json()
+      // const data = await response.json()
       
       // Explicitly update the session with the new user type
-      if (update) {
-        await update({
-          ...session,
-          user: {
-            ...session?.user,
-            userType: selectedType
-          }
-        })
-      }
+      // if (update) {
+      //   await update({
+      //     ...session,
+      //     user: {
+      //       ...session?.user,
+      //       userType: selectedType
+      //     }
+      //   })
+      // }
 
       // Use window.location for a hard redirect to force a complete page refresh
       // This ensures the session is completely reloaded
@@ -70,7 +86,7 @@ function ChooseAccountTypeContent() {
     }
   }
 
-  if (status === 'loading') {
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>

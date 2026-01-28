@@ -1,5 +1,6 @@
 "use client";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Pencil, CalendarIcon, Plus, Check } from "lucide-react";
@@ -96,7 +97,9 @@ interface KPIData {
 
 export default function MyFacilities() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  // const { data: session, status } = useSession();
+  const { user, loading, logout } = useAuth();
+  const status = loading ? "loading" : user ? "authenticated" : "unauthenticated";
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [allFacilities, setAllFacilities] = useState<Facility[]>([]);
   const [kpiData, setKpiData] = useState<KPIData>({
@@ -182,6 +185,8 @@ export default function MyFacilities() {
 
   const fetchFacilities = async () => {
     try {
+      if (!user?.id) return; // Guard clause
+
       setIsLoading(true);
       const response = await fetch("/api/facilities");
 
@@ -209,7 +214,7 @@ export default function MyFacilities() {
     if (status === "unauthenticated") return; // Don't fetch if not authenticated
 
     fetchFacilities();
-  }, [status]);
+  }, [user?.id, loading]);
 
   const handleEdit = async (facility: Facility) => {
     try {

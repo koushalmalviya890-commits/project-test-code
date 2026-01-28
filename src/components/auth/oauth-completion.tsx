@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+// import { useSession } from 'next-auth/react'
+import { useAuth } from '@/context/AuthContext';
 
 import { Input } from '@/components/ui/input'
 import { LoadingButton } from '@/components/ui/loading-button'
@@ -49,7 +50,8 @@ interface OAuthCompletionProps {
 
 export function OAuthCompletion({ userType }: OAuthCompletionProps) {
   const router = useRouter()
-  const { data: session, update } = useSession()
+  // const { data: session, update } = useSession()
+  const { user, update } = useAuth();
   const schema = userType === 'startup' ? startupSchema : serviceProviderSchema
 
   const {
@@ -63,18 +65,30 @@ export function OAuthCompletion({ userType }: OAuthCompletionProps) {
 
   const onSubmit = async (data: any) => {
     try {
-      const response = await fetch('/api/auth/complete-profile', {
+
+      const API_URL = "http://localhost:3001";
+      
+      const response = await fetch(`${API_URL}/api/auth/complete-profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // ✅ 2. Include credentials so Express knows WHO is updating
+        credentials: 'include', 
         body: JSON.stringify({ ...data, userType }),
       })
+
+      // const response = await fetch('/api/auth/complete-profile', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ ...data, userType }),
+      // })
 
       if (!response.ok) {
         throw new Error('Failed to complete profile')
       }
 
       // Update session with new user type
-      await update({ userType })
+      // await update({ userType })
+      update({userType});
 
       // Redirect to appropriate dashboard
       router.push(userType === 'startup' ? '/startup/dashboard' : '/service-provider/dashboard')

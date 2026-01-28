@@ -7,7 +7,8 @@ import { Separator } from "@/components/ui/separator";
 import { ChevronLeft, ChevronRight, Filter, Menu, Search, UserCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSession, signOut } from 'next-auth/react';
+// import { useSession, signOut } from 'next-auth/react';
+import { useAuth } from "@/context/AuthContext";
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, Suspense } from 'react';
 import {
@@ -70,7 +71,8 @@ function SearchHeaderLoading() {
 }
 
 function SearchHeaderClient() {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -176,10 +178,11 @@ function SearchHeaderClient() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        if (!session?.user) return;
-
+        // if (!session?.user) return;
+if(!user) return;
         const response = await fetch(
-          session.user.userType === 'startup' 
+          // session.user.userType === 'startup' 
+            user.userType === 'startup' 
             ? '/api/startup/profile'
             : '/api/service-provider/profile'
         );
@@ -200,22 +203,30 @@ function SearchHeaderClient() {
       }
     };
 
-    if (session?.user) {
+  //   if (session?.user) {
+  //     fetchProfile();
+  //   }
+  // }, [session]);
+      if (user?.id) {
       fetchProfile();
     }
-  }, [session]);
+  }, [user?.id]);
 
   // Function to get booking link based on user type
   const getBookingLink = () => {
-    if (!session?.user) return '/sign-up';
-    return session.user.userType === 'startup'
+    // if (!session?.user) return '/sign-up';
+    // return session.user.userType === 'startup'
+     if (!user) return '/sign-up';
+    return user.userType === 'startup'
       ? '/startup/bookings'
       : '/service-provider/dashboard';
   };
 
   // Function to handle sign out
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/landing' });
+    // await signOut({ callbackUrl: '/landing' });
+    await logout();
+    window.location.href = "/landing";
   };
 
   // Check if filters are active
@@ -246,9 +257,11 @@ function SearchHeaderClient() {
           </div>
 
           {/* User profile section */}
-          {session?.user ? (
+          {/* {session?.user ? ( */}
+          {user ? (
             <div className="flex items-center gap-4">
-              <Link href={session.user.userType === 'startup' ? '/startup/bookings' : '/service-provider/dashboard'}>
+              {/* <Link href={session.user.userType === 'startup' ? '/startup/bookings' : '/service-provider/dashboard'}> */}
+              <Link href={user.userType === 'startup' ? '/startup/bookings' : '/service-provider/dashboard'}>
                 <Button size="sm" className="h-10 px-6 bg-green-500 hover:bg-green-600 text-white rounded-md font-medium">
                   Dashboard
                 </Button>
@@ -293,7 +306,8 @@ function SearchHeaderClient() {
                   {/* Account section */}
                   <div className="space-y-2.5 mb-5">
                     <Link 
-                      href={session.user.userType === 'startup' ? '/startup/profile' : '/service-provider/profile'}
+                      // href={session.user.userType === 'startup' ? '/startup/profile' : '/service-provider/profile'}
+                       href={user.userType === 'startup' ? '/startup/profile' : '/service-provider/profile'}
                       className="flex items-center h-8 text-base font-bold text-gray-800 hover:text-green-500 transition-colors px-2 rounded-md"
                     >
                       Profile

@@ -2056,7 +2056,8 @@ import {
   Lightbulb,
 } from "lucide-react";
 import { BookingModal } from "@/components/booking/BookingModal";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import Link from "next/link";
 import DatePicker from "react-datepicker";
@@ -2182,7 +2183,9 @@ export default function ViewDetailsClient({
   facilityId: string;
   affiliateId: string;
 }) {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user } = useAuth();
+  const session = user ? { user } : null;
   const [facility, setFacility] = useState<Facility | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

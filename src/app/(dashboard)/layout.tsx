@@ -2,7 +2,8 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
+// import { useSession } from 'next-auth/react'
+import {useAuth } from "@/context/AuthContext"
 import { ProfilePicture } from '@/components/ui/profile-picture'
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
@@ -22,7 +23,9 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { data: session } = useSession()
+  // const { data: session } = useSession()
+  const { user } = useAuth();
+  const session = user ? { user } : null;
   const pathname = usePathname()
   const [profile, setProfile] = useState<StartupProfile | ServiceProviderProfile | null>(null)
   
@@ -32,13 +35,33 @@ export default function DashboardLayout({
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        if (!session?.user) return
+        if (!user?.id) return
 
-        const response = await fetch(
-          session.user.userType === 'startup' 
-            ? '/api/startup/profile'
-            : '/api/service-provider/profile'
-        )
+
+        // ✅ 1. Point to Express Backend
+        const API_URL = "http://localhost:3001";
+        
+        // ✅ 2. Determine the correct endpoint
+        // Note: Make sure these routes exist in your Express backend!
+        const endpoint = user.userType === 'startup' 
+          ? '/api/startup/profile' 
+          : '/api/service-provider/profile';
+
+        const response = await fetch(`${API_URL}${endpoint}`, {
+           method: "GET",
+           headers: {
+             "Content-Type": "application/json",
+           },
+           // ✅ 3. CRITICAL: Send the cookie to Express
+           credentials: 'include'
+        });
+
+
+        // const response = await fetch(
+        //   user.userType === 'startup' 
+        //     ? '/api/startup/profile'
+        //     : '/api/service-provider/profile'
+        // )
         
         if (response.ok) {
           const data = await response.json()
@@ -57,7 +80,8 @@ export default function DashboardLayout({
     }
 
     fetchProfile()
-  }, [session])
+  // }, [session])
+}, [user?.id, user?.userType]);
 
   return (
     <div className="min-h-screen bg-[#F8F9FC] font-jakarta">

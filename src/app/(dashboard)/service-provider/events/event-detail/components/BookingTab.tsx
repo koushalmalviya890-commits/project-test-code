@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+// import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { Download, ExternalLink, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,7 +60,9 @@ interface BookingTabProps {
 }
 
 export default function BookingTab({ eventData }: BookingTabProps) {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const {user} = useAuth();
+  const session = user ? { user } : null;
   const [bookings, setBookings] = useState<BookingData[]>([]);
   const [ticketSummary, setTicketSummary] = useState<TicketSummary>({
     ticketCapacity: 0,

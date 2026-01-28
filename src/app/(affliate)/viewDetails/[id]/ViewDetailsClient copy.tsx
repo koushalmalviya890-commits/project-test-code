@@ -2034,7 +2034,6 @@
 //   );
 // }
 
-
 "use client";
 import { useState, useEffect } from "react";
 import Image from "next/image";
@@ -2056,7 +2055,7 @@ import {
   Lightbulb,
 } from "lucide-react";
 import { BookingModal } from "@/components/booking/BookingModal";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import Link from "next/link";
 import DatePicker from "react-datepicker";
@@ -2079,6 +2078,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useAuth } from "@/context/AuthContext";
 
 const getYouTubeVideoId = (url: string) => {
   if (!url) return null;
@@ -2177,12 +2177,14 @@ interface Facility {
 
 export default function ViewDetailsClient({
   facilityId,
-  affiliateId
+  affiliateId,
 }: {
   facilityId: string;
   affiliateId: string;
 }) {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
+  const { user } = useAuth();
+  const session = user ? { user } : null;
   const [facility, setFacility] = useState<Facility | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -2202,15 +2204,19 @@ export default function ViewDetailsClient({
   const [bookingSeats, setBookingSeats] = useState(1);
   const [isExisting, setIsExisting] = useState<boolean | null>(null);
   const [relatedFacilities, setRelatedFacilities] = useState<any[]>([]);
-  const [loadingRelatedFacilities, setLoadingRelatedFacilities] = useState(false);
-  const [hoveredFacilityId, setHoveredFacilityId] = useState<string | null>(null);
+  const [loadingRelatedFacilities, setLoadingRelatedFacilities] =
+    useState(false);
+  const [hoveredFacilityId, setHoveredFacilityId] = useState<string | null>(
+    null,
+  );
   const [showAllTimings, setShowAllTimings] = useState(false);
   const [currentDay, setCurrentDay] = useState<string>("monday");
   const [processingPayment, setProcessingPayment] = useState(false);
   const [failedBookingId, setFailedBookingId] = useState<string | null>(null);
   const [isAffiliateDialogOpen, setIsAffiliateDialogOpen] = useState(false);
   const [affiliateMailId, setAffiliateMailId] = useState<string>("");
-  const [affiliateContactNumber, setAffiliateContactNumber] = useState<string>("");
+  const [affiliateContactNumber, setAffiliateContactNumber] =
+    useState<string>("");
   const [affiliateContactName, setAffiliateContactName] = useState<string>("");
   const router = useRouter();
   const [priceDetails, setPriceDetails] = useState<{
@@ -2239,7 +2245,9 @@ export default function ViewDetailsClient({
       } catch (error) {
         console.error("Error calculating price details:", error);
         const baseAmount = selectedPlan.price * unitCount;
-        const fixedServiceFee = getFixedServiceFee(facility?.facilityType || "");
+        const fixedServiceFee = getFixedServiceFee(
+          facility?.facilityType || "",
+        );
         const totalBaseAmount = baseAmount + fixedServiceFee;
         const gstAmount = 0;
         const totalAmount = totalBaseAmount;
@@ -2259,8 +2267,10 @@ export default function ViewDetailsClient({
     calculatePrices();
   }, [selectedPlan, unitCount, facilityId, bookingSeats]);
 
-  const basePrice = (priceDetails?.basePrice ?? 0) + (priceDetails?.fixedFee ?? 0);
-  const fixedFeePerUnit = priceDetails?.fixedFee || getFixedServiceFee(facility?.facilityType || "");
+  const basePrice =
+    (priceDetails?.basePrice ?? 0) + (priceDetails?.fixedFee ?? 0);
+  const fixedFeePerUnit =
+    priceDetails?.fixedFee || getFixedServiceFee(facility?.facilityType || "");
   const fixedServiceFee = priceDetails?.fixedFee;
   const gstAmount = priceDetails?.gstAmount || 0;
   const totalAmount = priceDetails?.finalPrice || 0;
@@ -2278,7 +2288,9 @@ export default function ViewDetailsClient({
 
         if (data && data.address) {
           const address = `${data.address}, ${data.city}, ${data.state}, ${data.pincode}, ${data.country}`;
-          const mapResponse = await fetch(`/api/maps?query=${encodeURIComponent(address)}`);
+          const mapResponse = await fetch(
+            `/api/maps?query=${encodeURIComponent(address)}`,
+          );
           if (mapResponse.ok) {
             const mapData = await mapResponse.json();
             setMapUrl(mapData.embedUrl);
@@ -2299,7 +2311,13 @@ export default function ViewDetailsClient({
 
   const sortedRentalPlans = facility?.details?.rentalPlans
     ? [...facility.details.rentalPlans].sort((a, b) => {
-        const order = ["Hourly", "One Day (24 Hours)", "Weekly", "Monthly", "Annual"];
+        const order = [
+          "Hourly",
+          "One Day (24 Hours)",
+          "Weekly",
+          "Monthly",
+          "Annual",
+        ];
         return order.indexOf(a.name) - order.indexOf(b.name);
       })
     : [];
@@ -2310,7 +2328,17 @@ export default function ViewDetailsClient({
     }
   }, [sortedRentalPlans]);
 
-  const timeSlots = ["9 AM", "10 AM", "11 AM", "12 PM", "1 PM", "2 PM", "3 PM", "4 PM", "5 PM"];
+  const timeSlots = [
+    "9 AM",
+    "10 AM",
+    "11 AM",
+    "12 PM",
+    "1 PM",
+    "2 PM",
+    "3 PM",
+    "4 PM",
+    "5 PM",
+  ];
 
   const handleDateChange = (date: Date | null) => {
     if (date) {
@@ -2344,8 +2372,10 @@ export default function ViewDetailsClient({
 
   const handleBookingSubmit = () => {
     if (
-      (facility?.facilityType === "individual-cabin" && (facility.details.availableCabins ?? 0) <= 0) ||
-      (facility?.facilityType === "coworking-spaces" && (facility.details.availableSeats ?? 0) <= 0) ||
+      (facility?.facilityType === "individual-cabin" &&
+        (facility.details.availableCabins ?? 0) <= 0) ||
+      (facility?.facilityType === "coworking-spaces" &&
+        (facility.details.availableSeats ?? 0) <= 0) ||
       (facility?.facilityType === "meeting-rooms" &&
         ((facility.details.totalRooms ?? 0) <= 0 ||
           (facility.details.seatingCapacity ?? 0) <= 0 ||
@@ -2398,7 +2428,9 @@ export default function ViewDetailsClient({
 
       if (!affiliateResponse.ok) {
         const errorData = await affiliateResponse.json();
-        throw new Error(errorData.error || "Failed to save affiliate user data");
+        throw new Error(
+          errorData.error || "Failed to save affiliate user data",
+        );
       }
 
       // Proceed with booking logic
@@ -2410,10 +2442,16 @@ export default function ViewDetailsClient({
 
       const isPM = selectedTime.includes("PM");
       startDateTime.setHours(
-        isPM ? (parseInt(hours) === 12 ? 12 : parseInt(hours) + 12) : parseInt(hours) === 12 ? 0 : parseInt(hours),
+        isPM
+          ? parseInt(hours) === 12
+            ? 12
+            : parseInt(hours) + 12
+          : parseInt(hours) === 12
+            ? 0
+            : parseInt(hours),
         parseInt(minutes) || 0,
         0,
-        0
+        0,
       );
 
       const endDateTime = new Date(startDateTime.getTime());
@@ -2459,10 +2497,13 @@ export default function ViewDetailsClient({
       setAffiliateContactNumber("");
     } catch (error) {
       console.error("Error processing affiliate data:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to process booking", {
-        duration: 5000,
-        icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Failed to process booking",
+        {
+          duration: 5000,
+          icon: <AlertCircle className="h-5 w-5 text-red-500" />,
+        },
+      );
     } finally {
       setProcessingPayment(false);
     }
@@ -2475,12 +2516,18 @@ export default function ViewDetailsClient({
       switch (e.key) {
         case "ArrowRight":
           if (facility?.details?.images) {
-            setFullscreenIndex((prev) => (prev + 1) % facility.details.images.length);
+            setFullscreenIndex(
+              (prev) => (prev + 1) % facility.details.images.length,
+            );
           }
           break;
         case "ArrowLeft":
           if (facility?.details?.images) {
-            setFullscreenIndex((prev) => (prev - 1 + facility.details.images.length) % facility.details.images.length);
+            setFullscreenIndex(
+              (prev) =>
+                (prev - 1 + facility.details.images.length) %
+                facility.details.images.length,
+            );
           }
           break;
         case "Escape":
@@ -2499,9 +2546,13 @@ export default function ViewDetailsClient({
 
       try {
         setLoadingRelatedFacilities(true);
-        const response = await fetch(`/api/facilities/by-provider/${facility.serviceProviderId}`);
+        const response = await fetch(
+          `/api/facilities/by-provider/${facility.serviceProviderId}`,
+        );
         if (!response.ok) {
-          throw new Error(`Failed to fetch related facilities: ${response.status}`);
+          throw new Error(
+            `Failed to fetch related facilities: ${response.status}`,
+          );
         }
         const data = await response.json();
         const filteredFacilities = data
@@ -2509,7 +2560,9 @@ export default function ViewDetailsClient({
           .sort((a: any, b: any) => {
             if (a.isFeatured && !b.isFeatured) return -1;
             if (!a.isFeatured && b.isFeatured) return 1;
-            return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+            return (
+              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+            );
           });
         setRelatedFacilities(filteredFacilities);
       } catch (error) {
@@ -2532,7 +2585,15 @@ export default function ViewDetailsClient({
   }, [sortedRentalPlans]);
 
   useEffect(() => {
-    const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const days = [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+    ];
     const today = new Date().getDay();
     setCurrentDay(days[today]);
   }, []);
@@ -2551,7 +2612,9 @@ export default function ViewDetailsClient({
       if (!session?.user?.id) return;
 
       try {
-        const response = await fetch(`/api/bookings/failed?facilityId=${facilityId}`);
+        const response = await fetch(
+          `/api/bookings/failed?facilityId=${facilityId}`,
+        );
         if (response.ok) {
           const data = await response.json();
           if (data.bookingId) {
@@ -2599,11 +2662,20 @@ export default function ViewDetailsClient({
 
   const previousImage = () => {
     if (!facility?.details.images) return;
-    setFullscreenIndex((prev) => (prev - 1 + facility.details.images.length) % facility.details.images.length);
+    setFullscreenIndex(
+      (prev) =>
+        (prev - 1 + facility.details.images.length) %
+        facility.details.images.length,
+    );
   };
 
   const openFullscreen = (index: number) => {
-    if (facility?.details?.images && index >= 0 && index < facility.details.images.length && facility.details.images[index]) {
+    if (
+      facility?.details?.images &&
+      index >= 0 &&
+      index < facility.details.images.length &&
+      facility.details.images[index]
+    ) {
       setFullscreenIndex(index);
       setIsFullscreen(true);
     } else {
@@ -2614,10 +2686,13 @@ export default function ViewDetailsClient({
 
   const handleBookNowClick = () => {
     if (session?.user?.userType === "Service Provider") {
-      toast.error("Facility Partners cannot make bookings. Please use a startup account to book facilities.", {
-        duration: 5000,
-        icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-      });
+      toast.error(
+        "Facility Partners cannot make bookings. Please use a startup account to book facilities.",
+        {
+          duration: 5000,
+          icon: <AlertCircle className="h-5 w-5 text-red-500" />,
+        },
+      );
       return;
     }
     setIsBookingModalOpen(true);
@@ -2628,7 +2703,8 @@ export default function ViewDetailsClient({
       {failedBookingId && <PaymentFailedBanner bookingId={failedBookingId} />}
       {facility.details.images && facility.details.images.length > 0 && (
         <div className="mb-8">
-          {facility.details.images.length === 1 && !facility.details.videoLink ? (
+          {facility.details.images.length === 1 &&
+          !facility.details.videoLink ? (
             <div className="relative aspect-[16/9] w-full">
               <Image
                 src={facility.details.images[0]}
@@ -2641,7 +2717,8 @@ export default function ViewDetailsClient({
           ) : (
             <div className="grid grid-cols-12 gap-3">
               <div className="col-span-12 md:col-span-8 relative aspect-[16/9]">
-                {facility.details.videoLink && getYouTubeVideoId(facility.details.videoLink) ? (
+                {facility.details.videoLink &&
+                getYouTubeVideoId(facility.details.videoLink) ? (
                   <iframe
                     src={`https://www.youtube.com/embed/${getYouTubeVideoId(facility.details.videoLink)}`}
                     title={`${facility.details.name} Video`}
@@ -2662,7 +2739,10 @@ export default function ViewDetailsClient({
               <div className="col-span-12 md:col-span-4 grid grid-cols-2 gap-3 h-full">
                 {facility.details.images.map((image, index) => {
                   if (index >= 4) return null;
-                  if (facility.details.videoLink && getYouTubeVideoId(facility.details.videoLink)) {
+                  if (
+                    facility.details.videoLink &&
+                    getYouTubeVideoId(facility.details.videoLink)
+                  ) {
                     return (
                       <div key={index} className="relative aspect-square">
                         <Image
@@ -2696,7 +2776,9 @@ export default function ViewDetailsClient({
       <div className="grid grid-cols-12 gap-8 mb-12">
         <div className="col-span-12 lg:col-span-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{facility.details.name}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {facility.details.name}
+            </h1>
             <p className="text-gray-600">{facility.address}</p>
           </div>
           <div className="mb-10 flex flex-wrap gap-3">
@@ -2705,16 +2787,24 @@ export default function ViewDetailsClient({
                 <div className="inline-block border border-gray-200 rounded-md p-3">
                   <div className="flex items-center gap-2">
                     <div>
-                      <div className="text-gray-500 text-xs mb-1">Total Cabins</div>
-                      <div className="text-lg font-medium text-gray-800">{facility.details.totalCabins || 0}</div>
+                      <div className="text-gray-500 text-xs mb-1">
+                        Total Cabins
+                      </div>
+                      <div className="text-lg font-medium text-gray-800">
+                        {facility.details.totalCabins || 0}
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div className="inline-block border border-gray-200 rounded-md p-3">
                   <div className="flex items-center gap-2">
                     <div>
-                      <div className="text-gray-500 text-xs mb-1">Available Cabins</div>
-                      <div className="text-lg font-medium text-gray-800">{facility.details.availableCabins || 0}</div>
+                      <div className="text-gray-500 text-xs mb-1">
+                        Available Cabins
+                      </div>
+                      <div className="text-lg font-medium text-gray-800">
+                        {facility.details.availableCabins || 0}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2725,16 +2815,24 @@ export default function ViewDetailsClient({
                 <div className="inline-block border border-gray-200 rounded-md p-3">
                   <div className="flex items-center gap-2">
                     <div>
-                      <div className="text-gray-500 text-xs mb-1">Total Seaters</div>
-                      <div className="text-lg font-medium text-gray-800">{facility.details.totalSeats || 0}</div>
+                      <div className="text-gray-500 text-xs mb-1">
+                        Total Seaters
+                      </div>
+                      <div className="text-lg font-medium text-gray-800">
+                        {facility.details.totalSeats || 0}
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div className="inline-block border border-gray-200 rounded-md p-3">
                   <div className="flex items-center gap-2">
                     <div>
-                      <div className="text-gray-500 text-xs mb-1">Available Seats</div>
-                      <div className="text-lg font-medium text-gray-800">{facility.details.availableSeats || 0}</div>
+                      <div className="text-gray-500 text-xs mb-1">
+                        Available Seats
+                      </div>
+                      <div className="text-lg font-medium text-gray-800">
+                        {facility.details.availableSeats || 0}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2745,24 +2843,36 @@ export default function ViewDetailsClient({
                 <div className="inline-block border border-gray-200 rounded-md p-3">
                   <div className="flex items-center gap-2">
                     <div>
-                      <div className="text-gray-500 text-xs mb-1">Total Rooms</div>
-                      <div className="text-lg font-medium text-gray-800">{facility.details.totalRooms || 0}</div>
+                      <div className="text-gray-500 text-xs mb-1">
+                        Total Rooms
+                      </div>
+                      <div className="text-lg font-medium text-gray-800">
+                        {facility.details.totalRooms || 0}
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div className="inline-block border border-gray-200 rounded-md p-3">
                   <div className="flex items-center gap-2">
                     <div>
-                      <div className="text-gray-500 text-xs mb-1">Seating Capacity</div>
-                      <div className="text-lg font-medium text-gray-800">{facility.details.seatingCapacity || 0}</div>
+                      <div className="text-gray-500 text-xs mb-1">
+                        Seating Capacity
+                      </div>
+                      <div className="text-lg font-medium text-gray-800">
+                        {facility.details.seatingCapacity || 0}
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div className="inline-block border border-gray-200 rounded-md p-3">
                   <div className="flex items-center gap-2">
                     <div>
-                      <div className="text-gray-500 text-xs mb-1">Training Room Seats</div>
-                      <div className="text-lg font-medium text-gray-800">{facility.details.totalTrainingRoomSeaters || 0}</div>
+                      <div className="text-gray-500 text-xs mb-1">
+                        Training Room Seats
+                      </div>
+                      <div className="text-lg font-medium text-gray-800">
+                        {facility.details.totalTrainingRoomSeaters || 0}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2775,12 +2885,21 @@ export default function ViewDetailsClient({
               facility.details.equipment.length > 0 && (
                 <>
                   {facility.details.equipment.slice(0, 2).map((item, index) => (
-                    <div key={index} className="inline-block border border-gray-200 rounded-md p-3">
+                    <div
+                      key={index}
+                      className="inline-block border border-gray-200 rounded-md p-3"
+                    >
                       <div className="flex items-center gap-2">
                         <div>
-                          <div className="text-gray-500 text-xs mb-1">{item.labName || "Lab"}</div>
-                          <div className="text-lg font-medium text-gray-800">{item.equipmentName || "Equipment"}</div>
-                          <div className="text-xs text-gray-500">{item.capacityAndMake || ""}</div>
+                          <div className="text-gray-500 text-xs mb-1">
+                            {item.labName || "Lab"}
+                          </div>
+                          <div className="text-lg font-medium text-gray-800">
+                            {item.equipmentName || "Equipment"}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {item.capacityAndMake || ""}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2789,8 +2908,12 @@ export default function ViewDetailsClient({
                     <div className="inline-block border border-gray-200 rounded-md p-3">
                       <div className="flex items-center gap-2">
                         <div>
-                          <div className="text-gray-500 text-xs mb-1">More Equipment</div>
-                          <div className="text-lg font-medium text-gray-800">+{facility.details.equipment.length - 2}</div>
+                          <div className="text-gray-500 text-xs mb-1">
+                            More Equipment
+                          </div>
+                          <div className="text-lg font-medium text-gray-800">
+                            +{facility.details.equipment.length - 2}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2802,12 +2925,21 @@ export default function ViewDetailsClient({
               facility.details.equipment.length > 0 && (
                 <>
                   {facility.details.equipment.slice(0, 2).map((item, index) => (
-                    <div key={index} className="inline-block border border-gray-200 rounded-md p-3">
+                    <div
+                      key={index}
+                      className="inline-block border border-gray-200 rounded-md p-3"
+                    >
                       <div className="flex items-center gap-2">
                         <div>
-                          <div className="text-gray-500 text-xs mb-1">Software</div>
-                          <div className="text-lg font-medium text-gray-800">{item.softwareName || "Software"}</div>
-                          <div className="text-xs text-gray-500">Version: {item.version || "N/A"}</div>
+                          <div className="text-gray-500 text-xs mb-1">
+                            Software
+                          </div>
+                          <div className="text-lg font-medium text-gray-800">
+                            {item.softwareName || "Software"}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Version: {item.version || "N/A"}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2816,8 +2948,12 @@ export default function ViewDetailsClient({
                     <div className="inline-block border border-gray-200 rounded-md p-3">
                       <div className="flex items-center gap-2">
                         <div>
-                          <div className="text-gray-500 text-xs mb-1">More Software</div>
-                          <div className="text-lg font-medium text-gray-800">+{facility.details.equipment.length - 2}</div>
+                          <div className="text-gray-500 text-xs mb-1">
+                            More Software
+                          </div>
+                          <div className="text-lg font-medium text-gray-800">
+                            +{facility.details.equipment.length - 2}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2829,12 +2965,21 @@ export default function ViewDetailsClient({
               facility.details.equipment.length > 0 && (
                 <>
                   {facility.details.equipment.slice(0, 2).map((item, index) => (
-                    <div key={index} className="inline-block border border-gray-200 rounded-md p-3">
+                    <div
+                      key={index}
+                      className="inline-block border border-gray-200 rounded-md p-3"
+                    >
                       <div className="flex items-center gap-2">
                         <div>
-                          <div className="text-gray-500 text-xs mb-1">Service</div>
-                          <div className="text-lg font-medium text-gray-800">{item.equipmentName || "Service"}</div>
-                          <div className="text-xs text-gray-500">{item.capacityAndMake || ""}</div>
+                          <div className="text-gray-500 text-xs mb-1">
+                            Service
+                          </div>
+                          <div className="text-lg font-medium text-gray-800">
+                            {item.equipmentName || "Service"}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {item.capacityAndMake || ""}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2843,8 +2988,12 @@ export default function ViewDetailsClient({
                     <div className="inline-block border border-gray-200 rounded-md p-3">
                       <div className="flex items-center gap-2">
                         <div>
-                          <div className="text-gray-500 text-xs mb-1">More Services</div>
-                          <div className="text-lg font-medium text-gray-800">+{facility.details.equipment.length - 2}</div>
+                          <div className="text-gray-500 text-xs mb-1">
+                            More Services
+                          </div>
+                          <div className="text-lg font-medium text-gray-800">
+                            +{facility.details.equipment.length - 2}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2857,11 +3006,19 @@ export default function ViewDetailsClient({
               facility.details.areaDetails.length > 0 && (
                 <>
                   {facility.details.areaDetails.map((area, index) => (
-                    <div key={index} className="inline-block border border-gray-200 rounded-md p-3">
+                    <div
+                      key={index}
+                      className="inline-block border border-gray-200 rounded-md p-3"
+                    >
                       <div className="flex items-center gap-2">
                         <div>
-                          <div className="text-gray-500 text-xs mb-1">{area.type || "Area"}</div>
-                          <div className="text-lg font-medium text-gray-800">{area.area} <span className="text-xs text-gray-500">sq.ft</span></div>
+                          <div className="text-gray-500 text-xs mb-1">
+                            {area.type || "Area"}
+                          </div>
+                          <div className="text-lg font-medium text-gray-800">
+                            {area.area}{" "}
+                            <span className="text-xs text-gray-500">sq.ft</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2870,8 +3027,12 @@ export default function ViewDetailsClient({
                     <div className="inline-block border border-gray-200 rounded-md p-3">
                       <div className="flex items-center gap-2">
                         <div>
-                          <div className="text-gray-500 text-xs mb-1">Furnishing</div>
-                          <div className="text-lg font-medium text-gray-800">{facility.details.areaDetails[0].furnishing}</div>
+                          <div className="text-gray-500 text-xs mb-1">
+                            Furnishing
+                          </div>
+                          <div className="text-lg font-medium text-gray-800">
+                            {facility.details.areaDetails[0].furnishing}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2880,75 +3041,113 @@ export default function ViewDetailsClient({
                     <div className="inline-block border border-gray-200 rounded-md p-3">
                       <div className="flex items-center gap-2">
                         <div>
-                          <div className="text-gray-500 text-xs mb-1">Customisation</div>
-                          <div className="text-lg font-medium text-gray-800">{facility.details.areaDetails[0].customisation}</div>
+                          <div className="text-gray-500 text-xs mb-1">
+                            Customisation
+                          </div>
+                          <div className="text-lg font-medium text-gray-800">
+                            {facility.details.areaDetails[0].customisation}
+                          </div>
                         </div>
                       </div>
                     </div>
                   )}
                 </>
               )}
-            {facility.facilityType === "studio" && facility.details.studioDetails && (
-              <>
-                <div className="inline-block border border-gray-200 rounded-md p-3">
-                  <div className="flex items-center gap-2">
-                    <Mic className="h-5 w-5 text-gray-600" />
-                    <div>
-                      <div className="text-gray-500 text-xs mb-1">Suitable For</div>
-                      <div className="text-lg font-medium text-gray-800">{facility.details.studioDetails.suitableFor.join(", ")}</div>
-                    </div>
-                  </div>
-                </div>
-                {facility.details.studioDetails.isSoundProof && (
+            {facility.facilityType === "studio" &&
+              facility.details.studioDetails && (
+                <>
                   <div className="inline-block border border-gray-200 rounded-md p-3">
                     <div className="flex items-center gap-2">
-                      <Volume2 className="h-5 w-5 text-gray-600" />
+                      <Mic className="h-5 w-5 text-gray-600" />
                       <div>
-                        <div className="text-gray-500 text-xs mb-1">Sound Proof</div>
-                        <div className="text-lg font-medium text-gray-800">Yes</div>
+                        <div className="text-gray-500 text-xs mb-1">
+                          Suitable For
+                        </div>
+                        <div className="text-lg font-medium text-gray-800">
+                          {facility.details.studioDetails.suitableFor.join(
+                            ", ",
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                )}
-                {facility.details.studioDetails.hasAmpleLighting && (
-                  <div className="inline-block border border-gray-200 rounded-md p-3">
-                    <div className="flex items-center gap-2">
-                      <Lightbulb className="h-5 w-5 text-gray-600" />
-                      <div>
-                        <div className="text-gray-500 text-xs mb-1">Ample Lighting</div>
-                        <div className="text-lg font-medium text-gray-800">Yes</div>
+                  {facility.details.studioDetails.isSoundProof && (
+                    <div className="inline-block border border-gray-200 rounded-md p-3">
+                      <div className="flex items-center gap-2">
+                        <Volume2 className="h-5 w-5 text-gray-600" />
+                        <div>
+                          <div className="text-gray-500 text-xs mb-1">
+                            Sound Proof
+                          </div>
+                          <div className="text-lg font-medium text-gray-800">
+                            Yes
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-                {facility.details.studioDetails.equipmentDetails &&
-                  facility.details.studioDetails.equipmentDetails.length > 0 && (
-                    <>
-                      {facility.details.studioDetails.equipmentDetails.slice(0, 2).map((item, index) => (
-                        <div key={index} className="inline-block border border-gray-200 rounded-md p-3">
-                          <div className="flex items-center gap-2">
-                            <div>
-                              <div className="text-gray-500 text-xs mb-1">Equipment</div>
-                              <div className="text-lg font-medium text-gray-800">{item.name}</div>
-                              <div className="text-xs text-gray-500">{item.model} (Qty: {item.quantity})</div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {facility.details.studioDetails.equipmentDetails.length > 2 && (
-                        <div className="inline-block border border-gray-200 rounded-md p-3">
-                          <div className="flex items-center gap-2">
-                            <div>
-                              <div className="text-gray-500 text-xs mb-1">More Equipment</div>
-                              <div className="text-lg font-medium text-gray-800">+{facility.details.studioDetails.equipmentDetails.length - 2}</div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </>
                   )}
-              </>
-            )}
+                  {facility.details.studioDetails.hasAmpleLighting && (
+                    <div className="inline-block border border-gray-200 rounded-md p-3">
+                      <div className="flex items-center gap-2">
+                        <Lightbulb className="h-5 w-5 text-gray-600" />
+                        <div>
+                          <div className="text-gray-500 text-xs mb-1">
+                            Ample Lighting
+                          </div>
+                          <div className="text-lg font-medium text-gray-800">
+                            Yes
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {facility.details.studioDetails.equipmentDetails &&
+                    facility.details.studioDetails.equipmentDetails.length >
+                      0 && (
+                      <>
+                        {facility.details.studioDetails.equipmentDetails
+                          .slice(0, 2)
+                          .map((item, index) => (
+                            <div
+                              key={index}
+                              className="inline-block border border-gray-200 rounded-md p-3"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div>
+                                  <div className="text-gray-500 text-xs mb-1">
+                                    Equipment
+                                  </div>
+                                  <div className="text-lg font-medium text-gray-800">
+                                    {item.name}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {item.model} (Qty: {item.quantity})
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        {facility.details.studioDetails.equipmentDetails
+                          .length > 2 && (
+                          <div className="inline-block border border-gray-200 rounded-md p-3">
+                            <div className="flex items-center gap-2">
+                              <div>
+                                <div className="text-gray-500 text-xs mb-1">
+                                  More Equipment
+                                </div>
+                                <div className="text-lg font-medium text-gray-800">
+                                  +
+                                  {facility.details.studioDetails
+                                    .equipmentDetails.length - 2}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                </>
+              )}
             {!facility.facilityType ||
               (facility.facilityType !== "individual-cabin" &&
                 facility.facilityType !== "coworking-spaces" &&
@@ -2964,8 +3163,13 @@ export default function ViewDetailsClient({
                   <div className="inline-block border border-gray-200 rounded-md p-3">
                     <div className="flex items-center gap-2">
                       <div>
-                        <div className="text-gray-500 text-xs mb-1">Facility Space</div>
-                        <div className="text-lg font-medium text-gray-800">1400 <span className="text-xs text-gray-500">sq.ft</span></div>
+                        <div className="text-gray-500 text-xs mb-1">
+                          Facility Space
+                        </div>
+                        <div className="text-lg font-medium text-gray-800">
+                          1400{" "}
+                          <span className="text-xs text-gray-500">sq.ft</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2973,30 +3177,43 @@ export default function ViewDetailsClient({
           </div>
           <div className="flex items-center gap-3 mb-10 pb-6 border-b border-gray-100">
             <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-              {facility.serviceProvider?.logoUrl && typeof facility.serviceProvider.logoUrl === "string" ? (
+              {facility.serviceProvider?.logoUrl &&
+              typeof facility.serviceProvider.logoUrl === "string" ? (
                 <Image
                   src={facility.serviceProvider.logoUrl}
-                  alt={facility.serviceProvider.serviceName || "Service Provider"}
+                  alt={
+                    facility.serviceProvider.serviceName || "Service Provider"
+                  }
                   width={48}
                   height={48}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-xl font-semibold text-green-600">{facility.serviceProvider?.serviceName ? facility.serviceProvider.serviceName.charAt(0) : "S"}</span>
+                <span className="text-xl font-semibold text-green-600">
+                  {facility.serviceProvider?.serviceName
+                    ? facility.serviceProvider.serviceName.charAt(0)
+                    : "S"}
+                </span>
               )}
             </div>
             <div>
               <p className="font-medium">
                 Hosted by{" "}
-                {facility.serviceProvider?.serviceName && facility.serviceProvider?._id ? (
-                  <Link href={`/ViewProvider/${facility.serviceProvider._id}`} className="font-bold text-green-600 hover:text-green-700 hover:underline cursor-pointer">
+                {facility.serviceProvider?.serviceName &&
+                facility.serviceProvider?._id ? (
+                  <Link
+                    href={`/ViewProvider/${facility.serviceProvider._id}`}
+                    className="font-bold text-green-600 hover:text-green-700 hover:underline cursor-pointer"
+                  >
                     {facility.serviceProvider.serviceName}
                   </Link>
                 ) : (
                   <span>Service Provider</span>
                 )}
                 {!facility.serviceProvider?.serviceName && (
-                  <span className="text-xs text-gray-500 ml-2">(Service provider info unavailable)</span>
+                  <span className="text-xs text-gray-500 ml-2">
+                    (Service provider info unavailable)
+                  </span>
                 )}
               </p>
               <p className="text-sm text-gray-600">
@@ -3014,15 +3231,23 @@ export default function ViewDetailsClient({
             </div>
           </div>
           <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">About this space</h2>
-            <p className="text-gray-600 whitespace-pre-line">{facility.details.description}</p>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              About this space
+            </h2>
+            <p className="text-gray-600 whitespace-pre-line">
+              {facility.details.description}
+            </p>
           </div>
           {facility.features && facility.features.length > 0 && (
             <div className="mb-10">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800">Venue Amenities</h2>
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">
+                Venue Amenities
+              </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {facility.features.map((feature, index) => {
-                  const IconComponent = AMENITY_ICONS[feature as keyof typeof AMENITY_ICONS] || AMENITY_ICONS["Other"];
+                  const IconComponent =
+                    AMENITY_ICONS[feature as keyof typeof AMENITY_ICONS] ||
+                    AMENITY_ICONS["Other"];
                   return (
                     <div key={index} className="flex items-center gap-3">
                       <IconComponent className="h-5 w-5 text-gray-600" />
@@ -3040,8 +3265,13 @@ export default function ViewDetailsClient({
                   <h4 className="text-lg font-semibold mb-3">Sector</h4>
                   <div className="flex flex-wrap gap-3">
                     {facility.relevantSectors.map((sector, index) => (
-                      <span key={index} className="px-4 py-2 border border-green-600 text-black rounded-full text-sm font-medium whitespace-nowrap">
-                        {sector.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                      <span
+                        key={index}
+                        className="px-4 py-2 border border-green-600 text-black rounded-full text-sm font-medium whitespace-nowrap"
+                      >
+                        {sector
+                          .replace(/-/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())}
                       </span>
                     ))}
                   </div>
@@ -3050,31 +3280,74 @@ export default function ViewDetailsClient({
             </div>
           )}
           <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Venue Timings</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              Venue Timings
+            </h2>
             {facility.timings && (
               <div className="space-y-2">
                 <div className="border border-gray-200 rounded-md overflow-hidden">
-                  <div className="bg-gray-50 py-3 px-4 flex justify-between items-center cursor-pointer" onClick={() => setShowAllTimings(!showAllTimings)}>
+                  <div
+                    className="bg-gray-50 py-3 px-4 flex justify-between items-center cursor-pointer"
+                    onClick={() => setShowAllTimings(!showAllTimings)}
+                  >
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-gray-600" />
-                      <span className="font-medium">{formatDayName(currentDay)}</span>
-                      <Badge variant="outline" className="ml-2 text-xs bg-blue-50 text-blue-700 border-blue-200">Today</Badge>
+                      <span className="font-medium">
+                        {formatDayName(currentDay)}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="ml-2 text-xs bg-blue-50 text-blue-700 border-blue-200"
+                      >
+                        Today
+                      </Badge>
                     </div>
                     <div className="flex items-center">
-                      <span className="text-gray-700 mr-2">{getTimingText(facility.timings[currentDay as keyof Timings])}</span>
-                      {showAllTimings ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                      <span className="text-gray-700 mr-2">
+                        {getTimingText(
+                          facility.timings[currentDay as keyof Timings],
+                        )}
+                      </span>
+                      {showAllTimings ? (
+                        <ChevronUp className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-gray-500" />
+                      )}
                     </div>
                   </div>
                   <AnimatePresence>
                     {showAllTimings && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: "easeInOut" }} className="overflow-hidden">
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
                         <div className="divide-y divide-gray-200">
-                          {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].filter((day) => day !== currentDay).map((day) => (
-                            <div key={day} className="py-3 px-4 flex justify-between items-center">
-                              <span>{formatDayName(day)}</span>
-                              <span className="text-gray-700">{getTimingText(facility.timings[day as keyof Timings])}</span>
-                            </div>
-                          ))}
+                          {[
+                            "monday",
+                            "tuesday",
+                            "wednesday",
+                            "thursday",
+                            "friday",
+                            "saturday",
+                            "sunday",
+                          ]
+                            .filter((day) => day !== currentDay)
+                            .map((day) => (
+                              <div
+                                key={day}
+                                className="py-3 px-4 flex justify-between items-center"
+                              >
+                                <span>{formatDayName(day)}</span>
+                                <span className="text-gray-700">
+                                  {getTimingText(
+                                    facility.timings[day as keyof Timings],
+                                  )}
+                                </span>
+                              </div>
+                            ))}
                         </div>
                       </motion.div>
                     )}
@@ -3084,7 +3357,9 @@ export default function ViewDetailsClient({
             )}
           </div>
           <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Address</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              Address
+            </h2>
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <span className="text-gray-600">City</span>
@@ -3096,11 +3371,27 @@ export default function ViewDetailsClient({
                 <span className="text-gray-600">Country</span>
                 <span>{facility.country}</span>
               </div>
-              <div className="w-full h-[250px] rounded-lg overflow-hidden cursor-pointer relative border border-gray-200" onClick={() => {
-                  const address = encodeURIComponent(`${facility.address}, ${facility.city}, ${facility.state}, ${facility.pincode}, ${facility.country}`);
-                  window.open(`https://www.google.com/maps/search/?api=1&query=${address}`, "_blank");
-                }}>
-                <iframe width="100%" height="100%" style={{ border: 0 }} loading="lazy" allowFullScreen referrerPolicy="no-referrer-when-downgrade" src={mapUrl || ""} />
+              <div
+                className="w-full h-[250px] rounded-lg overflow-hidden cursor-pointer relative border border-gray-200"
+                onClick={() => {
+                  const address = encodeURIComponent(
+                    `${facility.address}, ${facility.city}, ${facility.state}, ${facility.pincode}, ${facility.country}`,
+                  );
+                  window.open(
+                    `https://www.google.com/maps/search/?api=1&query=${address}`,
+                    "_blank",
+                  );
+                }}
+              >
+                <iframe
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={mapUrl || ""}
+                />
                 <div className="absolute inset-0 bg-transparent hover:bg-black/5 transition-colors" />
               </div>
             </div>
@@ -3117,9 +3408,11 @@ export default function ViewDetailsClient({
                   </div>
                   <div className="flex justify-between">
                     <span>
-                      Base Price {unitCount > 1 || bookingSeats > 1 ? (
+                      Base Price{" "}
+                      {unitCount > 1 || bookingSeats > 1 ? (
                         <>
-                          ({bookingSeats} × ₹{(basePrice / (unitCount * bookingSeats)).toFixed(2)})
+                          ({bookingSeats} × ₹
+                          {(basePrice / (unitCount * bookingSeats)).toFixed(2)})
                         </>
                       ) : (
                         ""
@@ -3139,31 +3432,52 @@ export default function ViewDetailsClient({
                   </div>
                 </div>
                 <div className="text-sm text-gray-600">
-                  {selectedPlan?.name === "Monthly" && `for ${unitCount} month${unitCount > 1 ? "s" : ""}`}
-                  {selectedPlan?.name === "Annual" && `for ${unitCount} year${unitCount > 1 ? "s" : ""}`}
-                  {selectedPlan?.name === "Weekly" && `for ${unitCount} week${unitCount > 1 ? "s" : ""}`}
-                  {selectedPlan?.name === "One Day (24 Hours)" && `for ${unitCount} day${unitCount > 1 ? "s" : ""}`}
-                  {selectedPlan?.name === "Hourly" && `for ${unitCount} hour${unitCount > 1 ? "s" : ""}`}
+                  {selectedPlan?.name === "Monthly" &&
+                    `for ${unitCount} month${unitCount > 1 ? "s" : ""}`}
+                  {selectedPlan?.name === "Annual" &&
+                    `for ${unitCount} year${unitCount > 1 ? "s" : ""}`}
+                  {selectedPlan?.name === "Weekly" &&
+                    `for ${unitCount} week${unitCount > 1 ? "s" : ""}`}
+                  {selectedPlan?.name === "One Day (24 Hours)" &&
+                    `for ${unitCount} day${unitCount > 1 ? "s" : ""}`}
+                  {selectedPlan?.name === "Hourly" &&
+                    `for ${unitCount} hour${unitCount > 1 ? "s" : ""}`}
                 </div>
               </div>
               <div className="p-6">
                 <div className="mb-6">
-                  <h3 className="text-sm font-medium mb-3">Choose Booking Duration</h3>
+                  <h3 className="text-sm font-medium mb-3">
+                    Choose Booking Duration
+                  </h3>
                   {sortedRentalPlans.map((plan) => {
                     const isSelected = selectedPlan?.name === plan.name;
-                    const fixedFeePerUnit = getFixedServiceFee(facility?.facilityType || "");
+                    const fixedFeePerUnit = getFixedServiceFee(
+                      facility?.facilityType || "",
+                    );
                     let fallbackPrice;
                     if (session?.user) {
-                      if (session?.user && !isProfileLoading && isExisting === false) {
-                        const distanceBasedFee = plan.price * unitCount * bookingSeats * 0.07;
-                        fallbackPrice = plan.price * unitCount * bookingSeats + distanceBasedFee;
+                      if (
+                        session?.user &&
+                        !isProfileLoading &&
+                        isExisting === false
+                      ) {
+                        const distanceBasedFee =
+                          plan.price * unitCount * bookingSeats * 0.07;
+                        fallbackPrice =
+                          plan.price * unitCount * bookingSeats +
+                          distanceBasedFee;
                       } else {
-                        const fixedFee = fixedFeePerUnit * unitCount * bookingSeats;
-                        fallbackPrice = plan.price * unitCount * bookingSeats + fixedFee;
+                        const fixedFee =
+                          fixedFeePerUnit * unitCount * bookingSeats;
+                        fallbackPrice =
+                          plan.price * unitCount * bookingSeats + fixedFee;
                       }
                     } else {
-                      const distanceBasedFee = plan.price * unitCount * bookingSeats * 0.07;
-                      fallbackPrice = plan.price * unitCount * bookingSeats + distanceBasedFee;
+                      const distanceBasedFee =
+                        plan.price * unitCount * bookingSeats * 0.07;
+                      fallbackPrice =
+                        plan.price * unitCount * bookingSeats +
+                        distanceBasedFee;
                     }
                     const totalPrice = Math.round(fallbackPrice);
                     return (
@@ -3178,28 +3492,44 @@ export default function ViewDetailsClient({
                         }}
                         className={`w-full flex items-center justify-between p-3 mt-3 rounded-lg border transition-all ${isSelected ? "border-primary bg-primary/5 text-primary" : "border-gray-200 hover:border-primary/50"}`}
                       >
-                        <span className="font-medium">{plan.name === "One Day (24 Hours)" ? "Daily" : plan.name}</span>
+                        <span className="font-medium">
+                          {plan.name === "One Day (24 Hours)"
+                            ? "Daily"
+                            : plan.name}
+                        </span>
                         {totalPrice.toLocaleString()}
                       </button>
                     );
                   })}
                 </div>
                 <div className="mb-6">
-                  <h3 className="text-sm font-medium mb-3">Choose Booking Seats</h3>
+                  <h3 className="text-sm font-medium mb-3">
+                    Choose Booking Seats
+                  </h3>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200">
-                      <span className="text-sm font-medium">Number of Seats</span>
+                      <span className="text-sm font-medium">
+                        Number of Seats
+                      </span>
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={() => setBookingSeats(Math.max(1, bookingSeats - 1))}
+                          onClick={() =>
+                            setBookingSeats(Math.max(1, bookingSeats - 1))
+                          }
                           className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 hover:border-primary/50 transition-colors"
                           type="button"
                         >
                           <span className="text-lg">-</span>
                         </button>
-                        <span className="w-8 text-center font-medium">{bookingSeats}</span>
+                        <span className="w-8 text-center font-medium">
+                          {bookingSeats}
+                        </span>
                         <button
-                          onClick={() => setBookingSeats((prev) => Math.min(getMaxSeats(), prev + 1))}
+                          onClick={() =>
+                            setBookingSeats((prev) =>
+                              Math.min(getMaxSeats(), prev + 1),
+                            )
+                          }
                           disabled={bookingSeats >= getMaxSeats()}
                           className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 hover:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           type="button"
@@ -3211,14 +3541,21 @@ export default function ViewDetailsClient({
                     {priceDetails && (
                       <div className="flex justify-between p-3 rounded-lg border border-gray-200">
                         <span className="text-sm font-medium">Total Price</span>
-                        <span className="text-sm font-semibold text-primary">₹{priceDetails.finalPrice.toLocaleString()}</span>
+                        <span className="text-sm font-semibold text-primary">
+                          ₹{priceDetails.finalPrice.toLocaleString()}
+                        </span>
                       </div>
                     )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   <div>
-                    <Label htmlFor="date-select" className="text-sm font-medium mb-1.5 block">Choose Date</Label>
+                    <Label
+                      htmlFor="date-select"
+                      className="text-sm font-medium mb-1.5 block"
+                    >
+                      Choose Date
+                    </Label>
                     <div className="relative">
                       <DatePicker
                         selected={selectedDate}
@@ -3229,13 +3566,20 @@ export default function ViewDetailsClient({
                         wrapperClassName="w-full"
                         popperClassName="z-50"
                         popperPlacement="bottom-start"
-                        customInput={<Input id="date-select" className="pl-3 pr-8" />}
+                        customInput={
+                          <Input id="date-select" className="pl-3 pr-8" />
+                        }
                       />
                       <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="time-select" className="text-sm font-medium mb-1.5 block">Choose Time</Label>
+                    <Label
+                      htmlFor="time-select"
+                      className="text-sm font-medium mb-1.5 block"
+                    >
+                      Choose Time
+                    </Label>
                     <select
                       id="time-select"
                       value={selectedTime}
@@ -3244,7 +3588,9 @@ export default function ViewDetailsClient({
                     >
                       <option value="">Select time</option>
                       {timeSlots.map((time) => (
-                        <option key={time} value={time}>{time}</option>
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -3272,8 +3618,12 @@ export default function ViewDetailsClient({
         <div className="mb-16">
           <h2 className="text-2xl font-bold mb-6 text-gray-900">
             More facilities from{" "}
-            {facility.serviceProvider?.serviceName && facility.serviceProvider?._id ? (
-              <Link href={`/ViewProvider/${facility.serviceProvider._id}`} className="font-bold text-green-600 hover:text-green-700 hover:underline cursor-pointer">
+            {facility.serviceProvider?.serviceName &&
+            facility.serviceProvider?._id ? (
+              <Link
+                href={`/ViewProvider/${facility.serviceProvider._id}`}
+                className="font-bold text-green-600 hover:text-green-700 hover:underline cursor-pointer"
+              >
                 {facility.serviceProvider.serviceName}
               </Link>
             ) : (
@@ -3291,11 +3641,17 @@ export default function ViewDetailsClient({
               <div className="overflow-x-auto pb-4 hide-scrollbar">
                 <div className="flex gap-4">
                   {relatedFacilities.map((relatedFacility) => (
-                    <div key={relatedFacility._id} style={{ width: "300px", height: "400px" }} className="flex-shrink-0">
+                    <div
+                      key={relatedFacility._id}
+                      style={{ width: "300px", height: "400px" }}
+                      className="flex-shrink-0"
+                    >
                       <FacilityCard
                         facility={relatedFacility}
                         isHovered={hoveredFacilityId === relatedFacility._id}
-                        onMouseEnter={() => setHoveredFacilityId(relatedFacility._id)}
+                        onMouseEnter={() =>
+                          setHoveredFacilityId(relatedFacility._id)
+                        }
                         onMouseLeave={() => setHoveredFacilityId(null)}
                         isFeatured={relatedFacility.isFeatured}
                         className="h-full"
@@ -3306,52 +3662,72 @@ export default function ViewDetailsClient({
               </div>
             ) : (
               <div className="bg-gray-50 rounded-lg p-8 text-center">
-                <p className="text-gray-500">No other facilities available from this provider.</p>
-                {facility.serviceProvider?.serviceName && facility.serviceProvider?._id && (
-                  <p className="text-sm text-gray-400 mt-2">
-                    This is the only facility listed by{" "}
-                    <Link href={`/ViewProvider/${facility.serviceProvider._id}`} className="text-green-600 hover:text-green-700 hover:underline cursor-pointer">
-                      {facility.serviceProvider.serviceName}
-                    </Link>
-                    .
-                  </p>
-                )}
+                <p className="text-gray-500">
+                  No other facilities available from this provider.
+                </p>
+                {facility.serviceProvider?.serviceName &&
+                  facility.serviceProvider?._id && (
+                    <p className="text-sm text-gray-400 mt-2">
+                      This is the only facility listed by{" "}
+                      <Link
+                        href={`/ViewProvider/${facility.serviceProvider._id}`}
+                        className="text-green-600 hover:text-green-700 hover:underline cursor-pointer"
+                      >
+                        {facility.serviceProvider.serviceName}
+                      </Link>
+                      .
+                    </p>
+                  )}
               </div>
             )}
           </div>
         </div>
       )}
-      <Reviews facilityId={facilityId} serviceProvider={facility.serviceProviderId} />
-      {isFullscreen && facility.details.images && facility.details.images.length > 0 && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
-          <div className="relative w-full h-full flex items-center justify-center">
-            <button className="absolute top-4 right-4 text-white p-2 rounded-full hover:bg-white/10 transition-colors z-10" onClick={() => setIsFullscreen(false)}>
-              <X className="h-8 w-8" />
-            </button>
-            {facility.details.images.length > 1 && (
-              <>
-                <button className="absolute left-4 text-white p-2 rounded-full hover:bg-white/10 transition-colors z-10" onClick={previousImage}>
-                  <ChevronLeft className="h-8 w-8" />
-                </button>
-                <button className="absolute right-4 text-white p-2 rounded-full hover:bg-white/10 transition-colors z-10" onClick={nextImage}>
-                  <ChevronRight className="h-8 w-8" />
-                </button>
-              </>
-            )}
-            <div className="relative w-full h-full max-w-5xl max-h-[80vh] flex items-center justify-center">
-              <Image
-                src={facility.details.images[fullscreenIndex]}
-                alt={`${facility.details.name} - Image ${fullscreenIndex + 1}`}
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-              {fullscreenIndex + 1} / {facility.details.images.length}
+      <Reviews
+        facilityId={facilityId}
+        serviceProvider={facility.serviceProviderId}
+      />
+      {isFullscreen &&
+        facility.details.images &&
+        facility.details.images.length > 0 && (
+          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+            <div className="relative w-full h-full flex items-center justify-center">
+              <button
+                className="absolute top-4 right-4 text-white p-2 rounded-full hover:bg-white/10 transition-colors z-10"
+                onClick={() => setIsFullscreen(false)}
+              >
+                <X className="h-8 w-8" />
+              </button>
+              {facility.details.images.length > 1 && (
+                <>
+                  <button
+                    className="absolute left-4 text-white p-2 rounded-full hover:bg-white/10 transition-colors z-10"
+                    onClick={previousImage}
+                  >
+                    <ChevronLeft className="h-8 w-8" />
+                  </button>
+                  <button
+                    className="absolute right-4 text-white p-2 rounded-full hover:bg-white/10 transition-colors z-10"
+                    onClick={nextImage}
+                  >
+                    <ChevronRight className="h-8 w-8" />
+                  </button>
+                </>
+              )}
+              <div className="relative w-full h-full max-w-5xl max-h-[80vh] flex items-center justify-center">
+                <Image
+                  src={facility.details.images[fullscreenIndex]}
+                  alt={`${facility.details.name} - Image ${fullscreenIndex + 1}`}
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                {fullscreenIndex + 1} / {facility.details.images.length}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       {facility && (
         <BookingModal
           isOpen={isBookingModalOpen}
@@ -3359,13 +3735,16 @@ export default function ViewDetailsClient({
           facility={facility}
         />
       )}
-      <Dialog open={isAffiliateDialogOpen} onOpenChange={(open) => {
-        setIsAffiliateDialogOpen(open);
-        if (!open) {
-          setAffiliateMailId("");
-          setAffiliateContactNumber("");
-        }
-      }}>
+      <Dialog
+        open={isAffiliateDialogOpen}
+        onOpenChange={(open) => {
+          setIsAffiliateDialogOpen(open);
+          if (!open) {
+            setAffiliateMailId("");
+            setAffiliateContactNumber("");
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Enter Your Details</DialogTitle>
@@ -3393,7 +3772,7 @@ export default function ViewDetailsClient({
                 required
               />
             </div>
-             <div className="grid gap-2">
+            <div className="grid gap-2">
               <Label htmlFor="affiliate-contact">Contact Name</Label>
               <Input
                 id="affiliate-contact"
