@@ -13,6 +13,7 @@ import { AMENITY_ICONS } from '@/components'
 import { AnimatePresence, motion } from 'framer-motion'
 import EventService from "@/app/(dashboard)/service-provider/events/services/event-api-services"
 import EventCards from '@/app/(landing)/events-page/components/eventcard'
+import axios from 'axios'
 
 // Define interfaces
 interface DayTiming {
@@ -185,6 +186,8 @@ interface Pagination {
   hasMore: boolean
 }
 
+const apiUrl = "http://localhost:3001";
+
 export default function ViewProviderClient({
   providerId
 }: {
@@ -306,11 +309,11 @@ export default function ViewProviderClient({
             provider.pincode
           ].filter(Boolean).join(', ')
           
-          const mapResponse = await fetch(`/api/maps?query=${encodeURIComponent(fullAddress)}`)
-          if (mapResponse.ok) {
-            const mapData = await mapResponse.json()
-            setMapUrl(mapData.embedUrl)
-          }
+          const mapResponse = await axios.get(`${apiUrl}/api/maps?query=${encodeURIComponent(fullAddress)}`)
+          if (mapResponse.data && mapResponse.data.embedUrl) {
+    setMapUrl(mapResponse.data.embedUrl); 
+  }
+
         }
       } catch (error) {
         console.error('Error fetching service provider:', error)

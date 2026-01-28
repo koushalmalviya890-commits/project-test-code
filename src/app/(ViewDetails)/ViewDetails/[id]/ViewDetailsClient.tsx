@@ -187,7 +187,7 @@ export default function ViewDetailsClient({
   const [loadingRelatedFacilities, setLoadingRelatedFacilities] =
     useState(false);
   const [hoveredFacilityId, setHoveredFacilityId] = useState<string | null>(
-    null
+    null,
   );
 
   // New state for venue timings
@@ -207,6 +207,7 @@ export default function ViewDetailsClient({
   const [couponCode, setCouponCode] = useState("");
   const [isCouponLoading, setIsCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState("");
+  const apiUrl = "http://localhost:3001";
 
   // Add this useEffect to auto-select if only one room
   // useEffect(() => {
@@ -312,8 +313,8 @@ export default function ViewDetailsClient({
   ]);
   // console.log("testing total", priceDetails);
   // Update your price display to use priceDetails
-  const currentBaseRent = selectedPlan 
-    ? selectedPlan.price * unitCount * bookingSeats 
+  const currentBaseRent = selectedPlan
+    ? selectedPlan.price * unitCount * bookingSeats
     : 0;
   const basePrice =
     (priceDetails?.basePrice ?? 0) + (priceDetails?.fixedFee ?? 0);
@@ -324,10 +325,15 @@ export default function ViewDetailsClient({
   const gstOnServiceFee =
     priceDetails?.gstOnServiceFee ?? fixedServiceFee * 0.18;
   // console.log(fixedServiceFee, `vshvchscvhjcv`);
-const gstAmount = (priceDetails?.hasGST && priceDetails?.hasGST === true && (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
-    ? (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
-      ? priceDetails.gstAmount
-      : (currentBaseRent * 0.18) : 0);
+  const gstAmount =
+    priceDetails?.hasGST &&
+    priceDetails?.hasGST === true &&
+    priceDetails?.gstAmount &&
+    priceDetails.gstAmount > 0
+      ? priceDetails?.gstAmount && priceDetails.gstAmount > 0
+        ? priceDetails.gstAmount
+        : currentBaseRent * 0.18
+      : 0;
   console.log(gstAmount, `for gast amount only`);
   const displayTotalGst = gstAmount + gstOnServiceFee;
   console.log(displayTotalGst);
@@ -349,9 +355,12 @@ const gstAmount = (priceDetails?.hasGST && priceDetails?.hasGST === true && (pri
         // Fetch the map URL once we have the facility data
         if (data && data.address) {
           const address = `${data.address}, ${data.city}, ${data.state}, ${data.pincode}, ${data.country}`;
+
+          // Use the apiUrl variable here
           const mapResponse = await fetch(
-            `/api/maps?query=${encodeURIComponent(address)}`
+            `${apiUrl}/api/maps?query=${encodeURIComponent(address)}`,
           );
+
           if (mapResponse.ok) {
             const mapData = await mapResponse.json();
             setMapUrl(mapData.embedUrl);
@@ -528,7 +537,7 @@ const gstAmount = (priceDetails?.hasGST && priceDetails?.hasGST === true && (pri
             couponCode: couponCode.toUpperCase(),
             bookingAmount: totalAmount,
           }),
-        }
+        },
       );
 
       const data = await res.json();
@@ -696,7 +705,7 @@ const gstAmount = (priceDetails?.hasGST && priceDetails?.hasGST === true && (pri
         {
           duration: 5000,
           icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-        }
+        },
       );
       return;
     }
@@ -758,7 +767,7 @@ const gstAmount = (priceDetails?.hasGST && priceDetails?.hasGST === true && (pri
             : parseInt(hours),
         parseInt(minutes) || 0,
         0, // Set seconds to 0
-        0 // Set milliseconds to 0
+        0, // Set milliseconds to 0
       );
 
       // Calculate end date based on rental plan
@@ -842,15 +851,22 @@ const gstAmount = (priceDetails?.hasGST && priceDetails?.hasGST === true && (pri
         gstOnServiceFee: isExisting
           ? calculatedFixedServiceFee * unitCount * bookingSeats * 0.18
           : selectedPlan.price * unitCount * bookingSeats * 0.07 * 0.18,
-gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
-    ? priceDetails.gstAmount
-    : (currentBaseRent * 0.18),
-       totalBeforeDiscount: 
-            (selectedPlan.price * unitCount * bookingSeats) + // Base
-            (priceDetails?.fixedFee ?? (isExisting ? calculatedFixedServiceFee * unitCount * bookingSeats : selectedPlan.price * unitCount * bookingSeats * 0.07)) + // Fee
-            (priceDetails?.gstOnServiceFee ?? (isExisting ? calculatedFixedServiceFee * unitCount * bookingSeats * 0.18 : selectedPlan.price * unitCount * bookingSeats * 0.07 * 0.18)) + // GST on Fee
-            (priceDetails?.gstAmount ?? 0), // GST on Base
-       discount: appliedCoupon ? appliedCoupon.discountAmount : 0,
+        gstAmount:
+          priceDetails?.gstAmount && priceDetails.gstAmount > 0
+            ? priceDetails.gstAmount
+            : currentBaseRent * 0.18,
+        totalBeforeDiscount:
+          selectedPlan.price * unitCount * bookingSeats + // Base
+          (priceDetails?.fixedFee ??
+            (isExisting
+              ? calculatedFixedServiceFee * unitCount * bookingSeats
+              : selectedPlan.price * unitCount * bookingSeats * 0.07)) + // Fee
+          (priceDetails?.gstOnServiceFee ??
+            (isExisting
+              ? calculatedFixedServiceFee * unitCount * bookingSeats * 0.18
+              : selectedPlan.price * unitCount * bookingSeats * 0.07 * 0.18)) + // GST on Fee
+          (priceDetails?.gstAmount ?? 0), // GST on Base
+        discount: appliedCoupon ? appliedCoupon.discountAmount : 0,
         amount: getFinalAmount(),
         // }
         // Coupon Details
@@ -890,7 +906,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
 
           // Redirect to booking details page
           const encodedData = encodeURIComponent(
-            JSON.stringify(bookingDataForPayment)
+            JSON.stringify(bookingDataForPayment),
           );
           router.push(`/BookingDetails?data=${encodedData}`);
         } else {
@@ -917,7 +933,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
         {
           duration: 5000,
           icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-        }
+        },
       );
       setProcessingPayment(false);
     }
@@ -932,7 +948,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
         case "ArrowRight":
           if (facility?.details?.images) {
             setFullscreenIndex(
-              (prev) => (prev + 1) % facility.details.images.length
+              (prev) => (prev + 1) % facility.details.images.length,
             );
           }
           break;
@@ -941,7 +957,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
             setFullscreenIndex(
               (prev) =>
                 (prev - 1 + facility.details.images.length) %
-                facility.details.images.length
+                facility.details.images.length,
             );
           }
           break;
@@ -970,12 +986,12 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
 
         // Fetch facilities from the API using serviceProviderId
         const response = await fetch(
-          `/api/facilities/by-provider/${facility.serviceProviderId}`
+          `/api/facilities/by-provider/${facility.serviceProviderId}`,
         );
 
         if (!response.ok) {
           throw new Error(
-            `Failed to fetch related facilities: ${response.status}`
+            `Failed to fetch related facilities: ${response.status}`,
           );
         }
 
@@ -1060,7 +1076,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
 
       try {
         const response = await fetch(
-          `/api/bookings/failed?facilityId=${facilityId}`
+          `/api/bookings/failed?facilityId=${facilityId}`,
         );
         if (response.ok) {
           const data = await response.json();
@@ -1112,7 +1128,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
     setFullscreenIndex(
       (prev) =>
         (prev - 1 + facility.details.images.length) %
-        facility.details.images.length
+        facility.details.images.length,
     );
   };
 
@@ -1140,7 +1156,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
         {
           duration: 5000,
           icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-        }
+        },
       );
       return;
     }
@@ -1592,7 +1608,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                         </div>
                         <div className="text-base sm:text-lg font-medium text-gray-800">
                           {facility.details.studioDetails.suitableFor.join(
-                            ", "
+                            ", ",
                           )}
                         </div>
                       </div>
@@ -1862,7 +1878,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                     <div className="flex items-center ml-2">
                       <span className="text-gray-700 mr-2 text-sm sm:text-base">
                         {getTimingText(
-                          facility.timings[currentDay as keyof Timings]
+                          facility.timings[currentDay as keyof Timings],
                         )}
                       </span>
                       {showAllTimings ? (
@@ -1904,7 +1920,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                                 </span>
                                 <span className="text-gray-700 text-sm sm:text-base">
                                   {getTimingText(
-                                    facility.timings[day as keyof Timings]
+                                    facility.timings[day as keyof Timings],
                                   )}
                                 </span>
                               </div>
@@ -1947,11 +1963,11 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                 className="w-full h-[200px] sm:h-[250px] rounded-lg overflow-hidden cursor-pointer relative border border-gray-200"
                 onClick={() => {
                   const address = encodeURIComponent(
-                    `${facility.address}, ${facility.city}, ${facility.state}, ${facility.pincode}, ${facility.country}`
+                    `${facility.address}, ${facility.city}, ${facility.state}, ${facility.pincode}, ${facility.country}`,
                   );
                   window.open(
                     `https://www.google.com/maps/search/?api=1&query=${address}`,
-                    "_blank"
+                    "_blank",
                   );
                 }}
               >
@@ -2089,7 +2105,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                                 </div>
                               )}
                             </div>
-                          )
+                          ),
                         )}
                       </div>
 
@@ -2360,34 +2376,34 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                                       : parseInt(hours) === 12
                                         ? 0
                                         : parseInt(hours),
-                                    parseInt(minutes) || 0
+                                    parseInt(minutes) || 0,
                                   );
 
                                   const endDate = new Date(startDate);
                                   switch (selectedPlan.name) {
                                     case "Annual":
                                       endDate.setFullYear(
-                                        endDate.getFullYear() + unitCount
+                                        endDate.getFullYear() + unitCount,
                                       );
                                       break;
                                     case "Monthly":
                                       endDate.setMonth(
-                                        endDate.getMonth() + unitCount
+                                        endDate.getMonth() + unitCount,
                                       );
                                       break;
                                     case "Weekly":
                                       endDate.setDate(
-                                        endDate.getDate() + 7 * unitCount
+                                        endDate.getDate() + 7 * unitCount,
                                       );
                                       break;
                                     case "One Day (24 Hours)":
                                       endDate.setDate(
-                                        endDate.getDate() + unitCount
+                                        endDate.getDate() + unitCount,
                                       );
                                       break;
                                     case "Hourly":
                                       endDate.setHours(
-                                        endDate.getHours() + unitCount
+                                        endDate.getHours() + unitCount,
                                       );
                                       break;
                                   }
@@ -2484,25 +2500,35 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                           Base Price{" "}
                           {unitCount > 1 || bookingSeats > 1 ? (
                             <>
-                             ({bookingSeats} × ₹
-{selectedPlan
-  ? (() => {
-      const basePrice = selectedPlan.price; // per-unit base price
-      const serviceFee = isExisting === true
-        ? getFixedServiceFee(facility?.facilityType || "")
-        : basePrice * 0.07; // per-unit service fee
-      const companyGstPerUnit = 0.18 * serviceFee; // GST on service fee (per unit)
-      const gstTotal = priceDetails?.gstAmount && priceDetails.gstAmount > 0
-        ? priceDetails.gstAmount
-        : 0;
-      const unitCountForDivision = Math.max(1, unitCount * bookingSeats);
-      const gstPerUnit = gstTotal ? gstTotal / unitCountForDivision : 0;
+                              ({bookingSeats} × ₹
+                              {selectedPlan
+                                ? (() => {
+                                    const basePrice = selectedPlan.price; // per-unit base price
+                                    const serviceFee =
+                                      isExisting === true
+                                        ? getFixedServiceFee(
+                                            facility?.facilityType || "",
+                                          )
+                                        : basePrice * 0.07; // per-unit service fee
+                                    const companyGstPerUnit = 0.18 * serviceFee; // GST on service fee (per unit)
+                                    const gstTotal =
+                                      priceDetails?.gstAmount &&
+                                      priceDetails.gstAmount > 0
+                                        ? priceDetails.gstAmount
+                                        : 0;
+                                    const unitCountForDivision = Math.max(
+                                      1,
+                                      unitCount * bookingSeats,
+                                    );
+                                    const gstPerUnit = gstTotal
+                                      ? gstTotal / unitCountForDivision
+                                      : 0;
 
-      const pricePerUnit = basePrice + serviceFee;
-      return pricePerUnit.toFixed(2);
-    })()
-  : "0.00"}
-)
+                                    const pricePerUnit = basePrice + serviceFee;
+                                    return pricePerUnit.toFixed(2);
+                                  })()
+                                : "0.00"}
+                              )
                             </>
                           ) : null}
                         </span>
@@ -2514,7 +2540,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                                 const serviceFee =
                                   isExisting === true
                                     ? getFixedServiceFee(
-                                        facility?.facilityType || ""
+                                        facility?.facilityType || "",
                                       ) *
                                       unitCount *
                                       bookingSeats
@@ -2534,14 +2560,14 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                       </div>
 
                       {/* GST if applicable */}
-{/* GST if applicable (START OF CORRECTED LOGIC) */}
-{displayTotalGst > 0 && (
-      <div className="flex justify-between text-sm sm:text-base">
-        <span>GST (18%)</span>
-        <span>₹{displayTotalGst.toFixed(2)}</span>
-      </div>
-    )}
-{/* GST if applicable (END OF CORRECTED LOGIC) */}
+                      {/* GST if applicable (START OF CORRECTED LOGIC) */}
+                      {displayTotalGst > 0 && (
+                        <div className="flex justify-between text-sm sm:text-base">
+                          <span>GST (18%)</span>
+                          <span>₹{displayTotalGst.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {/* GST if applicable (END OF CORRECTED LOGIC) */}
 
                       {/* Total Fare */}
                       <div className="flex justify-between font-semibold pt-3 border-t text-sm sm:text-base">
@@ -2650,7 +2676,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
 
                         const basePrice = plan.price;
                         const fixedFeePerUnit = getFixedServiceFee(
-                          facility?.facilityType || ""
+                          facility?.facilityType || "",
                         );
                         let planServiceFee = 0;
                         if (session?.user && isExisting === true) {
@@ -2771,7 +2797,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                                   <button
                                     onClick={() =>
                                       setBookingSeats(
-                                        Math.max(1, bookingSeats - 1)
+                                        Math.max(1, bookingSeats - 1),
                                       )
                                     }
                                     className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full border border-gray-200 hover:border-primary/50 transition-colors"
@@ -2822,7 +2848,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                                   <button
                                     onClick={() =>
                                       setBookingSeats(
-                                        Math.max(1, bookingSeats - 1)
+                                        Math.max(1, bookingSeats - 1),
                                       )
                                     }
                                     className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full border border-gray-200 hover:border-primary/50 transition-colors"
@@ -2838,7 +2864,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                                   <button
                                     onClick={() =>
                                       setBookingSeats((prev) =>
-                                        Math.min(getMaxSeats(), prev + 1)
+                                        Math.min(getMaxSeats(), prev + 1),
                                       )
                                     }
                                     disabled={bookingSeats >= getMaxSeats()}
@@ -2896,7 +2922,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                                     return `₹${totalAmount.toFixed(2)}`;
                                   })()
                                 : "₹0.00"} */}
-                                  ₹{totalAmount?.toFixed(2) || "0.00"}
+                              ₹{totalAmount?.toFixed(2) || "0.00"}
                             </span>
                           </div>
                         )}
@@ -3148,34 +3174,34 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                                     : parseInt(hours) === 12
                                       ? 0
                                       : parseInt(hours),
-                                  parseInt(minutes) || 0
+                                  parseInt(minutes) || 0,
                                 );
 
                                 const endDate = new Date(startDate);
                                 switch (selectedPlan.name) {
                                   case "Annual":
                                     endDate.setFullYear(
-                                      endDate.getFullYear() + unitCount
+                                      endDate.getFullYear() + unitCount,
                                     );
                                     break;
                                   case "Monthly":
                                     endDate.setMonth(
-                                      endDate.getMonth() + unitCount
+                                      endDate.getMonth() + unitCount,
                                     );
                                     break;
                                   case "Weekly":
                                     endDate.setDate(
-                                      endDate.getDate() + 7 * unitCount
+                                      endDate.getDate() + 7 * unitCount,
                                     );
                                     break;
                                   case "One Day (24 Hours)":
                                     endDate.setDate(
-                                      endDate.getDate() + unitCount
+                                      endDate.getDate() + unitCount,
                                     );
                                     break;
                                   case "Hourly":
                                     endDate.setHours(
-                                      endDate.getHours() + unitCount
+                                      endDate.getHours() + unitCount,
                                     );
                                     break;
                                 }
@@ -3232,23 +3258,33 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                             <>
                               ({bookingSeats} × ₹
                               {selectedPlan
-  ? (() => {
-      const basePrice = selectedPlan.price; // per-unit base price
-      const serviceFee = isExisting === true
-        ? getFixedServiceFee(facility?.facilityType || "")
-        : basePrice * 0.07; // per-unit service fee
-      const companyGstPerUnit = 0.18 * serviceFee; // GST on service fee (per unit)
-      const gstTotal = priceDetails?.gstAmount && priceDetails.gstAmount > 0
-        ? priceDetails.gstAmount
-        : 0;
-      const unitCountForDivision = Math.max(1, unitCount * bookingSeats);
-      const gstPerUnit = gstTotal ? gstTotal / unitCountForDivision : 0;
+                                ? (() => {
+                                    const basePrice = selectedPlan.price; // per-unit base price
+                                    const serviceFee =
+                                      isExisting === true
+                                        ? getFixedServiceFee(
+                                            facility?.facilityType || "",
+                                          )
+                                        : basePrice * 0.07; // per-unit service fee
+                                    const companyGstPerUnit = 0.18 * serviceFee; // GST on service fee (per unit)
+                                    const gstTotal =
+                                      priceDetails?.gstAmount &&
+                                      priceDetails.gstAmount > 0
+                                        ? priceDetails.gstAmount
+                                        : 0;
+                                    const unitCountForDivision = Math.max(
+                                      1,
+                                      unitCount * bookingSeats,
+                                    );
+                                    const gstPerUnit = gstTotal
+                                      ? gstTotal / unitCountForDivision
+                                      : 0;
 
-      const pricePerUnit = basePrice + serviceFee;
-      return pricePerUnit.toFixed(2);
-    })()
-  : "0.00"}
-)
+                                    const pricePerUnit = basePrice + serviceFee;
+                                    return pricePerUnit.toFixed(2);
+                                  })()
+                                : "0.00"}
+                              )
                             </>
                           ) : null}
                         </span>
@@ -3260,7 +3296,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                                 const serviceFee =
                                   isExisting === true
                                     ? getFixedServiceFee(
-                                        facility?.facilityType || ""
+                                        facility?.facilityType || "",
                                       ) *
                                       unitCount *
                                       bookingSeats
@@ -3272,9 +3308,7 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                                     ? priceDetails.gstAmount
                                     : 0;
 
-                                const finalTotalPrice =
-                                  basePrice +
-                                  serviceFee;
+                                const finalTotalPrice = basePrice + serviceFee;
 
                                 return `₹${finalTotalPrice.toFixed(2)}`;
                               })()
@@ -3283,12 +3317,12 @@ gstAmount: (priceDetails?.gstAmount && priceDetails.gstAmount > 0)
                       </div>
 
                       {/* GST */}
-                  {displayTotalGst > 0 && (
-      <div className="flex justify-between text-sm sm:text-base">
-        <span>GST (18%)</span>
-        <span>₹{displayTotalGst.toFixed(2)}</span>
-      </div>
-    )}
+                      {displayTotalGst > 0 && (
+                        <div className="flex justify-between text-sm sm:text-base">
+                          <span>GST (18%)</span>
+                          <span>₹{displayTotalGst.toFixed(2)}</span>
+                        </div>
+                      )}
 
                       {/* Subtotal before discount (only show if coupon is applied) */}
                       {appliedCoupon && (
