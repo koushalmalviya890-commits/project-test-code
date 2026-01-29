@@ -284,8 +284,8 @@ export default function ViewDetailsClient({
         const serviceFee =
           isExisting === true
             ? getFixedServiceFee(facility?.facilityType || "") *
-              unitCount *
-              bookingSeats
+            unitCount *
+            bookingSeats
             : basePrice * 0.07;
         const gstOnServiceFee = serviceFee * 0.18;
         const subtotal = basePrice + serviceFee;
@@ -330,9 +330,9 @@ export default function ViewDetailsClient({
   // console.log(fixedServiceFee, `vshvchscvhjcv`);
   const gstAmount =
     priceDetails?.hasGST &&
-    priceDetails?.hasGST === true &&
-    priceDetails?.gstAmount &&
-    priceDetails.gstAmount > 0
+      priceDetails?.hasGST === true &&
+      priceDetails?.gstAmount &&
+      priceDetails.gstAmount > 0
       ? priceDetails?.gstAmount && priceDetails.gstAmount > 0
         ? priceDetails.gstAmount
         : currentBaseRent * 0.18
@@ -469,15 +469,15 @@ export default function ViewDetailsClient({
   // Sort rental plans in the specified order
   const sortedRentalPlans = facility?.details?.rentalPlans
     ? [...facility.details.rentalPlans].sort((a, b) => {
-        const order = [
-          "Hourly",
-          "One Day (24 Hours)",
-          "Weekly",
-          "Monthly",
-          "Annual",
-        ];
-        return order.indexOf(a.name) - order.indexOf(b.name);
-      })
+      const order = [
+        "Hourly",
+        "One Day (24 Hours)",
+        "Weekly",
+        "Monthly",
+        "Annual",
+      ];
+      return order.indexOf(a.name) - order.indexOf(b.name);
+    })
     : [];
 
   // Set initial booking period if available
@@ -691,6 +691,8 @@ export default function ViewDetailsClient({
     }
   };
 
+  const base_url = "http://localhost:3001";
+
   const handleBookingSubmit = async () => {
     // Check if user is signed in
     if (!user) {
@@ -875,22 +877,35 @@ export default function ViewDetailsClient({
         // Coupon Details
         couponApplied: appliedCoupon
           ? {
-              couponCode: appliedCoupon.couponCode,
-              discount: appliedCoupon.discount,
-              discountAmount: appliedCoupon.discountAmount,
-              couponId: appliedCoupon.couponId,
-            }
+            couponCode: appliedCoupon.couponCode,
+            discount: appliedCoupon.discount,
+            discountAmount: appliedCoupon.discountAmount,
+            couponId: appliedCoupon.couponId,
+          }
           : null,
       };
 
       // console.log(bookingDetails)
 
       try {
-        const response = await fetch("/api/bookings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(bookingDetails), // ✅ This is correct, bookingDetails already has coupon
-        });
+        // const response = await fetch("/api/bookings", {
+        //   method: "POST",
+        //   headers: { "Content-Type": "application/json" },
+        //   body: JSON.stringify(bookingDetails), // ✅ This is correct, bookingDetails already has coupon
+        // });
+
+        const response = await fetch(
+          `${base_url}/api/bookings`,
+          {
+            method: "POST",
+            credentials: "include", // IMPORTANT (send JWT cookie)
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(bookingDetails),
+          }
+        );
+
 
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
@@ -1078,9 +1093,21 @@ export default function ViewDetailsClient({
       if (!user?.id) return;
 
       try {
+        // const response = await fetch(
+        //   `/api/bookings/failed?facilityId=${facilityId}`,
+        // );
+
         const response = await fetch(
-          `/api/bookings/failed?facilityId=${facilityId}`,
+          `${base_url}/api/bookings/failed?facilityId=${facilityId}`,
+          {
+            method: "GET",
+            credentials: "include", // IMPORTANT (send JWT cookie)
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
         );
+
         if (response.ok) {
           const data = await response.json();
           if (data.bookingId) {
@@ -1177,7 +1204,7 @@ export default function ViewDetailsClient({
       {facility.details.images && facility.details.images.length > 0 && (
         <div className="mb-6 sm:mb-8">
           {facility.details.images.length === 1 &&
-          !facility.details.videoLink ? (
+            !facility.details.videoLink ? (
             // Single image layout - full width (only when no video)
             <div className="relative aspect-[16/9] w-full">
               <Image
@@ -1193,7 +1220,7 @@ export default function ViewDetailsClient({
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3">
               <div className="col-span-1 sm:col-span-12 md:col-span-8 relative aspect-[16/9]">
                 {facility.details.videoLink &&
-                getYouTubeVideoId(facility.details.videoLink) ? (
+                  getYouTubeVideoId(facility.details.videoLink) ? (
                   <iframe
                     src={`https://www.youtube.com/embed/${getYouTubeVideoId(facility.details.videoLink)}`}
                     title={`${facility.details.name} Video`}
@@ -1655,7 +1682,7 @@ export default function ViewDetailsClient({
                   {/* Equipment Details */}
                   {facility.details.studioDetails.equipmentDetails &&
                     facility.details.studioDetails.equipmentDetails.length >
-                      0 && (
+                    0 && (
                       <>
                         {facility.details.studioDetails.equipmentDetails
                           .slice(0, 2)
@@ -1681,21 +1708,21 @@ export default function ViewDetailsClient({
                           ))}
                         {facility.details.studioDetails.equipmentDetails
                           .length > 2 && (
-                          <div className="inline-block border border-gray-200 rounded-md p-2 sm:p-3">
-                            <div className="flex items-center gap-2">
-                              <div>
-                                <div className="text-gray-500 text-xs mb-1">
-                                  More Equipment
-                                </div>
-                                <div className="text-base sm:text-lg font-medium text-gray-800">
-                                  +
-                                  {facility.details.studioDetails
-                                    .equipmentDetails.length - 2}
+                            <div className="inline-block border border-gray-200 rounded-md p-2 sm:p-3">
+                              <div className="flex items-center gap-2">
+                                <div>
+                                  <div className="text-gray-500 text-xs mb-1">
+                                    More Equipment
+                                  </div>
+                                  <div className="text-base sm:text-lg font-medium text-gray-800">
+                                    +
+                                    {facility.details.studioDetails
+                                      .equipmentDetails.length - 2}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        )}
+                          )}
                       </>
                     )}
                 </>
@@ -1735,7 +1762,7 @@ export default function ViewDetailsClient({
           <div className="flex items-center gap-3 mb-8 sm:mb-10 pb-6 border-b border-gray-100">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
               {facility.serviceProvider?.logoUrl &&
-              typeof facility.serviceProvider.logoUrl === "string" ? (
+                typeof facility.serviceProvider.logoUrl === "string" ? (
                 <Image
                   src={facility.serviceProvider.logoUrl}
                   alt={
@@ -1757,7 +1784,7 @@ export default function ViewDetailsClient({
               <p className="font-medium text-sm sm:text-base">
                 Hosted by{" "}
                 {facility.serviceProvider?.serviceName &&
-                facility.serviceProvider?._id ? (
+                  facility.serviceProvider?._id ? (
                   <Link
                     href={`/ViewProvider/${facility.serviceProvider._id}`}
                     className="font-bold text-green-600 hover:text-green-700 hover:underline cursor-pointer break-words"
@@ -2045,11 +2072,10 @@ export default function ViewDetailsClient({
                             <div
                               key={index}
                               onClick={() => setSelectedPlan(plan)}
-                              className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                                selectedPlan?.name === plan.name
-                                  ? "border-primary bg-primary/5"
-                                  : "border-gray-200 hover:border-primary/50"
-                              }`}
+                              className={`border rounded-lg p-4 cursor-pointer transition-all ${selectedPlan?.name === plan.name
+                                ? "border-primary bg-primary/5"
+                                : "border-gray-200 hover:border-primary/50"
+                                }`}
                             >
                               <div className="flex justify-between items-center">
                                 <div>
@@ -2159,7 +2185,7 @@ export default function ViewDetailsClient({
                     {/* Booking Form for Event Workspace */}
                     <div className="p-4 sm:p-6">
                       {/* {!session && ( */}
-                        {!user && (
+                      {!user && (
                         <div className="mb-4 p-3 sm:p-4 bg-gray-50 rounded-lg text-center">
                           <p className="text-xs sm:text-sm text-gray-600 mb-3">
                             Sign in to book this event space
@@ -2188,7 +2214,7 @@ export default function ViewDetailsClient({
                       )}
 
                       {/* {session?.user?.userType === "Service Provider" && ( */}
-                       {user?.userType === "Service Provider" && (
+                      {user?.userType === "Service Provider" && (
                         <div className="mb-4 p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg">
                           <p className="text-xs sm:text-sm text-amber-800">
                             Facility Partners cannot make bookings. Please use a
@@ -2441,7 +2467,7 @@ export default function ViewDetailsClient({
                                     : selectedPlan.name === "Weekly"
                                       ? `week${unitCount > 1 ? "s" : ""}`
                                       : selectedPlan.name ===
-                                          "One Day (24 Hours)"
+                                        "One Day (24 Hours)"
                                         ? `day${unitCount > 1 ? "s" : ""}`
                                         : `hour${unitCount > 1 ? "s" : ""}`}
                               </span>
@@ -2463,7 +2489,7 @@ export default function ViewDetailsClient({
                         disabled={
                           // !session ||
                           // session?.user?.userType === "Service Provider" ||
-                           !user ||
+                          !user ||
                           user?.userType === "Service Provider" ||
                           !selectedDate ||
                           !selectedTime ||
@@ -2478,16 +2504,16 @@ export default function ViewDetailsClient({
                             <span className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></span>
                             Processing...
                           </span>
-                        ) : 
-                        // session ? (
-                        user ? (
-                          // selectedRooms.length === 0 ? (
-                          //   "Select Rooms to Continue"
-                          // ) :
-                          "Reserve Event Space"
-                        ) : (
-                          "Sign in to Book"
-                        )}
+                        ) :
+                          // session ? (
+                          user ? (
+                            // selectedRooms.length === 0 ? (
+                            //   "Select Rooms to Continue"
+                            // ) :
+                            "Reserve Event Space"
+                          ) : (
+                            "Sign in to Book"
+                          )}
                       </Button>
                     </div>
                   </div>
@@ -2512,30 +2538,30 @@ export default function ViewDetailsClient({
                               ({bookingSeats} × ₹
                               {selectedPlan
                                 ? (() => {
-                                    const basePrice = selectedPlan.price; // per-unit base price
-                                    const serviceFee =
-                                      isExisting === true
-                                        ? getFixedServiceFee(
-                                            facility?.facilityType || "",
-                                          )
-                                        : basePrice * 0.07; // per-unit service fee
-                                    const companyGstPerUnit = 0.18 * serviceFee; // GST on service fee (per unit)
-                                    const gstTotal =
-                                      priceDetails?.gstAmount &&
+                                  const basePrice = selectedPlan.price; // per-unit base price
+                                  const serviceFee =
+                                    isExisting === true
+                                      ? getFixedServiceFee(
+                                        facility?.facilityType || "",
+                                      )
+                                      : basePrice * 0.07; // per-unit service fee
+                                  const companyGstPerUnit = 0.18 * serviceFee; // GST on service fee (per unit)
+                                  const gstTotal =
+                                    priceDetails?.gstAmount &&
                                       priceDetails.gstAmount > 0
-                                        ? priceDetails.gstAmount
-                                        : 0;
-                                    const unitCountForDivision = Math.max(
-                                      1,
-                                      unitCount * bookingSeats,
-                                    );
-                                    const gstPerUnit = gstTotal
-                                      ? gstTotal / unitCountForDivision
+                                      ? priceDetails.gstAmount
                                       : 0;
+                                  const unitCountForDivision = Math.max(
+                                    1,
+                                    unitCount * bookingSeats,
+                                  );
+                                  const gstPerUnit = gstTotal
+                                    ? gstTotal / unitCountForDivision
+                                    : 0;
 
-                                    const pricePerUnit = basePrice + serviceFee;
-                                    return pricePerUnit.toFixed(2);
-                                  })()
+                                  const pricePerUnit = basePrice + serviceFee;
+                                  return pricePerUnit.toFixed(2);
+                                })()
                                 : "0.00"}
                               )
                             </>
@@ -2544,26 +2570,26 @@ export default function ViewDetailsClient({
                         <span>
                           {selectedPlan
                             ? (() => {
-                                const basePrice =
-                                  selectedPlan.price * unitCount * bookingSeats;
-                                const serviceFee =
-                                  isExisting === true
-                                    ? getFixedServiceFee(
-                                        facility?.facilityType || "",
-                                      ) *
-                                      unitCount *
-                                      bookingSeats
-                                    : basePrice * 0.07;
-                                const companygst = 0.18 * serviceFee;
-                                const gstAmount =
-                                  priceDetails?.gstAmount &&
+                              const basePrice =
+                                selectedPlan.price * unitCount * bookingSeats;
+                              const serviceFee =
+                                isExisting === true
+                                  ? getFixedServiceFee(
+                                    facility?.facilityType || "",
+                                  ) *
+                                  unitCount *
+                                  bookingSeats
+                                  : basePrice * 0.07;
+                              const companygst = 0.18 * serviceFee;
+                              const gstAmount =
+                                priceDetails?.gstAmount &&
                                   priceDetails.gstAmount > 0
-                                    ? priceDetails.gstAmount
-                                    : 0;
+                                  ? priceDetails.gstAmount
+                                  : 0;
 
-                                const finalTotalPrice = basePrice + serviceFee;
-                                return `₹${finalTotalPrice.toFixed(2)}`;
-                              })()
+                              const finalTotalPrice = basePrice + serviceFee;
+                              return `₹${finalTotalPrice.toFixed(2)}`;
+                            })()
                             : "₹0.00"}
                         </span>
                       </div>
@@ -2709,11 +2735,10 @@ export default function ViewDetailsClient({
                               setUnitCount(1);
                               setBookingSeats(1);
                             }}
-                            className={`w-full flex items-center justify-between p-2 sm:p-3 mt-2 sm:mt-3 rounded-lg border transition-all text-sm sm:text-base ${
-                              isSelected
-                                ? "border-primary bg-primary/5 text-primary"
-                                : "border-gray-200 hover:border-primary/50"
-                            }`}
+                            className={`w-full flex items-center justify-between p-2 sm:p-3 mt-2 sm:mt-3 rounded-lg border transition-all text-sm sm:text-base ${isSelected
+                              ? "border-primary bg-primary/5 text-primary"
+                              : "border-gray-200 hover:border-primary/50"
+                              }`}
                           >
                             <span className="font-medium">
                               {plan.name === "One Day (24 Hours)"
@@ -2846,7 +2871,7 @@ export default function ViewDetailsClient({
                               (facility.details.availableCabins ?? 0) > 0) ||
                             (facilityType === "training-rooms" &&
                               (facility.details.totalTrainingRoomSeaters ?? 0) >
-                                0)
+                              0)
                           ) {
                             return (
                               <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg border border-gray-200">
@@ -3139,7 +3164,7 @@ export default function ViewDetailsClient({
                                     : selectedPlan.name === "Weekly"
                                       ? `week${unitCount > 1 ? "s" : ""}`
                                       : selectedPlan.name ===
-                                          "One Day (24 Hours)"
+                                        "One Day (24 Hours)"
                                         ? `day${unitCount > 1 ? "s" : ""}`
                                         : `hour${unitCount > 1 ? "s" : ""}`}
                               </span>
@@ -3271,30 +3296,30 @@ export default function ViewDetailsClient({
                               ({bookingSeats} × ₹
                               {selectedPlan
                                 ? (() => {
-                                    const basePrice = selectedPlan.price; // per-unit base price
-                                    const serviceFee =
-                                      isExisting === true
-                                        ? getFixedServiceFee(
-                                            facility?.facilityType || "",
-                                          )
-                                        : basePrice * 0.07; // per-unit service fee
-                                    const companyGstPerUnit = 0.18 * serviceFee; // GST on service fee (per unit)
-                                    const gstTotal =
-                                      priceDetails?.gstAmount &&
+                                  const basePrice = selectedPlan.price; // per-unit base price
+                                  const serviceFee =
+                                    isExisting === true
+                                      ? getFixedServiceFee(
+                                        facility?.facilityType || "",
+                                      )
+                                      : basePrice * 0.07; // per-unit service fee
+                                  const companyGstPerUnit = 0.18 * serviceFee; // GST on service fee (per unit)
+                                  const gstTotal =
+                                    priceDetails?.gstAmount &&
                                       priceDetails.gstAmount > 0
-                                        ? priceDetails.gstAmount
-                                        : 0;
-                                    const unitCountForDivision = Math.max(
-                                      1,
-                                      unitCount * bookingSeats,
-                                    );
-                                    const gstPerUnit = gstTotal
-                                      ? gstTotal / unitCountForDivision
+                                      ? priceDetails.gstAmount
                                       : 0;
+                                  const unitCountForDivision = Math.max(
+                                    1,
+                                    unitCount * bookingSeats,
+                                  );
+                                  const gstPerUnit = gstTotal
+                                    ? gstTotal / unitCountForDivision
+                                    : 0;
 
-                                    const pricePerUnit = basePrice + serviceFee;
-                                    return pricePerUnit.toFixed(2);
-                                  })()
+                                  const pricePerUnit = basePrice + serviceFee;
+                                  return pricePerUnit.toFixed(2);
+                                })()
                                 : "0.00"}
                               )
                             </>
@@ -3303,27 +3328,27 @@ export default function ViewDetailsClient({
                         <span>
                           {selectedPlan
                             ? (() => {
-                                const basePrice =
-                                  selectedPlan.price * unitCount * bookingSeats;
-                                const serviceFee =
-                                  isExisting === true
-                                    ? getFixedServiceFee(
-                                        facility?.facilityType || "",
-                                      ) *
-                                      unitCount *
-                                      bookingSeats
-                                    : basePrice * 0.07;
-                                const companygst = serviceFee * 0.18;
-                                const gstAmount =
-                                  priceDetails?.gstAmount &&
+                              const basePrice =
+                                selectedPlan.price * unitCount * bookingSeats;
+                              const serviceFee =
+                                isExisting === true
+                                  ? getFixedServiceFee(
+                                    facility?.facilityType || "",
+                                  ) *
+                                  unitCount *
+                                  bookingSeats
+                                  : basePrice * 0.07;
+                              const companygst = serviceFee * 0.18;
+                              const gstAmount =
+                                priceDetails?.gstAmount &&
                                   priceDetails.gstAmount > 0
-                                    ? priceDetails.gstAmount
-                                    : 0;
+                                  ? priceDetails.gstAmount
+                                  : 0;
 
-                                const finalTotalPrice = basePrice + serviceFee;
+                              const finalTotalPrice = basePrice + serviceFee;
 
-                                return `₹${finalTotalPrice.toFixed(2)}`;
-                              })()
+                              return `₹${finalTotalPrice.toFixed(2)}`;
+                            })()
                             : "₹0.00"}
                         </span>
                       </div>
@@ -3373,17 +3398,16 @@ export default function ViewDetailsClient({
 
                       {/* Total Fare */}
                       <div
-                        className={`flex justify-between font-bold pt-3 border-t text-base sm:text-lg ${
-                          appliedCoupon ? "text-green-700" : "text-gray-900"
-                        }`}
+                        className={`flex justify-between font-bold pt-3 border-t text-base sm:text-lg ${appliedCoupon ? "text-green-700" : "text-gray-900"
+                          }`}
                       >
                         <span>Total Amount (Inclusive of all taxes)</span>
                         <span>
                           ₹
                           {appliedCoupon
                             ? (
-                                totalAmount - appliedCoupon.discountAmount
-                              ).toFixed(2)
+                              totalAmount - appliedCoupon.discountAmount
+                            ).toFixed(2)
                             : totalAmount.toFixed(2)}
                         </span>
                       </div>
@@ -3421,13 +3445,13 @@ export default function ViewDetailsClient({
                           <span className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></span>
                           Processing...
                         </span>
-                      ) : 
-                      // session ? (
-                      user ? (
-                        "Reserve"
-                      ) : (
-                        "Sign in to Book"
-                      )}
+                      ) :
+                        // session ? (
+                        user ? (
+                          "Reserve"
+                        ) : (
+                          "Sign in to Book"
+                        )}
                     </Button>
                   </div>
                 </>
@@ -3443,7 +3467,7 @@ export default function ViewDetailsClient({
           <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900">
             More facilities from{" "}
             {facility.serviceProvider?.serviceName &&
-            facility.serviceProvider?._id ? (
+              facility.serviceProvider?._id ? (
               <Link
                 href={`/ViewProvider/${facility.serviceProvider._id}`}
                 className="font-bold text-green-600 hover:text-green-700 hover:underline cursor-pointer break-words"

@@ -15,18 +15,33 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const base_url = "http://localhost:3001";
+
   useEffect(() => {
     async function fetchInvoiceUrl() {
       try {
         setLoading(true);
-        const response = await fetch(`/api/bookings/${bookingId}`);
+        // const response = await fetch(`/api/bookings/${bookingId}`);
+
+        const response = await fetch(
+          `${base_url}/api/bookings/${bookingId}`,
+          {
+            method: "GET",
+            credentials: "include", // IMPORTANT (send JWT cookie)
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+
         if (!response.ok) {
           throw new Error('Failed to fetch booking details');
         }
-        
+
         const data = await response.json();
-       // console.log("Booking data for invoice:", data);
-        
+        // console.log("Booking data for invoice:", data);
+
         if (data.invoiceUrl) {
           setInvoiceUrl(data.invoiceUrl);
         } else {
@@ -52,10 +67,10 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           bookingId,
           // When user manually clicks, always force send the email
-          forceSend: true 
+          forceSend: true
         }),
       });
 
@@ -73,7 +88,7 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
 
   const handlePrintInvoice = () => {
     if (!invoiceUrl) return;
-    
+
     // Open the invoice in a new window and print it
     const printWindow = window.open(invoiceUrl, 'print_invoice', 'height=600,width=800');
     if (printWindow) {
@@ -123,7 +138,7 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
       <p className="text-center text-sm text-gray-600 mb-4">
         Your booking invoice has been generated and is ready for viewing or printing.
       </p>
-      
+
       <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
         {invoiceUrl && (
           <>
@@ -136,7 +151,7 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
               <FiFileText className="mr-2" />
               View Invoice
             </Link>
-            
+
             <button
               onClick={handlePrintInvoice}
               className="flex items-center justify-center px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700"
@@ -146,7 +161,7 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
             </button>
           </>
         )}
-        
+
         <button
           onClick={handleEmailInvoice}
           className="flex items-center justify-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary"

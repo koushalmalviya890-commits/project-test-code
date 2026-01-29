@@ -74,13 +74,27 @@ export default function BookingDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const base_url = "http://localhost:3001";
+
   useEffect(() => {
     const fetchBookingDetails = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/bookings/${params.id}`);
+        // const response = await fetch(`/api/bookings/${params.id}`);
+
+        const response = await fetch(
+          `${base_url}/api/bookings/${params.id}`,
+          {
+            method: "GET",
+            credentials: "include", // IMPORTANT (send cookie)
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
 
         if (!response.ok) {
           throw new Error(
@@ -303,8 +317,8 @@ export default function BookingDetailsPage() {
               {/* Facility image */}
               <div className="flex-shrink-0">
                 {bookingDetails.facility &&
-                bookingDetails.facility.images &&
-                bookingDetails.facility.images.length > 0 ? (
+                  bookingDetails.facility.images &&
+                  bookingDetails.facility.images.length > 0 ? (
                   <div className="relative h-[180px] w-[180px] rounded-[10px] overflow-hidden bg-[#f8f8f8]">
                     <Image
                       src={bookingDetails.facility.images[0]}
@@ -361,14 +375,14 @@ export default function BookingDetailsPage() {
                   </p>
                   <div className="flex flex-wrap gap-[15px]">
                     {bookingDetails.serviceProvider?.features &&
-                    bookingDetails.serviceProvider.features.length > 0 ? (
+                      bookingDetails.serviceProvider.features.length > 0 ? (
                       <>
                         {bookingDetails.serviceProvider.features
                           .slice(0, 5)
                           .map((feature, index) => {
                             const IconComponent =
                               AMENITY_ICONS[
-                                feature as keyof typeof AMENITY_ICONS
+                              feature as keyof typeof AMENITY_ICONS
                               ] || AMENITY_ICONS["Other"];
                             return (
                               <div
@@ -481,7 +495,7 @@ export default function BookingDetailsPage() {
                     </p>
                   </div>
 
-                   <div className="w-[180px] bg-[#f8f8f8] p-3 rounded-md">
+                  <div className="w-[180px] bg-[#f8f8f8] p-3 rounded-md">
                     <p className="text-[15px] font-semibold text-[rgba(34,34,34,0.3)] mb-[2px]">
                       Booked Seats
                     </p>
@@ -562,13 +576,13 @@ export default function BookingDetailsPage() {
                 <Link
                   href={bookingDetails.invoiceUrl}
                   target="_blank"
-                  // rel="noopener noreferrer"
+                // rel="noopener noreferrer"
                 >
                   <Download className="h-5 w-5 text-[#222222]" />
                 </Link>
-        //          <a href={bookingDetails.invoiceUrl}>
-        //   📥 View Invoice
-        // </a>
+                //          <a href={bookingDetails.invoiceUrl}>
+                //   📥 View Invoice
+                // </a>
               ) : (
                 <span className="text-sm text-gray-400">Not available</span>
               )}
@@ -652,12 +666,12 @@ export default function BookingDetailsPage() {
               </div>
 
               <div className="flex justify-between border-t border-[rgba(34,34,34,0.6)] border-opacity-30 pt-4 mt-3">
-    <p className="text-xl text-black font-bold flex justify-between gap-6 ">
-      Total
-    </p>
-<p className="text-xl font-bold ">
-      {formatCurrency(bookingDetails.amount)}
-    </p>
+                <p className="text-xl text-black font-bold flex justify-between gap-6 ">
+                  Total
+                </p>
+                <p className="text-xl font-bold ">
+                  {formatCurrency(bookingDetails.amount)}
+                </p>
 
               </div>
             </div>

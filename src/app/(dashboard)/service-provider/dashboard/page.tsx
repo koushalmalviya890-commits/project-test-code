@@ -272,7 +272,7 @@ export default function ServiceProviderDashboard() {
       const dateStr = date.toISOString().split("T")[0];
 
       // const serviceProviderId = userId || session?.user?.id;
-const serviceProviderId = userId || user?.id;
+      const serviceProviderId = userId || user?.id;
       if (!serviceProviderId) {
         console.error("No service provider ID available");
         setIsLoading(false);
@@ -336,11 +336,24 @@ const serviceProviderId = userId || user?.id;
     }
   };
 
+  const base_url = "http://localhost:3001";
+
   // Fetch bookings data for the charts
   const fetchBookingsData = async () => {
     try {
       // Fetch all bookings directly from the bookings API
-      const bookingsResponse = await fetch("/api/bookings");
+      //const bookingsResponse = await fetch("/api/bookings");
+      const bookingsResponse = await fetch(
+        `${base_url}/api/bookings`,
+        {
+          method: "GET",
+          credentials: "include", // IMPORTANT (send JWT cookie)
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
 
       if (!bookingsResponse.ok) {
         throw new Error(`Error fetching bookings: ${bookingsResponse.status}`);
@@ -500,7 +513,7 @@ const serviceProviderId = userId || user?.id;
     // if (session?.user?.id) {
     //   fetchDashboardData(newDate, user.id);
     // }
-     if (user?.id) {
+    if (user?.id) {
       fetchDashboardData(newDate, user?.id);
     }
   };
@@ -679,7 +692,7 @@ const serviceProviderId = userId || user?.id;
         }
       );
 
-     // console.log("Filtered bookings count:", filteredBookings.length);
+      // console.log("Filtered bookings count:", filteredBookings.length);
 
       // Group by facility
       const facilityMap = new Map<string, FacilityGroup>();
@@ -720,16 +733,16 @@ const serviceProviderId = userId || user?.id;
       //   "/api/notifications?limit=3&type=booking&status=approved"
       // );
 
-   const response = await fetch(
-      `${apiUrl}/notifications?limit=3&type=booking&status=approved`,
-      {
-         // ✅ 3. CRITICAL: Allow Express to read the cookie
-         credentials: 'include', 
-         headers: {
-           "Content-Type": "application/json",
-         }
-      }
-    );
+      const response = await fetch(
+        `${apiUrl}/notifications?limit=3&type=booking&status=approved`,
+        {
+          // ✅ 3. CRITICAL: Allow Express to read the cookie
+          credentials: 'include',
+          headers: {
+            "Content-Type": "application/json",
+          }
+        }
+      );
 
 
       if (response.ok) {
@@ -1303,9 +1316,9 @@ const serviceProviderId = userId || user?.id;
                                           );
                                         const gradient =
                                           BAR_GRADIENTS[
-                                            facilityIndex >= 0
-                                              ? facilityIndex
-                                              : 0
+                                          facilityIndex >= 0
+                                            ? facilityIndex
+                                            : 0
                                           ];
 
                                         return (
@@ -1603,181 +1616,181 @@ const serviceProviderId = userId || user?.id;
 
                 {/* Calendar Content */}
                 <div className="overflow-x-auto">
-  {calendarBookings.length === 0 ? (
-    <div className="text-center py-12 sm:py-16 text-base sm:text-lg text-gray-500 bg-gray-50/50 rounded-xl">
-      No bookings for {selectedDate.toLocaleDateString()}
-    </div>
-  ) : (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Mobile: Card-based layout, Desktop: Timeline layout */}
-      <div className="block sm:hidden">
-        {/* Mobile Card Layout */}
-        {calendarBookings.map((facilityGroup) => (
-          <div key={facilityGroup.facilityId} className="mb-6">
-            <h4 className="text-lg font-semibold text-gray-800 mb-3 px-1">
-              {facilityGroup.facilityName}
-            </h4>
-            <div className="space-y-3">
-              {facilityGroup.bookings.length === 0 ? (
-                <div className="bg-gray-50 rounded-xl p-4 text-center text-gray-500">
-                  No bookings for this facility
-                </div>
-              ) : (
-                facilityGroup.bookings.map((booking) => {
-                  const facilityTypeLabel =
-                    facilityTypeNames[booking.facilityType] ||
-                    booking.facilityType
-                      .split("-")
-                      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                      .join(" ");
+                  {calendarBookings.length === 0 ? (
+                    <div className="text-center py-12 sm:py-16 text-base sm:text-lg text-gray-500 bg-gray-50/50 rounded-xl">
+                      No bookings for {selectedDate.toLocaleDateString()}
+                    </div>
+                  ) : (
+                    <div className="space-y-4 sm:space-y-6">
+                      {/* Mobile: Card-based layout, Desktop: Timeline layout */}
+                      <div className="block sm:hidden">
+                        {/* Mobile Card Layout */}
+                        {calendarBookings.map((facilityGroup) => (
+                          <div key={facilityGroup.facilityId} className="mb-6">
+                            <h4 className="text-lg font-semibold text-gray-800 mb-3 px-1">
+                              {facilityGroup.facilityName}
+                            </h4>
+                            <div className="space-y-3">
+                              {facilityGroup.bookings.length === 0 ? (
+                                <div className="bg-gray-50 rounded-xl p-4 text-center text-gray-500">
+                                  No bookings for this facility
+                                </div>
+                              ) : (
+                                facilityGroup.bookings.map((booking) => {
+                                  const facilityTypeLabel =
+                                    facilityTypeNames[booking.facilityType] ||
+                                    booking.facilityType
+                                      .split("-")
+                                      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                                      .join(" ");
 
-                  const startDateInfo = formatDateFromDB(booking.startDate);
-                  const endDateInfo = formatDateFromDB(booking.endDate);
+                                  const startDateInfo = formatDateFromDB(booking.startDate);
+                                  const endDateInfo = formatDateFromDB(booking.endDate);
 
-                  return (
-                    <div
-                      key={booking._id}
-                      className="rounded-xl p-4 text-white shadow-sm"
-                      style={{
-                        backgroundColor: facilityTypeColors[booking.facilityType] || "#22C55E",
-                      }}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <span className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
-                            {booking.startupName?.[0] || "?"}
-                          </span>
-                          <div>
-                            <h5 className="font-bold text-base">{booking.startupName}</h5>
-                            <p className="text-sm opacity-90">{facilityTypeLabel}</p>
+                                  return (
+                                    <div
+                                      key={booking._id}
+                                      className="rounded-xl p-4 text-white shadow-sm"
+                                      style={{
+                                        backgroundColor: facilityTypeColors[booking.facilityType] || "#22C55E",
+                                      }}
+                                    >
+                                      <div className="flex items-start justify-between mb-2">
+                                        <div className="flex items-center gap-3">
+                                          <span className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                            {booking.startupName?.[0] || "?"}
+                                          </span>
+                                          <div>
+                                            <h5 className="font-bold text-base">{booking.startupName}</h5>
+                                            <p className="text-sm opacity-90">{facilityTypeLabel}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                          <svg className="w-4 h-4 opacity-80" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                          </svg>
+                                          <span className="font-medium">
+                                            {startDateInfo.formattedTime} - {endDateInfo.formattedTime}
+                                          </span>
+                                        </div>
+                                        <div className="text-sm opacity-90">
+                                          {(() => {
+                                            const start = new Date(booking.startDate);
+                                            const end = new Date(booking.endDate);
+                                            const duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+                                            return duration >= 60
+                                              ? `${Math.floor(duration / 60)}h ${duration % 60}m`
+                                              : `${duration}m`;
+                                          })()}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Desktop Timeline Layout */}
+                      <div className="hidden sm:block">
+                        {calendarBookings.map((facilityGroup) => (
+                          <div
+                            key={facilityGroup.facilityId}
+                            className="flex mb-4"
+                          >
+                            <div className="w-32 lg:w-40 pr-4 flex-shrink-0 flex items-center">
+                              <div className="text-base font-semibold truncate">
+                                {facilityGroup.facilityName}
+                              </div>
+                            </div>
+                            <div className="flex-1 relative h-16 bg-gray-50 rounded-2xl">
+                              {/* Display hours grid lines */}
+                              {HOURS.map((hour, index) => (
+                                <div
+                                  key={`line-${hour}`}
+                                  className="absolute top-0 bottom-0 w-px bg-gray-200"
+                                  style={{
+                                    left: `${(index / (HOURS.length - 1)) * 100}%`,
+                                  }}
+                                />
+                              ))}
+
+                              {/* Display bookings */}
+                              {facilityGroup.bookings.map((booking) => {
+                                const { left, width } = calculateTimeSlotPosition(
+                                  booking.startDate,
+                                  booking.endDate
+                                );
+
+                                // Skip rendering if the booking doesn't appear in the visible range
+                                if (width <= 0 || left >= 100) return null;
+
+                                const facilityTypeLabel =
+                                  facilityTypeNames[booking.facilityType] ||
+                                  booking.facilityType
+                                    .split("-")
+                                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                                    .join(" ");
+
+                                // Get properly formatted times
+                                const startDateInfo = formatDateFromDB(booking.startDate);
+                                const endDateInfo = formatDateFromDB(booking.endDate);
+
+                                return (
+                                  <div
+                                    key={booking._id}
+                                    className="absolute top-1/2 -translate-y-1/2 h-10 flex items-center justify-start rounded-xl text-white text-sm font-medium shadow-sm overflow-hidden"
+                                    style={{
+                                      left: `${left}%`,
+                                      width: `${width}%`,
+                                      backgroundColor: facilityTypeColors[booking.facilityType] || "#22C55E",
+                                    }}
+                                    title={`${booking.startupName} - ${facilityTypeLabel} - ${startDateInfo.formattedTime} to ${endDateInfo.formattedTime}`}
+                                  >
+                                    <div className="truncate px-3 flex items-center gap-2 w-full">
+                                      <span className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs flex-shrink-0">
+                                        {booking.startupName?.[0] || "?"}
+                                      </span>
+                                      <div className="flex flex-col min-w-0">
+                                        <span className="truncate text-xs font-bold">
+                                          {booking.startupName}
+                                        </span>
+                                        <span className="truncate text-[10px] font-normal opacity-80">
+                                          {startDateInfo.formattedTime} - {endDateInfo.formattedTime}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Legend/time indicators at the bottom */}
+                        <div className="mt-6">
+                          <div className="flex">
+                            <div className="w-32 lg:w-40 flex-shrink-0"></div>
+                            <div className="flex-1 grid grid-cols-10 gap-4 text-center border-t pt-2">
+                              {HOURS.map((hour) => (
+                                <div
+                                  key={`hour-legend-${hour}`}
+                                  className="text-sm font-medium text-gray-400"
+                                >
+                                  {hour}:00
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-4 h-4 opacity-80" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                          </svg>
-                          <span className="font-medium">
-                            {startDateInfo.formattedTime} - {endDateInfo.formattedTime}
-                          </span>
-                        </div>
-                        <div className="text-sm opacity-90">
-                          {(() => {
-                            const start = new Date(booking.startDate);
-                            const end = new Date(booking.endDate);
-                            const duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
-                            return duration >= 60 
-                              ? `${Math.floor(duration / 60)}h ${duration % 60}m`
-                              : `${duration}m`;
-                          })()}
-                        </div>
-                      </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Desktop Timeline Layout */}
-      <div className="hidden sm:block">
-        {calendarBookings.map((facilityGroup) => (
-          <div
-            key={facilityGroup.facilityId}
-            className="flex mb-4"
-          >
-            <div className="w-32 lg:w-40 pr-4 flex-shrink-0 flex items-center">
-              <div className="text-base font-semibold truncate">
-                {facilityGroup.facilityName}
-              </div>
-            </div>
-            <div className="flex-1 relative h-16 bg-gray-50 rounded-2xl">
-              {/* Display hours grid lines */}
-              {HOURS.map((hour, index) => (
-                <div
-                  key={`line-${hour}`}
-                  className="absolute top-0 bottom-0 w-px bg-gray-200"
-                  style={{
-                    left: `${(index / (HOURS.length - 1)) * 100}%`,
-                  }}
-                />
-              ))}
-
-              {/* Display bookings */}
-              {facilityGroup.bookings.map((booking) => {
-                const { left, width } = calculateTimeSlotPosition(
-                  booking.startDate,
-                  booking.endDate
-                );
-
-                // Skip rendering if the booking doesn't appear in the visible range
-                if (width <= 0 || left >= 100) return null;
-
-                const facilityTypeLabel =
-                  facilityTypeNames[booking.facilityType] ||
-                  booking.facilityType
-                    .split("-")
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ");
-
-                // Get properly formatted times
-                const startDateInfo = formatDateFromDB(booking.startDate);
-                const endDateInfo = formatDateFromDB(booking.endDate);
-
-                return (
-                  <div
-                    key={booking._id}
-                    className="absolute top-1/2 -translate-y-1/2 h-10 flex items-center justify-start rounded-xl text-white text-sm font-medium shadow-sm overflow-hidden"
-                    style={{
-                      left: `${left}%`,
-                      width: `${width}%`,
-                      backgroundColor: facilityTypeColors[booking.facilityType] || "#22C55E",
-                    }}
-                    title={`${booking.startupName} - ${facilityTypeLabel} - ${startDateInfo.formattedTime} to ${endDateInfo.formattedTime}`}
-                  >
-                    <div className="truncate px-3 flex items-center gap-2 w-full">
-                      <span className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs flex-shrink-0">
-                        {booking.startupName?.[0] || "?"}
-                      </span>
-                      <div className="flex flex-col min-w-0">
-                        <span className="truncate text-xs font-bold">
-                          {booking.startupName}
-                        </span>
-                        <span className="truncate text-[10px] font-normal opacity-80">
-                          {startDateInfo.formattedTime} - {endDateInfo.formattedTime}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-
-        {/* Legend/time indicators at the bottom */}
-        <div className="mt-6">
-          <div className="flex">
-            <div className="w-32 lg:w-40 flex-shrink-0"></div>
-            <div className="flex-1 grid grid-cols-10 gap-4 text-center border-t pt-2">
-              {HOURS.map((hour) => (
-                <div
-                  key={`hour-legend-${hour}`}
-                  className="text-sm font-medium text-gray-400"
-                >
-                  {hour}:00
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )}
-</div>
               </div>
             </div>
           </div>
@@ -1852,7 +1865,7 @@ const serviceProviderId = userId || user?.id;
             {/* Middle row: Graphs and Notifications */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
               {/* Left column: Both charts side by side */}
-                <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+              <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                 {/* Monthly Earnings Chart */}
                 <div className="bg-white rounded-[30px] p-6 shadow-sm border border-gray-100">
                   <h3 className="text-lg font-semibold mb-4 text-gray-800">
@@ -2133,9 +2146,9 @@ const serviceProviderId = userId || user?.id;
                                           );
                                         const gradient =
                                           BAR_GRADIENTS[
-                                            facilityIndex >= 0
-                                              ? facilityIndex
-                                              : 0
+                                          facilityIndex >= 0
+                                            ? facilityIndex
+                                            : 0
                                           ];
 
                                         return (
@@ -2431,182 +2444,182 @@ const serviceProviderId = userId || user?.id;
                 </div>
 
                 {/* Calendar Content */}
-              <div className="overflow-x-auto">
-  {calendarBookings.length === 0 ? (
-    <div className="text-center py-12 sm:py-16 text-base sm:text-lg text-gray-500 bg-gray-50/50 rounded-xl">
-      No bookings for {selectedDate.toLocaleDateString()}
-    </div>
-  ) : (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Mobile: Card-based layout, Desktop: Timeline layout */}
-      <div className="block sm:hidden">
-        {/* Mobile Card Layout */}
-        {calendarBookings.map((facilityGroup) => (
-          <div key={facilityGroup.facilityId} className="mb-6">
-            <h4 className="text-lg font-semibold text-gray-800 mb-3 px-1">
-              {facilityGroup.facilityName}
-            </h4>
-            <div className="space-y-3">
-              {facilityGroup.bookings.length === 0 ? (
-                <div className="bg-gray-50 rounded-xl p-4 text-center text-gray-500">
-                  No bookings for this facility
-                </div>
-              ) : (
-                facilityGroup.bookings.map((booking) => {
-                  const facilityTypeLabel =
-                    facilityTypeNames[booking.facilityType] ||
-                    booking.facilityType
-                      .split("-")
-                      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                      .join(" ");
+                <div className="overflow-x-auto">
+                  {calendarBookings.length === 0 ? (
+                    <div className="text-center py-12 sm:py-16 text-base sm:text-lg text-gray-500 bg-gray-50/50 rounded-xl">
+                      No bookings for {selectedDate.toLocaleDateString()}
+                    </div>
+                  ) : (
+                    <div className="space-y-4 sm:space-y-6">
+                      {/* Mobile: Card-based layout, Desktop: Timeline layout */}
+                      <div className="block sm:hidden">
+                        {/* Mobile Card Layout */}
+                        {calendarBookings.map((facilityGroup) => (
+                          <div key={facilityGroup.facilityId} className="mb-6">
+                            <h4 className="text-lg font-semibold text-gray-800 mb-3 px-1">
+                              {facilityGroup.facilityName}
+                            </h4>
+                            <div className="space-y-3">
+                              {facilityGroup.bookings.length === 0 ? (
+                                <div className="bg-gray-50 rounded-xl p-4 text-center text-gray-500">
+                                  No bookings for this facility
+                                </div>
+                              ) : (
+                                facilityGroup.bookings.map((booking) => {
+                                  const facilityTypeLabel =
+                                    facilityTypeNames[booking.facilityType] ||
+                                    booking.facilityType
+                                      .split("-")
+                                      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                                      .join(" ");
 
-                  const startDateInfo = formatDateFromDB(booking.startDate);
-                  const endDateInfo = formatDateFromDB(booking.endDate);
+                                  const startDateInfo = formatDateFromDB(booking.startDate);
+                                  const endDateInfo = formatDateFromDB(booking.endDate);
 
-                  return (
-                    <div
-                      key={booking._id}
-                      className="rounded-xl p-4 text-white shadow-sm"
-                      style={{
-                        backgroundColor: facilityTypeColors[booking.facilityType] || "#22C55E",
-                      }}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <span className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
-                            {booking.startupName?.[0] || "?"}
-                          </span>
-                          <div>
-                            <h5 className="font-bold text-base">{booking.startupName}</h5>
-                            <p className="text-sm opacity-90">{facilityTypeLabel}</p>
+                                  return (
+                                    <div
+                                      key={booking._id}
+                                      className="rounded-xl p-4 text-white shadow-sm"
+                                      style={{
+                                        backgroundColor: facilityTypeColors[booking.facilityType] || "#22C55E",
+                                      }}
+                                    >
+                                      <div className="flex items-start justify-between mb-2">
+                                        <div className="flex items-center gap-3">
+                                          <span className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                            {booking.startupName?.[0] || "?"}
+                                          </span>
+                                          <div>
+                                            <h5 className="font-bold text-base">{booking.startupName}</h5>
+                                            <p className="text-sm opacity-90">{facilityTypeLabel}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                          <svg className="w-4 h-4 opacity-80" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                          </svg>
+                                          <span className="font-medium">
+                                            {startDateInfo.formattedTime} - {endDateInfo.formattedTime}
+                                          </span>
+                                        </div>
+                                        <div className="text-sm opacity-90">
+                                          {(() => {
+                                            const start = new Date(booking.startDate);
+                                            const end = new Date(booking.endDate);
+                                            const duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+                                            return duration >= 60
+                                              ? `${Math.floor(duration / 60)}h ${duration % 60}m`
+                                              : `${duration}m`;
+                                          })()}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Desktop Timeline Layout */}
+                      <div className="hidden sm:block">
+                        {calendarBookings.map((facilityGroup) => (
+                          <div
+                            key={facilityGroup.facilityId}
+                            className="flex mb-4"
+                          >
+                            <div className="w-32 lg:w-40 pr-4 flex-shrink-0 flex items-center">
+                              <div className="text-base font-semibold truncate">
+                                {facilityGroup.facilityName}
+                              </div>
+                            </div>
+                            <div className="flex-1 relative h-16 bg-gray-50 rounded-2xl">
+                              {/* Display hours grid lines */}
+                              {HOURS.map((hour, index) => (
+                                <div
+                                  key={`line-${hour}`}
+                                  className="absolute top-0 bottom-0 w-px bg-gray-200"
+                                  style={{
+                                    left: `${(index / (HOURS.length - 1)) * 100}%`,
+                                  }}
+                                />
+                              ))}
+
+                              {/* Display bookings */}
+                              {facilityGroup.bookings.map((booking) => {
+                                const { left, width } = calculateTimeSlotPosition(
+                                  booking.startDate,
+                                  booking.endDate
+                                );
+
+                                // Skip rendering if the booking doesn't appear in the visible range
+                                if (width <= 0 || left >= 100) return null;
+
+                                const facilityTypeLabel =
+                                  facilityTypeNames[booking.facilityType] ||
+                                  booking.facilityType
+                                    .split("-")
+                                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                                    .join(" ");
+
+                                // Get properly formatted times
+                                const startDateInfo = formatDateFromDB(booking.startDate);
+                                const endDateInfo = formatDateFromDB(booking.endDate);
+
+                                return (
+                                  <div
+                                    key={booking._id}
+                                    className="absolute top-1/2 -translate-y-1/2 h-10 flex items-center justify-start rounded-xl text-white text-sm font-medium shadow-sm overflow-hidden"
+                                    style={{
+                                      left: `${left}%`,
+                                      width: `${width}%`,
+                                      backgroundColor: facilityTypeColors[booking.facilityType] || "#22C55E",
+                                    }}
+                                    title={`${booking.startupName} - ${facilityTypeLabel} - ${startDateInfo.formattedTime} to ${endDateInfo.formattedTime}`}
+                                  >
+                                    <div className="truncate px-3 flex items-center gap-2 w-full">
+                                      <span className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs flex-shrink-0">
+                                        {booking.startupName?.[0] || "?"}
+                                      </span>
+                                      <div className="flex flex-col min-w-0">
+                                        <span className="truncate text-xs font-bold">
+                                          {booking.startupName}
+                                        </span>
+                                        <span className="truncate text-[10px] font-normal opacity-80">
+                                          {startDateInfo.formattedTime} - {endDateInfo.formattedTime}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Legend/time indicators at the bottom */}
+                        <div className="mt-6">
+                          <div className="flex">
+                            <div className="w-32 lg:w-40 flex-shrink-0"></div>
+                            <div className="flex-1 grid grid-cols-10 gap-4 text-center border-t pt-2">
+                              {HOURS.map((hour) => (
+                                <div
+                                  key={`hour-legend-${hour}`}
+                                  className="text-sm font-medium text-gray-400"
+                                >
+                                  {hour}:00
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-4 h-4 opacity-80" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                          </svg>
-                          <span className="font-medium">
-                            {startDateInfo.formattedTime} - {endDateInfo.formattedTime}
-                          </span>
-                        </div>
-                        <div className="text-sm opacity-90">
-                          {(() => {
-                            const start = new Date(booking.startDate);
-                            const end = new Date(booking.endDate);
-                            const duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
-                            return duration >= 60 
-                              ? `${Math.floor(duration / 60)}h ${duration % 60}m`
-                              : `${duration}m`;
-                          })()}
-                        </div>
-                      </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Desktop Timeline Layout */}
-      <div className="hidden sm:block">
-        {calendarBookings.map((facilityGroup) => (
-          <div
-            key={facilityGroup.facilityId}
-            className="flex mb-4"
-          >
-            <div className="w-32 lg:w-40 pr-4 flex-shrink-0 flex items-center">
-              <div className="text-base font-semibold truncate">
-                {facilityGroup.facilityName}
-              </div>
-            </div>
-            <div className="flex-1 relative h-16 bg-gray-50 rounded-2xl">
-              {/* Display hours grid lines */}
-              {HOURS.map((hour, index) => (
-                <div
-                  key={`line-${hour}`}
-                  className="absolute top-0 bottom-0 w-px bg-gray-200"
-                  style={{
-                    left: `${(index / (HOURS.length - 1)) * 100}%`,
-                  }}
-                />
-              ))}
-
-              {/* Display bookings */}
-              {facilityGroup.bookings.map((booking) => {
-                const { left, width } = calculateTimeSlotPosition(
-                  booking.startDate,
-                  booking.endDate
-                );
-
-                // Skip rendering if the booking doesn't appear in the visible range
-                if (width <= 0 || left >= 100) return null;
-
-                const facilityTypeLabel =
-                  facilityTypeNames[booking.facilityType] ||
-                  booking.facilityType
-                    .split("-")
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ");
-
-                // Get properly formatted times
-                const startDateInfo = formatDateFromDB(booking.startDate);
-                const endDateInfo = formatDateFromDB(booking.endDate);
-
-                return (
-                  <div
-                    key={booking._id}
-                    className="absolute top-1/2 -translate-y-1/2 h-10 flex items-center justify-start rounded-xl text-white text-sm font-medium shadow-sm overflow-hidden"
-                    style={{
-                      left: `${left}%`,
-                      width: `${width}%`,
-                      backgroundColor: facilityTypeColors[booking.facilityType] || "#22C55E",
-                    }}
-                    title={`${booking.startupName} - ${facilityTypeLabel} - ${startDateInfo.formattedTime} to ${endDateInfo.formattedTime}`}
-                  >
-                    <div className="truncate px-3 flex items-center gap-2 w-full">
-                      <span className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs flex-shrink-0">
-                        {booking.startupName?.[0] || "?"}
-                      </span>
-                      <div className="flex flex-col min-w-0">
-                        <span className="truncate text-xs font-bold">
-                          {booking.startupName}
-                        </span>
-                        <span className="truncate text-[10px] font-normal opacity-80">
-                          {startDateInfo.formattedTime} - {endDateInfo.formattedTime}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-
-        {/* Legend/time indicators at the bottom */}
-        <div className="mt-6">
-          <div className="flex">
-            <div className="w-32 lg:w-40 flex-shrink-0"></div>
-            <div className="flex-1 grid grid-cols-10 gap-4 text-center border-t pt-2">
-              {HOURS.map((hour) => (
-                <div
-                  key={`hour-legend-${hour}`}
-                  className="text-sm font-medium text-gray-400"
-                >
-                  {hour}:00
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )}
-</div>
               </div>
             </div>
           </div>

@@ -46,18 +46,32 @@ export default function InvoicePage() {
   const [error, setError] = useState<string | null>(null)
   const printRef = useRef<HTMLDivElement>(null)
 
+  const base_url = "http://localhost:3001";
+
   useEffect(() => {
     const fetchBookingDetails = async () => {
       try {
         setIsLoading(true)
         setError(null)
-        
-        const response = await fetch(`/api/bookings/${params.id}`)
-        
+
+        // const response = await fetch(`/api/bookings/${params.id}`)
+
+        const response = await fetch(
+          `${base_url}/api/bookings/${params.id}`,
+          {
+            method: "GET",
+            credentials: "include", // IMPORTANT (send cookie)
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+
         if (!response.ok) {
           throw new Error(`Failed to fetch booking details: ${response.status}`)
         }
-        
+
         const data = await response.json()
         setBookingDetails(data)
       } catch (error) {
@@ -67,7 +81,7 @@ export default function InvoicePage() {
         setIsLoading(false)
       }
     }
-    
+
     if (params.id) {
       fetchBookingDetails()
     }
@@ -112,7 +126,7 @@ export default function InvoicePage() {
       <div className="flex flex-col items-center justify-center min-h-screen">
         <h2 className="text-xl font-semibold mb-4">Error</h2>
         <p className="text-gray-500 mb-6">{error || 'Booking details not found'}</p>
-        <Button 
+        <Button
           onClick={() => router.push('/service-provider/bookings')}
           variant="outline"
           className="flex items-center gap-2"
@@ -141,16 +155,16 @@ export default function InvoicePage() {
           <span className="font-medium">Back to Details</span>
         </Link>
         <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            onClick={handlePrint} 
+          <Button
+            variant="outline"
+            onClick={handlePrint}
             className="flex items-center gap-2 border-[rgba(34,34,34,0.3)] text-[#222222]"
           >
             <Printer className="h-4 w-4" />
             Print Invoice
           </Button>
-          <Button 
-            variant="default" 
+          <Button
+            variant="default"
             className="flex items-center gap-2 bg-[#222222] hover:bg-black text-white"
             onClick={handleDownloadPDF}
           >
@@ -161,7 +175,7 @@ export default function InvoicePage() {
       </div>
 
       {/* Invoice content */}
-      <div 
+      <div
         ref={printRef}
         className="mx-auto max-w-4xl p-10 bg-white"
       >
@@ -198,7 +212,7 @@ export default function InvoicePage() {
               {bookingDetails.facility.facilityType.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
             </p>
           </div>
-          
+
           {/* To details */}
           <div>
             <h2 className="text-[rgba(34,34,34,0.5)] font-semibold mb-4 text-sm uppercase tracking-wide">To</h2>
@@ -261,11 +275,10 @@ export default function InvoicePage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 inline-flex items-center rounded-full text-xs font-bold ${
-                      bookingDetails.paymentStatus.toLowerCase() === 'completed' 
-                        ? 'bg-[#D1F9DC] text-[#23BB4E] border border-[#23BB4E]' 
+                    <span className={`px-3 py-1 inline-flex items-center rounded-full text-xs font-bold ${bookingDetails.paymentStatus.toLowerCase() === 'completed'
+                        ? 'bg-[#D1F9DC] text-[#23BB4E] border border-[#23BB4E]'
                         : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                      }`}>
                       {bookingDetails.paymentStatus.charAt(0).toUpperCase() + bookingDetails.paymentStatus.slice(1)}
                     </span>
                   </td>

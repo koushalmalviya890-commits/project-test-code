@@ -18,7 +18,7 @@ import { Spinner } from '@/components/spinner'
 
 // Define time slots from 9 AM to 6 PM
 const TIME_SLOTS = [
-  '09:00AM', '10:00AM', '11:00AM', '12:00PM', 
+  '09:00AM', '10:00AM', '11:00AM', '12:00PM',
   '01:00PM', '02:00PM', '03:00PM', '04:00PM', '05:00PM', '06:00PM'
 ]
 
@@ -97,7 +97,7 @@ export default function CalendarPage() {
   // const { data: session } = useSession()
   const { user } = useAuth();
   const session = user ? { user } : null;
-  
+
   // Initialize with saved date or current date
   const [selectedDate, setSelectedDate] = useState(() => {
     // Check if we're in the browser environment
@@ -107,7 +107,7 @@ export default function CalendarPage() {
     }
     return new Date()
   })
-  
+
   const [selectedFacilityType, setSelectedFacilityType] = useState('All Facilities')
   const [bookings, setBookings] = useState<Booking[]>([])
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([])
@@ -115,7 +115,7 @@ export default function CalendarPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [weekDays, setWeekDays] = useState<Array<{ date: Date, isActive: boolean }>>([])
-  
+
   // New state for long-term bookings modal
   const [showLongTermBookings, setShowLongTermBookings] = useState(false)
   const [longTermBookings, setLongTermBookings] = useState<Record<string, Booking[]>>({
@@ -123,6 +123,8 @@ export default function CalendarPage() {
     'Annual': [],
     'Yearly': []
   })
+
+  const base_url = "http://localhost:3001";
 
   // Save selected date to localStorage when it changes
   useEffect(() => {
@@ -135,12 +137,12 @@ export default function CalendarPage() {
   useEffect(() => {
     const startOfCurrentWeek = startOfWeek(selectedDate, { weekStartsOn: 1 }) // Start from Monday
     const endOfCurrentWeek = endOfWeek(selectedDate, { weekStartsOn: 1 })
-    
+
     const days = eachDayOfInterval({
       start: startOfCurrentWeek,
       end: endOfCurrentWeek
     }).filter(date => date.getDay() !== 0) // Exclude Sunday
-    
+
     setWeekDays(days.map(date => ({
       date,
       isActive: isSameDay(date, selectedDate)
@@ -156,25 +158,35 @@ export default function CalendarPage() {
   const fetchBookings = async () => {
     try {
       setIsLoading(true)
-      
+
       // Get start and end dates for the week
       const startDate = startOfWeek(selectedDate, { weekStartsOn: 1 })
       const endDate = endOfWeek(selectedDate, { weekStartsOn: 1 })
-      
+
       // Format dates for API
       const startDateParam = format(startDate, 'yyyy-MM-dd')
       const endDateParam = format(endDate, 'yyyy-MM-dd')
-      
+
       // Fetch bookings for the selected week
-      const response = await fetch(`/api/bookings?detailed=true&startDate=${startDateParam}&endDate=${endDateParam}`)
-      
+      //const response = await fetch(`/api/bookings?detailed=true&startDate=${startDateParam}&endDate=${endDateParam}`)
+      const response = await fetch(
+        `${base_url}/api/bookings?detailed=true&startDate=${startDateParam}&endDate=${endDateParam}`,
+        {
+          method: "GET",
+          credentials: "include", // IMPORTANT (send JWT cookie)
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
       if (!response.ok) {
         const errorText = await response.text()
         throw new Error(errorText || 'Failed to fetch bookings')
       }
-      
+
       const data = await response.json()
-      
+
       // Set bookings from response
       let bookingsData = [];
       if (Array.isArray(data)) {
@@ -182,7 +194,7 @@ export default function CalendarPage() {
       } else if (data.bookings && Array.isArray(data.bookings)) {
         bookingsData = data.bookings;
       }
-      
+
       // Normalize dates in booking data
       const normalizedBookings = (bookingsData || []).map((booking: any) => ({
         ...booking,
@@ -191,9 +203,9 @@ export default function CalendarPage() {
         endDate: booking.endDate instanceof Date ? booking.endDate : new Date(booking.endDate),
         createdAt: booking.createdAt instanceof Date ? booking.createdAt : new Date(booking.createdAt || booking.bookedOn || Date.now())
       }));
-      
+
       setBookings(normalizedBookings);
-      
+
       //// console.log('Fetched bookings:', normalizedBookings.length);
     } catch (error) {
       console.error('Error fetching bookings:', error)
@@ -216,39 +228,39 @@ export default function CalendarPage() {
       });
       return;
     }
-    
+
     // Filter bookings based on facility type
     let filtered = bookings;
-    
+
     if (selectedFacilityType !== 'All Facilities') {
       // Map API facility types to display names
       let filterType = selectedFacilityType.toLowerCase();
-      
+
       if (filterType === 'meeting hall') filterType = 'meeting-rooms';
       if (filterType === 'private cabin') filterType = 'individual-cabin';
-      
+
       filtered = bookings.filter(booking => {
         const bookingType = booking.facilityType?.toLowerCase() || '';
         const facilityName = booking.facilityName?.toLowerCase() || '';
         return bookingType.includes(filterType) || facilityName.includes(filterType);
       });
     }
-    
+
     // Separate short-term and long-term bookings
     const shortTermBookings: Booking[] = [];
     const weeklyBookings: Booking[] = [];
     const annualBookings: Booking[] = [];
     const yearlyBookings: Booking[] = [];
     const now = new Date();
-    
+
     filtered.forEach(booking => {
       const rentalPlan = booking.rentalPlan?.toLowerCase() || '';
       const endDate = new Date(booking.endDate);
-      
+
       // Check if it's an approved ongoing long-term booking
       const isApproved = booking.status?.toLowerCase() === 'approved';
       const isOngoing = isAfter(endDate, now);
-      
+
       if ((rentalPlan === 'weekly' || rentalPlan === 'week') && isApproved && isOngoing) {
         weeklyBookings.push(booking);
       } else if ((rentalPlan === 'annual' || rentalPlan === 'annually') && isApproved && isOngoing) {
@@ -260,43 +272,43 @@ export default function CalendarPage() {
         shortTermBookings.push(booking);
       }
     });
-    
+
     // Update long-term bookings state
     setLongTermBookings({
       'Weekly': weeklyBookings,
       'Annual': annualBookings,
       'Yearly': yearlyBookings
     });
-    
+
     // Filter visible bookings (only short-term ones) that are visible in the current week
     const visibleBookings = shortTermBookings.filter(booking => {
       if (!booking.startDate || !booking.endDate) return false;
-      
+
       const startDateTime = new Date(booking.startDate);
       const endDateTime = new Date(booking.endDate);
-      
+
       // Check if any day in the week intersects with the booking duration
       return weekDays.some(day => {
         // Set day's time to start of day (00:00:00)
         const dayStart = new Date(day.date.setHours(0, 0, 0, 0));
         // Set day's time to end of day (23:59:59)
         const dayEnd = new Date(day.date.setHours(23, 59, 59, 999));
-        
+
         // Check if booking overlaps with this day
         const bookingOverlapsDay = (
           // Booking starts on or before day end AND booking ends on or after day start
           (startDateTime <= dayEnd && endDateTime >= dayStart)
         );
-        
+
         return bookingOverlapsDay;
       });
     });
-    
+
     setFilteredBookings(visibleBookings);
-    
+
     // Group bookings by facility for the weekly view
     const facilityMap = new Map<string, FacilityGroup>();
-    
+
     visibleBookings.forEach((booking) => {
       if (!facilityMap.has(booking.facilityId)) {
         facilityMap.set(booking.facilityId, {
@@ -305,17 +317,17 @@ export default function CalendarPage() {
           bookings: []
         });
       }
-      
+
       const group = facilityMap.get(booking.facilityId);
       if (group) {
         group.bookings.push(booking);
       }
     });
-    
+
     // Convert the map to an array
     const groupedBookings = Array.from(facilityMap.values());
     //// console.log('Grouped bookings by facility:', groupedBookings.length);
-    
+
     setCalendarBookings(groupedBookings);
   }, [selectedFacilityType, bookings, weekDays]);
 
@@ -330,19 +342,19 @@ export default function CalendarPage() {
     // Parse dates from either string or Date objects
     const startDateTime = startDate instanceof Date ? startDate : new Date(startDate);
     const endDateTime = endDate instanceof Date ? endDate : new Date(endDate);
-    
+
     // Create copies of the day date for start and end
     const currentDayStart = new Date(dayDate);
     currentDayStart.setHours(0, 0, 0, 0);
-    
+
     const currentDayEnd = new Date(dayDate);
     currentDayEnd.setHours(23, 59, 59, 999);
-    
+
     // If booking doesn't overlap with this day, return null
     if (startDateTime > currentDayEnd || endDateTime < currentDayStart) {
       return null;
     }
-    
+
     // Calculate effective start time for this day
     let effectiveStartTime = startDateTime;
     if (startDateTime < currentDayStart) {
@@ -350,7 +362,7 @@ export default function CalendarPage() {
       effectiveStartTime = new Date(currentDayStart);
       effectiveStartTime.setHours(9, 0, 0, 0);
     }
-    
+
     // Calculate effective end time for this day
     let effectiveEndTime = endDateTime;
     if (endDateTime > currentDayEnd) {
@@ -358,22 +370,22 @@ export default function CalendarPage() {
       effectiveEndTime = new Date(currentDayEnd);
       effectiveEndTime.setHours(18, 0, 0, 0);
     }
-    
+
     // Calendar time range is from 9AM (hour 9) to 6PM (hour 18) = 9 hours total
     const startHour = effectiveStartTime.getHours() + effectiveStartTime.getMinutes() / 60;
     const endHour = effectiveEndTime.getHours() + effectiveEndTime.getMinutes() / 60;
-    
+
     // Calculate the position as a percentage based on 9AM-6PM day
     const dayStartHour = 9; // 9AM
     const dayEndHour = 18; // 6PM
     const totalDayHours = dayEndHour - dayStartHour; // 9 hours
-    
+
     // Calculate left position (start position) as percentage of day
     const left = Math.max(0, ((startHour - dayStartHour) / totalDayHours) * 100);
-    
+
     // Calculate width as percentage of day
     const width = Math.max(5, ((endHour - startHour) / totalDayHours) * 100);
-    
+
     // Log for debugging
     //// console.log('Time slot calculation:', {
     //   booking: {
@@ -388,7 +400,7 @@ export default function CalendarPage() {
     //   },
     //   position: { left, width }
     // });
-    
+
     // Return the times and position information
     return {
       startHours: effectiveStartTime.getHours(),
@@ -406,12 +418,12 @@ export default function CalendarPage() {
   const getBookingRow = (date: string) => {
     try {
       const bookingDate = new Date(date)
-      
+
       // Find index of day in weekDays
-      const dayIndex = weekDays.findIndex(day => 
+      const dayIndex = weekDays.findIndex(day =>
         isSameDay(day.date, bookingDate)
       )
-      
+
       return dayIndex >= 0 ? dayIndex + 1 : null // Return null if day not found
     } catch (e) {
       console.error('Error determining booking row:', e)
@@ -423,12 +435,12 @@ export default function CalendarPage() {
   const formatDateFromDB = (dateString: string | Date) => {
     // Create a date object properly converting to local timezone
     const date = dateString instanceof Date ? dateString : new Date(dateString);
-    
+
     // Format the time according to local timezone
     return {
       date,
       formattedTime: date.toLocaleTimeString([], {
-        hour: '2-digit', 
+        hour: '2-digit',
         minute: '2-digit'
         // Removed timeZone: 'UTC' to use local timezone
       }),
@@ -462,7 +474,7 @@ export default function CalendarPage() {
           </Link>
           <h1 className="text-4xl font-bold text-[#222222]">Calendar</h1>
         </div>
-        
+
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <Spinner size="lg" />
@@ -483,11 +495,11 @@ export default function CalendarPage() {
           </Link>
           <h1 className="text-4xl font-bold text-[#222222]">Calendar</h1>
         </div>
-        
+
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <h3 className="text-red-800 text-lg font-medium mb-2">Error Loading Calendar</h3>
           <p className="text-red-600">{error}</p>
-          <Button 
+          <Button
             className="mt-4 bg-red-600 hover:bg-red-700"
             onClick={() => {
               setError(null)
@@ -513,26 +525,26 @@ export default function CalendarPage() {
           </Link>
           <h1 className="text-4xl font-bold text-[#222222]">Calendar</h1>
         </div>
-        
+
         <div className="flex items-center gap-4">
           {/* Date picker */}
           <div className="flex items-center">
-            <Button 
-              variant="link" 
+            <Button
+              variant="link"
               onClick={() => handleDateChange(subDays(selectedDate, 7))}
               className="p-1"
             >
               <ChevronLeft className="h-5 w-5 text-gray-500" />
             </Button>
-            
+
             <Popover>
               <PopoverTrigger asChild>
-                <Button 
+                <Button
                   variant="outline"
                   className="border-none shadow-none h-auto hover:bg-transparent hover:text-black"
                 >
                   <span className="text-2xl font-bold">
-                    {weekDays.length > 0 
+                    {weekDays.length > 0
                       ? `${format(weekDays[0].date, 'dd MMM')} - ${format(weekDays[weekDays.length - 1].date, 'dd MMM, yyyy')}`
                       : format(selectedDate, 'dd MMM, yyyy')
                     }
@@ -583,16 +595,16 @@ export default function CalendarPage() {
                 </div>
               </PopoverContent>
             </Popover>
-            
-            <Button 
-              variant="link" 
+
+            <Button
+              variant="link"
               onClick={() => handleDateChange(addDays(selectedDate, 7))}
               className="p-1"
             >
               <ChevronLeft className="h-5 w-5 text-gray-500 transform rotate-180" />
             </Button>
           </div>
-          
+
           {/* Facility type filter */}
           <div className="flex items-center rounded-md border border-gray-200 bg-white">
             <div className="flex h-10 px-3 items-center justify-center text-gray-500">
@@ -611,7 +623,7 @@ export default function CalendarPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Calendar Container */}
       <div className="bg-white rounded-[24px] border border-gray-200 shadow overflow-hidden">
         <div className="relative min-w-[1400px]">
@@ -619,7 +631,7 @@ export default function CalendarPage() {
           <div className="flex border-b border-gray-200">
             {/* Left corner empty cell */}
             <div className="w-[110px] flex-shrink-0 border-r border-gray-200 h-16 flex items-center justify-center">
-              <button 
+              <button
                 className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
                 onClick={() => setShowLongTermBookings(true)}
                 title="View long-term bookings"
@@ -634,12 +646,12 @@ export default function CalendarPage() {
                 )}
               </button>
             </div>
-            
+
             {/* Time slots header */}
             <div className="flex-1 grid grid-cols-10">
               {TIME_SLOTS.map((time, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className="h-16 flex items-center justify-center border-r border-gray-200 last:border-r-0"
                 >
                   <span className="text-[16px] font-bold text-gray-600 tracking-tight">
@@ -650,14 +662,14 @@ export default function CalendarPage() {
               ))}
             </div>
           </div>
-          
+
           {/* Calendar Body */}
           <div className="flex">
             {/* Days column */}
             <div className="w-[110px] flex-shrink-0 border-r border-gray-200">
               {weekDays.map((day, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className={`h-[100px] border-b border-gray-200 last:border-b-0 flex flex-col justify-center items-center py-3`}
                 >
                   <span className="text-[15px] font-medium text-gray-800">
@@ -669,7 +681,7 @@ export default function CalendarPage() {
                 </div>
               ))}
             </div>
-            
+
             {/* Calendar grid */}
             <div className="flex-1 relative">
               {/* Grid lines */}
@@ -677,8 +689,8 @@ export default function CalendarPage() {
                 {weekDays.map((_, dayIndex) => (
                   <React.Fragment key={`row-${dayIndex}`}>
                     {[...Array(10)].map((_, timeIndex) => (
-                      <div 
-                        key={`cell-${dayIndex}-${timeIndex}`} 
+                      <div
+                        key={`cell-${dayIndex}-${timeIndex}`}
                         className={`border-r border-b border-gray-200 
                           ${timeIndex === 9 ? 'border-r-0' : ''} 
                           ${dayIndex === 5 ? 'border-b-0' : ''}`}
@@ -691,7 +703,7 @@ export default function CalendarPage() {
                   </React.Fragment>
                 ))}
               </div>
-              
+
               {/* Booking cards */}
               <div className="relative" style={{ height: `${weekDays.length * 100}px` }}>
                 {filteredBookings.length > 0 ? (
@@ -701,24 +713,24 @@ export default function CalendarPage() {
                     return weekDays.map((day, dayIndex) => {
                       // Check if booking is on this day
                       const position = calculateTimeSlotPositionForDay(booking.startDate, booking.endDate, new Date(day.date));
-                      
+
                       // Skip if booking doesn't appear on this day
                       if (!position) return null;
-                      
+
                       // Get facility type display name
                       const facilityType = getDisplayFacilityType(booking);
-                      
+
                       // Set color based on facility type
                       const color = getFacilityColor(booking);
-                      
+
                       // Get properly formatted times for display
                       const startDateInfo = formatDateFromDB(booking.startDate);
                       const endDateInfo = formatDateFromDB(booking.endDate);
-                      
+
                       // Determine styling based on facility type
                       let cardStyle = {};
                       let cardClass = "absolute bg-white rounded-lg shadow-md p-2 box-content overflow-hidden z-10 transition-all hover:shadow-lg";
-                      
+
                       if (facilityType === 'Meeting Hall') {
                         cardStyle = { borderTop: `2px solid ${color}` };
                       } else if (facilityType === 'Labs') {
@@ -732,11 +744,11 @@ export default function CalendarPage() {
                         cardStyle = { borderTop: `2px solid ${color}`, borderRight: `1px solid ${color}20` };
                         cardClass += " border-t-[2px]"; // Add explicit border-top class
                       }
-                      
+
                       const startDate = new Date(booking.startDate);
                       const endDate = new Date(booking.endDate);
                       const bookingSpansMultipleDays = !isSameDay(startDate, endDate);
-                      
+
                       // Create a title that shows if booking spans multiple days
                       let titleText = `${booking.startupDetails?.startupName || booking.startupName || "Unknown Startup"} - ${facilityType}`;
                       if (bookingSpansMultipleDays) {
@@ -744,7 +756,7 @@ export default function CalendarPage() {
                       } else {
                         titleText += ` - ${startDateInfo.formattedTime} to ${endDateInfo.formattedTime}`;
                       }
-                      
+
                       return (
                         <div
                           key={`${booking._id}-day-${dayIndex}`}
@@ -774,11 +786,11 @@ export default function CalendarPage() {
                                 <div className="font-bold text-sm text-black">{booking.startupDetails?.startupName || booking.startupName || "Unknown Startup"}</div>
                                 <div className="text-xs text-black">{facilityType}</div>
                                 <div className="text-xs text-gray-500">
-                                  {bookingSpansMultipleDays && !isSameDay(day.date, startDate) 
-                                    ? "Continued" 
+                                  {bookingSpansMultipleDays && !isSameDay(day.date, startDate)
+                                    ? "Continued"
                                     : startDateInfo.formattedTime} - {
-                                    bookingSpansMultipleDays && !isSameDay(day.date, endDate) 
-                                      ? "..." 
+                                    bookingSpansMultipleDays && !isSameDay(day.date, endDate)
+                                      ? "..."
                                       : endDateInfo.formattedTime}
                                 </div>
                               </div>
@@ -813,7 +825,7 @@ export default function CalendarPage() {
               Long-term Ongoing Bookings
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="mt-4">
             {Object.entries(longTermBookings).map(([planType, bookings]) => (
               bookings.length > 0 ? (
@@ -827,10 +839,10 @@ export default function CalendarPage() {
                       const color = getFacilityColor(booking);
                       const startDate = new Date(booking.startDate);
                       const endDate = new Date(booking.endDate);
-                      
+
                       return (
-                        <div 
-                          key={booking._id} 
+                        <div
+                          key={booking._id}
                           className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 hover:shadow-md transition-shadow"
                           style={{ borderLeft: `4px solid ${color}` }}
                         >
@@ -872,7 +884,7 @@ export default function CalendarPage() {
                 </div>
               ) : null
             ))}
-            
+
             {countLongTermBookings() === 0 && (
               <div className="text-center py-10">
                 <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -15,6 +15,8 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const base_url = "http://localhost:3001";
+
   useEffect(() => {
     // Poll the booking endpoint for a short period so the invoice appears
     // as soon as the background generator writes it. This avoids forcing
@@ -29,7 +31,19 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
       try {
         if (!mounted) return;
         setLoading(true);
-        const response = await fetch(`/api/bookings/${bookingId}`);
+        
+        //const response = await fetch(`/api/bookings/${bookingId}`);
+
+        const response = await fetch(
+          `${base_url}/api/bookings/${bookingId}`,
+          {
+            method: "GET",
+            credentials: "include", // IMPORTANT (send JWT cookie)
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
         if (!response.ok) {
           throw new Error('Failed to fetch booking details');
         }

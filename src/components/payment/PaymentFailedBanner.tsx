@@ -25,6 +25,8 @@ export default function PaymentFailedBanner({ bookingId }: PaymentFailedBannerPr
   const [dismissed, setDismissed] = useState(false)
   const [expired, setExpired] = useState(false)
 
+  const base_url = "http://localhost:3001";
+
   // Function to load Razorpay script dynamically
   const loadRazorpayScript = () => {
     return new Promise<boolean>((resolve) => {
@@ -41,7 +43,18 @@ export default function PaymentFailedBanner({ bookingId }: PaymentFailedBannerPr
   useEffect(() => {
     const fetchBooking = async () => {
       try {
-        const response = await fetch(`/api/bookings/${bookingId}`)
+        //const response = await fetch(`/api/bookings/${bookingId}`)
+        const response = await fetch(
+          `${base_url}/api/bookings/${bookingId}`,
+          {
+            method: "GET",
+            credentials: "include", // IMPORTANT (send JWT cookie)
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
         if (!response.ok) throw new Error('Failed to fetch booking details')
         
         const data = await response.json()

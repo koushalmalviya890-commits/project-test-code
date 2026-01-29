@@ -46,13 +46,25 @@ export default function InvoicePage() {
   const [error, setError] = useState<string | null>(null)
   const printRef = useRef<HTMLDivElement>(null)
 
+  const base_url = "http://localhost:3001";
+
   useEffect(() => {
     const fetchBookingDetails = async () => {
       try {
         setIsLoading(true)
         setError(null)
         
-        const response = await fetch(`/api/bookings/${params.id}`)
+       // const response = await fetch(`/api/bookings/${params.id}`)
+        const response = await fetch(
+          `${base_url}/api/bookings/${params.id}`,
+          {
+            method: "GET",
+            credentials: "include", // IMPORTANT (send cookie)
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
         
         if (!response.ok) {
           throw new Error(`Failed to fetch booking details: ${response.status}`)

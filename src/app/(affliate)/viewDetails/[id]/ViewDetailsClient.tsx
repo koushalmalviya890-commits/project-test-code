@@ -2555,15 +2555,38 @@ export default function ViewDetailsClient({
     const checkFailedPayments = async () => {
       if (!session?.user?.id) return;
 
+      // try {
+      //   const response = await fetch(`/api/bookings/failed?facilityId=${facilityId}`);
+      //   if (response.ok) {
+      //     const data = await response.json();
+      //     if (data.bookingId) {
+      //       setFailedBookingId(data.bookingId);
+      //     }
+      //   }
+      // } 
       try {
-        const response = await fetch(`/api/bookings/failed?facilityId=${facilityId}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.bookingId) {
-            setFailedBookingId(data.bookingId);
-          }
+
+      const response = await fetch(
+        `${base_url}/api/bookings/failed?facilityId=${facilityId}`,
+        {
+          method: "GET",
+          credentials: "include", // VERY IMPORTANT (send cookie)
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
-      } catch (error) {
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        if (data.bookingId) {
+          setFailedBookingId(data.bookingId);
+        }
+      }
+
+    }
+      catch (error) {
         console.error("Error checking for failed payments:", error);
       }
     };

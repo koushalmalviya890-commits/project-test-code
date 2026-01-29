@@ -15,7 +15,9 @@ export default function StatusActions({ bookingId, status: initialStatus }: Stat
   const [showSpinner, setShowSpinner] = useState(false);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  
+
+  const base_url = "http://localhost:3001";
+
   // Store successful updates in localStorage to persist through refreshes
   useEffect(() => {
     // On first load, the localStorage should match whatever's in the database
@@ -26,11 +28,11 @@ export default function StatusActions({ bookingId, status: initialStatus }: Stat
       // If server says pending, remove any localStorage value that might be wrong
       localStorage.removeItem(`booking_status_${bookingId}`);
     }
-    
+
     // Set component state to server state
     setCurrentStatus(initialStatus);
   }, [bookingId, initialStatus]);
-  
+
   if (currentStatus !== 'pending') {
     // Define styling for each status
     const statusStyles = {
@@ -39,11 +41,10 @@ export default function StatusActions({ bookingId, status: initialStatus }: Stat
       cancelled: 'bg-orange-50 text-orange-700',
       completed: 'bg-blue-50 text-blue-700'
     };
-    
+
     return (
-      <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-sm font-medium ${
-        statusStyles[currentStatus] || 'bg-gray-50 text-gray-700'
-      }`}>
+      <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-sm font-medium ${statusStyles[currentStatus] || 'bg-gray-50 text-gray-700'
+        }`}>
         {currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1)}
         {(showSpinner || isPending) && (
           <svg className="ml-2 h-4 w-4 animate-spin text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -57,59 +58,74 @@ export default function StatusActions({ bookingId, status: initialStatus }: Stat
 
   const updateBookingStatus = async (newStatus: 'approved' | 'rejected', retry = false) => {
     if (isLoading) return; // Prevent multiple clicks
-    
+
     setIsLoading(true);
     if (retry) {
       setIsRetrying(true);
     }
-    
+
     // Optimistically update UI first - but only for the current session 
     setCurrentStatus(newStatus);
     setShowSpinner(true);
-    
+
     // Clear any old localStorage values to ensure we don't have stale data
     localStorage.removeItem(`booking_status_${bookingId}`);
-    
+
     //// console.log(`[StatusActions] ${retry ? 'Retrying' : 'Updating'} booking ${bookingId} status from ${initialStatus} to ${newStatus}`)
-    
+
     const requestData = {
       bookingId,
       status: newStatus,
       previousStatus: initialStatus,
       timestamp: Date.now() // Add timestamp to ensure request is not cached
     }
-    
+
     //// console.log(`[StatusActions] Sending request data:`, requestData)
-    
+
     try {
       // Use fetch with a timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-      
-      const res = await fetch(`/api/bookings/update-status?t=${Date.now()}`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store',
-          'Pragma': 'no-cache'
-        },
-        body: JSON.stringify(requestData),
-        cache: 'no-store',
-        signal: controller.signal,
-        next: { revalidate: 0 }
-      });
-      
+
+      // const res = await fetch(`/api/bookings/update-status?t=${Date.now()}`, {
+      //   method: 'POST',
+      //   headers: { 
+      //     'Content-Type': 'application/json',
+      //     'Cache-Control': 'no-cache, no-store',
+      //     'Pragma': 'no-cache'
+      //   },
+      //   body: JSON.stringify(requestData),
+      //   cache: 'no-store',
+      //   signal: controller.signal,
+      //   next: { revalidate: 0 }
+      // });
+
+      const res = await fetch(
+        `${base_url}/api/bookings/update-status?t=${Date.now()}`,
+        {
+          method: "POST",
+          credentials: "include", // IMPORTANT (send JWT cookie)
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache, no-store",
+            "Pragma": "no-cache",
+          },
+          body: JSON.stringify(requestData),
+          signal: controller.signal,
+        }
+      );
+
       clearTimeout(timeoutId);
-      
+
       if (res.ok) {
         const responseData = await res.json();
         //// console.log(`[StatusActions] Status update successful:`, responseData);
-        
+
         // ONLY on confirmed success, store in localStorage
         if (responseData.success) {
           localStorage.setItem(`booking_status_${bookingId}`, newStatus);
         }
-        
+
         // Use React useTransition for smoother UI updates
         startTransition(() => {
           setShowSpinner(false);
@@ -120,7 +136,7 @@ export default function StatusActions({ bookingId, status: initialStatus }: Stat
         // Reset UI status on error - the database update failed
         setCurrentStatus(initialStatus);
         setShowSpinner(false);
-        
+
         let errorMessage = 'Unknown error';
         try {
           const errorData = await res.json();
@@ -129,13 +145,13 @@ export default function StatusActions({ bookingId, status: initialStatus }: Stat
           // If we can't parse JSON, just use the status text
           errorMessage = res.statusText || `Error ${res.status}`;
         }
-        
+
         console.error(`[StatusActions] Status update failed:`, errorMessage);
-        
+
         // For 504 timeouts, try once more with a server query
         if (res.status === 504) {
           alert('The server took too long to respond. Checking actual status...');
-          
+
           // Forcefully refresh to get the true status from the server
           router.refresh();
         } else {
@@ -144,10 +160,10 @@ export default function StatusActions({ bookingId, status: initialStatus }: Stat
       }
     } catch (error: any) {
       console.error(`[StatusActions] Error updating status:`, error);
-      
+
       // For network errors, don't assume success - we need to verify
       setCurrentStatus(initialStatus);
-      
+
       // Handle timeout/abort specifically
       if (error.name === 'AbortError' || error.message?.includes('timeout')) {
         alert('The request timed out. Checking actual status...');
@@ -168,7 +184,7 @@ export default function StatusActions({ bookingId, status: initialStatus }: Stat
 
   return (
     <div className="flex items-center gap-2">
-      <button 
+      <button
         onClick={() => updateBookingStatus('approved')}
         disabled={isLoading || isPending}
         className={`rounded-full ${isLoading || isPending ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'} px-3 py-1 text-sm font-medium text-white transition-colors`}
