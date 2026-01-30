@@ -142,9 +142,11 @@ export async function POST(req: NextRequest) {
     try {
       // Convert amount to paise and ensure it's a whole number
         const amountInPaise = Math.round(amount);
-  
-  const nodeRes = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/facility-bookings/payments/create-order`, {
-    method: 'POST',
+  const apiUrl = "https://webapi.cumma.in";
+  // const nodeRes = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/facility-bookings/payments/create-order`, {
+    const nodeRes = await fetch(`${apiUrl}/api/facility-bookings/payments/create-order`, {
+ 
+  method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${process.env.API_SECRET_KEY}`

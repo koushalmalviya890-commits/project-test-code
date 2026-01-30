@@ -196,6 +196,7 @@ export default function ExtensionRequestDialog() {
   const [requests, setRequests] = useState<ExtensionRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const apiUrl ="http://localhost:3001";
 
   // Fetch data initially and optionally poll
   useEffect(() => {
@@ -224,12 +225,12 @@ export default function ExtensionRequestDialog() {
   ) => {
     setUpdatingId(id);
     try {
-      const res = await fetch(`/api/startup/extent-booking/${id}`, {
+      const res = await fetch(`${apiUrl}/api/extent-booking/${id}`, {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status }),
       });
 
       if (!res.ok) throw new Error("Failed to update status");

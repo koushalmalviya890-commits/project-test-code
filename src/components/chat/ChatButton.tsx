@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MessageCircle, X, Send } from 'lucide-react'
+import { method } from 'lodash'
 
 interface Message {
   type: 'user' | 'bot'
@@ -15,6 +16,8 @@ export function ChatButton() {
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const apiUrl = "http://localhost:3001";
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,13 +30,13 @@ export function ChatButton() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
+      const response = await fetch(`${apiUrl}/api/chat`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ message: userMessage.content }),
-      })
+      });
 
       if (!response.ok) throw new Error('Failed to get response')
 
