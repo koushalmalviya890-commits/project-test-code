@@ -721,6 +721,57 @@ export default function ServiceProviderDashboard() {
   }, [dashboardData, selectedDate]);
 
   // New function to fetch recent notifications
+  // const fetchRecentNotifications = async () => {
+  //   try {
+  //     // if (!session?.user?.id) return;
+  //     if (!user?.id) return;
+
+
+  //     const apiUrl = "http://localhost:3001";
+  //     // Updated API call with correct parameters
+  //     // const response = await fetch(
+  //     //   "/api/notifications?limit=3&type=booking&status=approved"
+  //     // );
+
+  //     const response = await fetch(
+  //       `${apiUrl}/notifications?limit=3&type=booking&status=approved`,
+  //       {
+  //         // ✅ 3. CRITICAL: Allow Express to read the cookie
+  //         credentials: 'include',
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         }
+  //       }
+  //     );
+
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+
+  //       // Transform notifications for display - preserve the original message
+  //       const transformedNotifications = data.notifications.map(
+  //         (notification: any) => ({
+  //           _id: notification._id,
+  //           userName: notification.metadata?.startupName || "A startup",
+  //           facilityName: notification.metadata?.facilityName || "your facility",
+  //           status: "approved",
+  //           createdAt: notification.createdAt,
+  //           isRead: notification.isRead,
+  //           message: notification.message, // Add the original message
+  //         })
+  //       );
+
+  //       setRecentNotifications(transformedNotifications);
+  //     } else {
+  //       console.error(
+  //         "Failed to fetch recent notifications:",
+  //         await response.text()
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching recent notifications:", error);
+  //   }
+  // };
   const fetchRecentNotifications = async () => {
     try {
       // if (!session?.user?.id) return;
@@ -733,16 +784,16 @@ export default function ServiceProviderDashboard() {
       //   "/api/notifications?limit=3&type=booking&status=approved"
       // );
 
-      const response = await fetch(
-        `${apiUrl}/notifications?limit=3&type=booking&status=approved`,
-        {
-          // ✅ 3. CRITICAL: Allow Express to read the cookie
-          credentials: 'include',
-          headers: {
-            "Content-Type": "application/json",
-          }
-        }
-      );
+   const response = await fetch(
+      `${apiUrl}/api/notifications?limit=3&type=booking&status=approved`,
+      {
+         // ✅ 3. CRITICAL: Allow Express to read the cookie
+         credentials: 'include', 
+         headers: {
+           "Content-Type": "application/json",
+         }
+      }
+    );
 
 
       if (response.ok) {
@@ -772,6 +823,7 @@ export default function ServiceProviderDashboard() {
       console.error("Error fetching recent notifications:", error);
     }
   };
+
 
   const handleTabChange = (tab: "bookings" | "earnings") => {
     setActiveTab(tab);

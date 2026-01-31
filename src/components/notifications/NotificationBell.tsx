@@ -1,15 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
+ import { useState, useEffect, useRef } from 'react';
 import { BellIcon } from 'lucide-react';
 import { NotificationPanel } from './NotificationPanel';
 import { INotification } from '@/models/Notification';
 import { useClickOutside } from '@/hooks/useClickOutside';
+import { useAuth } from '@/context/AuthContext'; // ✅ Import Auth
 
 export function NotificationBell() {
+  const { user } = useAuth(); // ✅ Get authenticated user
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const bellRef = useRef<HTMLDivElement>(null);
+
+  const apiUrl = "http://localhost:3001"; // Replace with your actual API URL
   
   // Use click outside hook to close panel when clicking elsewhere
   useClickOutside(bellRef, () => {
@@ -17,16 +21,22 @@ export function NotificationBell() {
   });
 
   // Fetch notifications on component mount
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
+useEffect(() => {
+    if (user?.id) {
+      fetchNotifications();
+    }
+  }, [user?.id]); // ✅ Depend on user ID
+
 
   // Fetch notifications from API
   const fetchNotifications = async () => {
     try {
+      if (!user?.id) return;
+
       setIsLoading(true);
-      const response = await fetch('/api/notifications');
-      
+const response = await fetch(`${apiUrl}/api/notifications`, {
+        credentials: 'include' 
+      });      
       if (response.ok) {
         const data = await response.json();
         setNotifications(data.notifications || []);
@@ -57,8 +67,9 @@ export function NotificationBell() {
   // Mark all notifications as read
   const markAllAsRead = async () => {
     try {
-      const response = await fetch('/api/notifications', {
-        method: 'PATCH'
+      const response = await fetch(`${apiUrl}/api/notifications/mark-all-read`, {
+        method: 'PATCH',
+        credentials: 'include' 
       });
       
       if (response.ok) {
@@ -76,8 +87,9 @@ export function NotificationBell() {
     try {
       // Handle "delete all" case
       if (notificationId === 'all') {
-        const response = await fetch('/api/notifications', {
-          method: 'DELETE'
+        const response = await fetch(`${apiUrl}/api/notifications/delete-all`, {
+          method: 'DELETE',
+          credentials: 'include'
         });
         
         if (response.ok) {
@@ -88,10 +100,10 @@ export function NotificationBell() {
       }
       
       // Handle single notification deletion
-      const response = await fetch(`/api/notifications/${notificationId}`, {
-        method: 'DELETE'
+const response = await fetch(`${apiUrl}/api/notifications/${notificationId}`, {
+        method: 'DELETE',
+        credentials: 'include' // ✅ Critical
       });
-      
       if (response.ok) {
         // Remove the notification from state
         setNotifications(notifications.filter(notif => notif._id !== notificationId));
@@ -113,7 +125,7 @@ export function NotificationBell() {
       <button 
         onClick={toggleNotificationPanel}
         className="p-2 sm:p-2.5 rounded-full bg-white/80 border border-gray-200 flex items-center justify-center w-10 h-10 sm:w-[60px] sm:h-[60px] relative touch-manipulation"
-        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+        // aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
       >
         <BellIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
         
