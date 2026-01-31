@@ -182,6 +182,7 @@ export default function ServiceProviderDashboard() {
     monthlyEarnings: 0,
     pendingPayouts: 0,
   });
+   const apiUrl = "http://localhost:3001";
 
   // Colors for charts
   const COLORS = ["#FFAE4C", "#6FD195", "#7086FD", "#FF8042", "#8884d8"];
@@ -225,7 +226,13 @@ export default function ServiceProviderDashboard() {
   const fetchEarningsApiData = async () => {
     try {
       setIsEarningsLoading(true);
-      const response = await fetch("/api/service-provider/earnings");
+      const response = await fetch(`${apiUrl}/api/service-provider/earnings`, {
+        method: "GET",
+        credentials: "include", // ⬅️ CRITICAL: Sends the auth cookie
+         headers: { 'Content-Type': 'application/json' },
+      });
+
+      // const result = await response.json();
 
       if (!response.ok) {
         throw new Error(`Error fetching earnings: ${response.status}`);
@@ -778,7 +785,7 @@ export default function ServiceProviderDashboard() {
       if (!user?.id) return;
 
 
-      const apiUrl = "http://localhost:3001";
+     
       // Updated API call with correct parameters
       // const response = await fetch(
       //   "/api/notifications?limit=3&type=booking&status=approved"

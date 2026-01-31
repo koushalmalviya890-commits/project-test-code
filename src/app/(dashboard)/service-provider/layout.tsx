@@ -216,7 +216,7 @@ export default function ServiceProviderLayout({
               <DropdownMenuTrigger asChild>
                 <button className="h-10 w-10 md:h-[60px] md:w-[60px] rounded-full bg-white/80 border border-gray-200 overflow-hidden cursor-pointer transition-transform hover:scale-105">
                   <ProfilePicture
-                    imageUrl={profile?.logoUrl}
+                    imageUrl={user?.logoUrl}
                     size={40}
                     className="md:w-[60px] md:h-[60px]"
                   />

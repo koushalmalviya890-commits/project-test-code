@@ -429,7 +429,7 @@ user.userType === "startup"
                       <DropdownMenuTrigger asChild>
                         <button className="h-10 w-10 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/40 transition-colors">
                           <ProfilePicture
-                            imageUrl={profile?.logoUrl}
+                            imageUrl={user?.logoUrl}
                             size={40}
                           />
                         </button>
