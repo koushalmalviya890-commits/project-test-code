@@ -384,14 +384,20 @@ export default function ViewDetailsClient({
 
   useEffect(() => {
     const checkStartupExists = async () => {
+      if (!user?.id && !user?.email) return;
       try {
-        const res = await fetch("/api/checkuser", {
+        const res = await fetch(`${apiUrl}/api/checkuser`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          // body: JSON.stringify({
+          //   incubatorId: facility?.serviceProviderId,
+          // }),
           body: JSON.stringify({
-            incubatorId: facility?.serviceProviderId,
+            // 3. CHANGE: Send userId and email to match Backend Controller
+            userId: user.id || user.id,
+            email: user.email,
           }),
         });
         const data = await res.json();
@@ -399,7 +405,7 @@ export default function ViewDetailsClient({
         if (res.ok) {
           setIsExisting(data.exists); // true or false
         } else {
-          console.error("API siva:", data.error);
+          console.error("Check user API error:", data.error);
           setIsExisting(false);
         }
       } catch (err) {
@@ -410,10 +416,17 @@ export default function ViewDetailsClient({
       }
     };
 
-    if (facility) {
+    if (user?.id || user?.email) {
       checkStartupExists();
     }
-  }, [facility]);
+    // Note: I removed 'facility' dependency because this specific backend API
+    // only checks the User, it doesn't seem to care about the facility.
+  }, [user]);
+
+  //   if (facility) {
+  //     checkStartupExists();
+  //   }
+  // }, [facility]);
 
   // Fetch startup profile
   useEffect(() => {

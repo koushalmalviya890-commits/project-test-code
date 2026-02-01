@@ -44,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         setUser(null); // Clear session if token is invalid/expired
         sessionStorage.removeItem("authUser");
+        
       } finally {
         setLoading(false);
       }

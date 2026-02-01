@@ -76,51 +76,45 @@ export default function StartupBookings() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  const apiUrl = "http://localhost:3001";
+
   useEffect(() => {
     const fetchBookings = async () => {
-      try {
-       // console.log('Fetching bookings with session ID:', session?.user?.id)
-        const response = await fetch('/api/startup/bookings')
-        // Gunjan
-        // const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/startup/bookings/${session.user.id}`);
-        const data = await response.json()
-       // console.log(data , " for booking section in startup")
-        if (!response.ok) {
-          console.error('API error:', data)
-          throw new Error(data.error || 'Failed to fetch bookings')
-        }
-        
-       // console.log('API Response:', {
-        //   status: response.status,
-        //   bookingsCount: Array.isArray(data) ? data.length : 'not an array',
-        //   firstBooking: Array.isArray(data) && data.length > 0 ? {
-        //     id: data[0]._id,
-        //     facility: data[0].facilityDetails?.name,
-        //     status: data[0].status
-        //   } : null
-        // })
-        
-        if (!Array.isArray(data)) {
-          console.error('Unexpected data format:', data)
-          throw new Error('Invalid data format received')
-        }
-        
-        setBookings(data)
-      } catch (error) {
-        console.error('Error fetching bookings:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+      // Safety check: Don't fetch if we don't have the ID
+      if (!user?.id) return;
 
-    // if (session?.user?.id) {
-        if (user?.id) {
-      fetchBookings()
-    } else {
-     // console.log('No session available yet')
+      try {
+        // 1. Point to your Express Backend
+        // 2. Include the user.id in the URL (required by backend route '/bookings/:userId')
+        const url = `${apiUrl}/api/startup/bookings/${user.id}`;
+
+        const response = await fetch(url);
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          console.error("API error:", data);
+          throw new Error(data.error || "Failed to fetch bookings");
+        }
+
+        if (!Array.isArray(data)) {
+          console.error("Unexpected data format:", data);
+          throw new Error("Invalid data format received");
+        }
+
+        setBookings(data);
+      } catch (error) {
+        console.error("Error fetching bookings:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Trigger logic
+    if (user?.id) {
+      fetchBookings();
     }
-  // }, [session])
-  }, [user])
+  }, [user?.id]);
 
   const handleExtensionRequested = (bookingId: string, extentDays: number) => {
     // Update the booking state to mark as extension requested

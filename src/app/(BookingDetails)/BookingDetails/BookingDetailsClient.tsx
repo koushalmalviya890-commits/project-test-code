@@ -247,7 +247,7 @@ useEffect(() => {
           "Content-Type": "application/json",
         },
         //added credentials try to check it again if not required remove it
-        credentials: "include",
+        // credentials: "include",
         body: JSON.stringify({
           facilityId: bookingDetails.facilityId,
           rentalPlan: bookingDetails.rentalPlan,

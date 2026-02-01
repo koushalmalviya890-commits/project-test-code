@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { Form } from 'react-hook-form'
+import { useAuth } from '@/context/AuthContext'
 
 interface BookingExtensionDialogProps {
   bookingId: string
@@ -22,6 +23,10 @@ interface BookingExtensionDialogProps {
   startupId:string
   facilityId:string
   onExtensionRequested?: (bookingId: string, extentDays: number) => void
+}
+
+interface ExtensionRequest {
+  status: string
 }
 
 export default function BookingExtensionDialog({ 
@@ -36,59 +41,98 @@ export default function BookingExtensionDialog({
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isRequested, setIsRequested] = useState(false)
+  const { user } = useAuth();
+
+  const apiUrl ="http://localhost:3001";
+
+  const fetchExtensionRequests = async (id: string) => {
+    try {
+      // Fetch requests specifically for this booking
+      const res = await fetch(`${apiUrl}/api/extent-booking/${id}`);
+      const data = await res.json();
+
+      // Check if there is any pending request for this booking
+      if (Array.isArray(data)) {
+        // Assuming your backend returns an array of requests
+        const hasPending = data.some((req: ExtensionRequest) => req.status === "pending");
+        setIsRequested(hasPending);
+      }
+    } catch (error) {
+      console.error("Failed to check extension status", error);
+    }
+  };
+
+  useEffect(() => {
+    if (bookingId) {
+      fetchExtensionRequests(bookingId);
+    }
+  }, [bookingId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!extentDays || parseInt(extentDays) <= 0) {
-      toast.error('Please enter a valid number of days')
-      return
-    }
+  e.preventDefault();
 
-    setIsLoading(true)
-    
-    try {
-      const response = await fetch('/api/startup/extent-booking', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentEndDate,
-          bookingId,
-          incubatorId,
-          startupId,
-          facilityId,
-          extentDays: parseInt(extentDays)
-        })
-      })
-
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send extension request')
-      }
-
-      setIsRequested(true)
-      setIsOpen(false)
-      toast.success( 'Extension request sent successfully!')
-      
-      // Call the callback function if provided
-      if (onExtensionRequested) {
-        onExtensionRequested(bookingId, parseInt(extentDays))
-      }
-      
-    } catch (error) {
-      console.error('Error sending extension request:', error)
-      toast.error(
-        typeof error === 'object' && error !== null && 'message' in error
-          ? (error as { message?: string }).message || 'Failed to send extension request. Please try again.'
-          : 'Failed to send extension request. Please try again.'
-      )
-    } finally {
-      setIsLoading(false)
-    }
+  // Validate days
+  if (!extentDays || parseInt(extentDays) <= 0) {
+    toast.error('Please enter a valid number of days');
+    return;
   }
+
+  // Validate User ID (Required by backend to find Startup)
+  if (!user?.id) {
+    toast.error('User session not found');
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    // CALCULATION: Backend expects 'requestedEndDate', so we calculate it here
+    const daysToAdd = parseInt(extentDays);
+    const startDate = new Date(currentEndDate); // Ensure currentEndDate is a valid Date string/object
+    const finalDate = new Date(startDate);
+    finalDate.setDate(startDate.getDate() + daysToAdd);
+
+    const response = await fetch(`${apiUrl}/api/extent-booking`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: user.id,            // REQUIRED: Your backend uses this to find the startup
+        bookingId: bookingId,       // REQUIRED: Link to the booking
+        requestedEndDate: finalDate.toISOString(), // REQUIRED: Calculated date
+        reason: "Extension requested" // Optional: You might want to add a text input for this
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to send extension request');
+    }
+
+    setIsRequested(true);
+    setIsOpen(false);
+    toast.success('Extension request sent successfully!');
+
+    // Refresh the list immediately after successful submission
+    fetchExtensionRequests(bookingId);
+
+    if (onExtensionRequested) {
+      onExtensionRequested(bookingId, daysToAdd);
+    }
+
+  } catch (error) {
+    console.error('Error sending extension request:', error);
+    toast.error(
+      typeof error === 'object' && error !== null && 'message' in error
+        ? (error as { message?: string }).message
+        : 'Failed to send extension request.'
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const calculateNewEndDate = () => {
     if (!extentDays || parseInt(extentDays) <= 0) return null
