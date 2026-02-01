@@ -31,28 +31,6 @@ export function isStartupProfileComplete(profile: any): boolean {
   );
 }
 
-// Check if a service provider profile is complete
-export function isServiceProviderProfileComplete(profile: any): boolean {
-  if (!profile) return false;
-  
-  const requiredFields = [
-    profile.serviceProviderType,
-    profile.serviceName,
-    profile.address,
-    profile.city,
-    profile.stateProvince,
-    profile.zipPostalCode,
-    profile.primaryContact1Name,
-    profile.primaryContact1Designation,
-    profile.primaryContactNumber,
-    profile.logoUrl
-  ];
-  
-  return requiredFields.every(field => 
-    field !== null && field !== undefined && field !== ''
-  );
-}
-
 // Get the completion percentage of a startup profile
 export function getStartupProfileCompletionPercentage(profile: any): number {
   if (!profile) return 0;
@@ -95,29 +73,6 @@ export function getStartupProfileCompletionPercentage(profile: any): number {
   return Math.round((filledFields / requiredFields.length) * 100);
 }
 
-// Get the completion percentage of a service provider profile
-export function getServiceProviderProfileCompletionPercentage(profile: any): number {
-  if (!profile) return 0;
-  
-  const requiredFields = [
-    { name: 'Logo', value: profile.logoUrl },
-    { name: 'Service Provider Type', value: profile.serviceProviderType },
-    { name: 'Service Name', value: profile.serviceName },
-    { name: 'Address', value: profile.address },
-    { name: 'City', value: profile.city },
-    { name: 'State/Province', value: profile.stateProvince },
-    { name: 'ZIP/Postal Code', value: profile.zipPostalCode },
-    { name: 'Primary Contact Name', value: profile.primaryContact1Name },
-    { name: 'Primary Contact Designation', value: profile.primaryContact1Designation },
-    { name: 'Primary Contact Number', value: profile.primaryContactNumber }
-  ];
-  
-  const filledFields = requiredFields.filter(field => 
-    field.value !== null && field.value !== undefined && field.value !== ''
-  ).length;
-  
-  return Math.round((filledFields / requiredFields.length) * 100);
-}
 
 // Get incomplete fields for a startup profile
 export function getStartupIncompleteFields(profile: any): string[] {
@@ -158,6 +113,57 @@ export function getStartupIncompleteFields(profile: any): string[] {
     .filter(field => !field.value)
     .map(field => field.name);
 }
+
+
+// Check if a service provider profile is complete
+export function isServiceProviderProfileComplete(profile: any): boolean {
+  if (!profile) return false;
+  
+  const requiredFields = [
+    profile.serviceProviderType,
+    profile.serviceName,
+    profile.address,
+    profile.city,
+    profile.stateProvince,
+    profile.zipPostalCode,
+    profile.primaryContact1Name,
+    profile.primaryContact1Designation,
+    profile.primaryContactNumber,
+    profile.logoUrl
+  ];
+  
+  return requiredFields.every(field => 
+    field !== null && field !== undefined && field !== ''
+  );
+}
+
+
+
+// Get the completion percentage of a service provider profile
+export function getServiceProviderProfileCompletionPercentage(profile: any): number {
+  if (!profile) return 0;
+  
+  const requiredFields = [
+    { name: 'Logo', value: profile.logoUrl },
+    { name: 'Service Provider Type', value: profile.serviceProviderType },
+    { name: 'Service Name', value: profile.serviceName },
+    { name: 'Address', value: profile.address },
+    { name: 'City', value: profile.city },
+    { name: 'State/Province', value: profile.stateProvince },
+    { name: 'ZIP/Postal Code', value: profile.zipPostalCode },
+    { name: 'Primary Contact Name', value: profile.primaryContact1Name },
+    { name: 'Primary Contact Designation', value: profile.primaryContact1Designation },
+    { name: 'Primary Contact Number', value: profile.primaryContactNumber }
+  ];
+  
+  const filledFields = requiredFields.filter(field => 
+    field.value !== null && field.value !== undefined && field.value !== ''
+  ).length;
+  
+  return Math.round((filledFields / requiredFields.length) * 100);
+}
+
+
 
 // Get incomplete fields for a service provider profile
 export function getServiceProviderIncompleteFields(profile: any): string[] {

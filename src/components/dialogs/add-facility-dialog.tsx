@@ -96,7 +96,6 @@
 //   children?: React.ReactNode
 // }
 
-
 // const sectorTags = [
 //   "Agri Tech", "Bio Tech", "Aerospace and Defence Tech", "Artificial Intelligence", "Machine Learning",
 //   "Food Tech", "SaaS", "IoT - Internet of Things", "Blue Economy", "Marine Tech", "Aquaculture",
@@ -106,7 +105,6 @@
 //   "Life Sciences", "Chemicals", "Retail Tech", "Fashion Tech", "Textiles", "Social Impact", "Sports Tech",
 //   "Travel", "Tourism", "Logistics", "Networking", "Web 3.0", "Industry 5.0", "Gaming", "AR, VR", "Others"
 // ]
-
 
 // export function AddFacilityDialog({ onSuccess, children }: AddFacilityDialogProps) {
 //   const router = useRouter()
@@ -120,7 +118,7 @@
 //   const [profileCompletionPercentage, setProfileCompletionPercentage] = useState(0)
 //   const [incompleteFields, setIncompleteFields] = useState<string[]>([])
 //   const [sectorTags, setSectorTags] = useState<string[]>([]);
-//   const [loadingSectors, setLoadingSectors] = useState(true);  
+//   const [loadingSectors, setLoadingSectors] = useState(true);
 
 //   const [selectedSectors, setSelectedSectors] = useState<string[]>([])
 
@@ -325,8 +323,6 @@
 //             </div>
 //           {/* // )} */}
 
-
-
 //           {selectedType && (
 //   <div className="mt-6">
 //     <FacilityForm
@@ -355,207 +351,238 @@
 //     </>
 //   )
 // }
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
-  Building2, Users, VideoIcon, Microscope,
-  MonitorPlay, LayoutDashboard
-} from 'lucide-react'
+  Building2,
+  Users,
+  VideoIcon,
+  Microscope,
+  MonitorPlay,
+  LayoutDashboard,
+} from "lucide-react";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { FacilityForm } from '@/components/forms/facility-form'
-import { FacilityType } from '@/components/forms/types'
-import { IncompleteProfileModal } from '@/components/ui/incomplete-profile-modal'
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { FacilityForm } from "@/components/forms/facility-form";
+import { FacilityType } from "@/components/forms/types";
+import { IncompleteProfileModal } from "@/components/ui/incomplete-profile-modal";
 import {
   isServiceProviderProfileComplete,
   getServiceProviderProfileCompletionPercentage,
-  getServiceProviderIncompleteFields
-} from '@/lib/utils/profile-completion'
-import { getServiceProviderProfile } from '@/lib/actions/service-provider'
+  getServiceProviderIncompleteFields,
+} from "@/lib/utils/profile-completion";
+// import { getServiceProviderProfile } from '@/lib/actions/service-provider'
 
 const facilityTypes = [
   {
-    type: 'individual-cabin',
-    title: 'Individual Cabin',
-    description: 'Private office spaces for individuals or small teams',
+    type: "individual-cabin",
+    title: "Individual Cabin",
+    description: "Private office spaces for individuals or small teams",
     icon: Building2,
   },
   {
-    type: 'coworking-spaces',
-    title: 'Coworking Spaces',
-    description: 'Shared workspace for professionals and teams',
+    type: "coworking-spaces",
+    title: "Coworking Spaces",
+    description: "Shared workspace for professionals and teams",
     icon: Users,
   },
   {
-    type: 'meeting-rooms',
-    title: 'Meeting Rooms',
-    description: 'Conference and meeting spaces for professional gatherings',
+    type: "meeting-rooms",
+    title: "Meeting Rooms",
+    description: "Conference and meeting spaces for professional gatherings",
     icon: VideoIcon,
   },
   {
-    type: 'bio-allied-labs',
-    title: 'Bio Allied Labs',
-    description: 'Laboratory spaces for biotechnology and life sciences',
+    type: "bio-allied-labs",
+    title: "Bio Allied Labs",
+    description: "Laboratory spaces for biotechnology and life sciences",
     icon: Microscope,
   },
   {
-    type: 'manufacturing-labs',
-    title: 'Manufacturing Labs',
-    description: 'Spaces for manufacturing and production',
+    type: "manufacturing-labs",
+    title: "Manufacturing Labs",
+    description: "Spaces for manufacturing and production",
     icon: Microscope,
   },
   {
-    type: 'prototyping-labs',
-    title: 'Prototyping Labs',
-    description: 'Facilities for product development and prototyping',
+    type: "prototyping-labs",
+    title: "Prototyping Labs",
+    description: "Facilities for product development and prototyping",
     icon: Microscope,
   },
   {
-    type: 'software',
-    title: 'Software',
-    description: 'Software tools and development environments',
+    type: "software",
+    title: "Software",
+    description: "Software tools and development environments",
     icon: MonitorPlay,
   },
   {
-    type: 'saas-allied',
-    title: 'SaaS Allied',
-    description: 'Software as a Service and related tools',
+    type: "saas-allied",
+    title: "SaaS Allied",
+    description: "Software as a Service and related tools",
     icon: MonitorPlay,
   },
   {
-    type: 'raw-space-office',
-    title: 'Raw Space (Office)',
-    description: 'Unfurnished office spaces for customization',
+    type: "raw-space-office",
+    title: "Raw Space (Office)",
+    description: "Unfurnished office spaces for customization",
     icon: LayoutDashboard,
   },
   {
-    type: 'raw-space-lab',
-    title: 'Raw Space (Lab)',
-    description: 'Unfurnished laboratory spaces for customization',
+    type: "raw-space-lab",
+    title: "Raw Space (Lab)",
+    description: "Unfurnished laboratory spaces for customization",
     icon: LayoutDashboard,
   },
   {
-    type: 'studio',
-    title: 'Studio',
-    description: 'Specialized workspace for creative professionals',
+    type: "studio",
+    title: "Studio",
+    description: "Specialized workspace for creative professionals",
     icon: Microscope,
   },
-    {
-      type: 'event-workspace',
-      title: 'Eventspace',
-      description: 'Specialized workspace for creative professionals',
-      icon: Microscope,
-    },
-] as const
+  {
+    type: "event-workspace",
+    title: "Eventspace",
+    description: "Specialized workspace for creative professionals",
+    icon: Microscope,
+  },
+] as const;
 
 interface AddFacilityDialogProps {
-  onSuccess?: () => void
-  children?: React.ReactNode
+  onSuccess?: () => void;
+  children?: React.ReactNode;
 }
 
-export function AddFacilityDialog({ onSuccess, children }: AddFacilityDialogProps) {
-  const router = useRouter()
-  const [open, setOpen] = useState(false)
-  const [selectedType, setSelectedType] = useState<FacilityType | null>(null)
-  const [showTypeSelection, setShowTypeSelection] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [showIncompleteProfileModal, setShowIncompleteProfileModal] = useState(false)
-  const [profileCompletionPercentage, setProfileCompletionPercentage] = useState(0)
-  const [incompleteFields, setIncompleteFields] = useState<string[]>([])
-
+export function AddFacilityDialog({
+  onSuccess,
+  children,
+}: AddFacilityDialogProps) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [selectedType, setSelectedType] = useState<FacilityType | null>(null);
+  const [showTypeSelection, setShowTypeSelection] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [showIncompleteProfileModal, setShowIncompleteProfileModal] =
+    useState(false);
+  const [profileCompletionPercentage, setProfileCompletionPercentage] =
+    useState(0);
+  const [incompleteFields, setIncompleteFields] = useState<string[]>([]);
+  const apiUrl = "http://localhost:3001";
   useEffect(() => {
     const checkProfileCompletion = async () => {
-      if (!open) return
+      if (!open) return;
       try {
-        const profileResponse = await getServiceProviderProfile()
-        if (profileResponse?.success && profileResponse.data) {
-          const isComplete = isServiceProviderProfileComplete(profileResponse.data)
+        const response = await fetch(`${apiUrl}/api/service-provider/profile`, {
+          method: "GET",
+          credentials: "include", // ⬅️ Critical for Auth
+          headers: { "Content-Type": "application/json" },
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          const profileData = result.data; // This is the actual profile object
+
+          const isComplete = isServiceProviderProfileComplete(profileData);
+
           if (!isComplete) {
-            const percentage = getServiceProviderProfileCompletionPercentage(profileResponse.data)
-            const fields = getServiceProviderIncompleteFields(profileResponse.data)
-            setProfileCompletionPercentage(percentage)
-            setIncompleteFields(fields)
-            setShowIncompleteProfileModal(true)
-            setOpen(false)
+            const percentage =
+              getServiceProviderProfileCompletionPercentage(profileData);
+            const fields = getServiceProviderIncompleteFields(profileData);
+
+            setProfileCompletionPercentage(percentage);
+            setIncompleteFields(fields);
+            setShowIncompleteProfileModal(true);
+            setOpen(false);
           }
         } else {
-          toast.error('Could not verify profile completion status')
+          if (!result.success) {
+            console.error("Profile check failed:", result);
+            toast.error("Could not verify profile completion status");
+          }
         }
       } catch (error) {
-        toast.error('An error occurred while checking your profile')
+        toast.error("An error occurred while checking your profile");
       }
-    }
+    };
 
     if (open) {
-      setSelectedType(null)
-      setShowTypeSelection(true)
-      setShowForm(false)
-      checkProfileCompletion()
+      setSelectedType(null);
+      setShowTypeSelection(true);
+      setShowForm(false);
+      checkProfileCompletion();
     }
-  }, [open])
+  }, [open]);
 
   const handleTypeChange = (newType: FacilityType) => {
-    setSelectedType(newType)
-    setShowTypeSelection(false)
-    setShowForm(true)
-  }
+    setSelectedType(newType);
+    setShowTypeSelection(false);
+    setShowForm(true);
+  };
 
   const handleSubmit = async (data: any) => {
     try {
       const formData = {
         ...data,
         facilityType: selectedType || data.type,
-      }
+      };
 
-      const response = await fetch('/api/facilities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/facilities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-      })
+      });
 
-      if (!response.ok) throw new Error('Failed to add facility')
+      if (!response.ok) throw new Error("Failed to add facility");
 
-      toast.success('Facility added successfully!')
-      setSelectedType(null)
-      setShowTypeSelection(true)
-      setShowForm(false)
-      setOpen(false)
-      onSuccess?.()
-      router.refresh()
+      toast.success("Facility added successfully!");
+      setSelectedType(null);
+      setShowTypeSelection(true);
+      setShowForm(false);
+      setOpen(false);
+      onSuccess?.();
+      router.refresh();
     } catch (error) {
-      toast.error('Failed to add facility. Please try again.')
+      toast.error("Failed to add facility. Please try again.");
     }
-  }
+  };
 
   const handleCancel = () => {
-    setSelectedType(null)
-    setShowTypeSelection(true)
-    setShowForm(false)
-    setOpen(false)
-  }
+    setSelectedType(null);
+    setShowTypeSelection(true);
+    setShowForm(false);
+    setOpen(false);
+  };
   const handleBack = () => {
     if (showForm) {
-      setShowForm(false)
-      setShowTypeSelection(true)
+      setShowForm(false);
+      setShowTypeSelection(true);
     }
-  }
+  };
   const handleCloseIncompleteModal = () => {
-    setShowIncompleteProfileModal(false)
-  }
+    setShowIncompleteProfileModal(false);
+  };
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(openState) => {
-        if (!openState) {
-          handleCancel()
-        }
-        setOpen(openState)
-      }}>
+      <Dialog
+        open={open}
+        onOpenChange={(openState) => {
+          if (!openState) {
+            handleCancel();
+          }
+          setOpen(openState);
+        }}
+      >
         <DialogTrigger asChild>
           {children || <Button>Add Facility</Button>}
         </DialogTrigger>
@@ -563,8 +590,11 @@ export function AddFacilityDialog({ onSuccess, children }: AddFacilityDialogProp
           <DialogHeader>
             <DialogTitle>
               {showTypeSelection
-                ? 'Select Facility Type'
-                : `Add ${selectedType?.replace(/-/g, ' ')}`.replace(/\b\w/g, c => c.toUpperCase())}
+                ? "Select Facility Type"
+                : `Add ${selectedType?.replace(/-/g, " ")}`.replace(
+                    /\b\w/g,
+                    (c) => c.toUpperCase(),
+                  )}
             </DialogTitle>
           </DialogHeader>
 
@@ -575,7 +605,9 @@ export function AddFacilityDialog({ onSuccess, children }: AddFacilityDialogProp
                 <div
                   key={facility.type}
                   className="border rounded-lg p-4 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
-                  onClick={() => handleTypeChange(facility.type as FacilityType)}
+                  onClick={() =>
+                    handleTypeChange(facility.type as FacilityType)
+                  }
                 >
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-full bg-primary/10">
@@ -583,7 +615,9 @@ export function AddFacilityDialog({ onSuccess, children }: AddFacilityDialogProp
                     </div>
                     <h3 className="font-medium">{facility.title}</h3>
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">{facility.description}</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {facility.description}
+                  </p>
                 </div>
               ))}
             </div>
@@ -620,5 +654,5 @@ export function AddFacilityDialog({ onSuccess, children }: AddFacilityDialogProp
         redirectPath="/service-provider/profile"
       />
     </>
-  )
+  );
 }

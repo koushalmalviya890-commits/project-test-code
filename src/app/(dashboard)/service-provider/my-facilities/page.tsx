@@ -123,6 +123,7 @@ export default function MyFacilities() {
   >(null);
   const [selectedStatus, setSelectedStatus] = useState<string>("active");
   const [isStatusPopoverOpen, setIsStatusPopoverOpen] = useState(false);
+  const apiUrl = "http://localhost:3001";
 
   useEffect(() => {
     if (allFacilities.length === 0) return;
@@ -188,7 +189,13 @@ export default function MyFacilities() {
       if (!user?.id) return; // Guard clause
 
       setIsLoading(true);
-      const response = await fetch("/api/facilities");
+      const response = await fetch(`${apiUrl}/api/facilities`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -219,7 +226,13 @@ export default function MyFacilities() {
   const handleEdit = async (facility: Facility) => {
     try {
      // console.log("Fetching facility details for:", facility._id);
-      const response = await fetch(`/api/facilities/${facility._id}`);
+      const response = await fetch(`${apiUrl}/api/facilities/${facility._id}`,{
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -332,7 +345,14 @@ export default function MyFacilities() {
 
       // First, fetch the current facility data again to make sure we have the most recent version
       const fetchResponse = await fetch(
-        `/api/facilities/${selectedFacility._id}`
+        `${apiUrl}/api/facilities/${selectedFacility._id}`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
       if (!fetchResponse.ok) {
         throw new Error("Failed to fetch current facility data");
@@ -663,8 +683,9 @@ export default function MyFacilities() {
       //   JSON.stringify(payload, null, 2)
       // );
 
-      const response = await fetch(`/api/facilities/${selectedFacility._id}`, {
+      const response = await fetch(`${apiUrl}/api/facilities/${selectedFacility._id}`, {
         method: "PATCH",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -748,7 +769,7 @@ export default function MyFacilities() {
       const facility = facilities.find((f) => f._id === facilityId);
       if (!facility) return;
 
-      const response = await fetch(`/api/facilities/${facilityId}/status`, {
+      const response = await fetch(`${apiUrl}/api/facilities/${facilityId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
