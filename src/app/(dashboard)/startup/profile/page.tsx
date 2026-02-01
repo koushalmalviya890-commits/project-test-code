@@ -28,6 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/context/AuthContext";
+import api from "@/services/Events/services/fetch-api";
 
 interface StartupProfile {
   startupName: string | null;
@@ -68,8 +69,6 @@ interface StartupProfile {
   ifscCode: string | null;
 }
 
-
-
 export default function StartupProfile() {
   // const { data: session } = useSession();
   const { user } = useAuth();
@@ -81,13 +80,25 @@ export default function StartupProfile() {
   const [incompleteFields, setIncompleteFields] = useState<string[]>([]);
   const [accountMismatchError, setAccountMismatchError] = useState(false);
 
-  // const apiUrl = "http://localhost:3001";
+  const apiUrl = "http://localhost:3001";
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!user?.id) return;
+
       try {
-        const response = await fetch("/api/startup/profile");
+        const token = sessionStorage.getItem("authUser");
+        const response = await fetch(`${apiUrl}/api/startup/profile`, {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            // You can remove Authorization header if your middleware checks cookies
+          },
+        });
+
         if (!response.ok) throw new Error("Failed to fetch profile");
+
         const data = await response.json();
         setProfile(data);
         calculateProfileCompletion(data);
@@ -98,33 +109,13 @@ export default function StartupProfile() {
         setIsLoading(false);
       }
     };
-    //     gunjan
-    //     const fetchProfile = async () => {
-    //       if (!session?.user?.id) return;
 
-    //       try {
-    //         const response = await fetch(
-    //           `${process.env.NEXT_PUBLIC_API_URL}/api/startup/profile/${session.user.id}`,
-    //         );
-    //         if (!response.ok) throw new Error("Failed to fetch profile");
-    //         const data = await response.json();
-    //         setProfile(data);
-    //         calculateProfileCompletion(data);
-    //       } catch (error) {
-    //         console.error("Error fetching profile:", error);
-    //         toast.error("Failed to load profile");
-    //       } finally {
-    //         setIsLoading(false);
-    //       }
-    //     };
+    if (user?.id) {
+      fetchProfile();
+    }
+  }, [user?.id]);
 
-    //     if (session?.user?.id) {
-    //     fetchProfile();
-    //   }
-    // }, [session]);
 
-    fetchProfile();
-  }, []);
 
   const calculateProfileCompletion = (profileData: StartupProfile) => {
     const requiredFields = [
@@ -234,58 +225,51 @@ export default function StartupProfile() {
 
     return true;
   };
+const handleSave = async (formData: StartupProfile) => {
+  if (!user?.id) return;
 
-  const handleSave = async (formData: StartupProfile) => {
-    if (!session?.user?.id) return;
-    // Only validate account numbers if user is in editing mode
-    if (isEditing && !validateAccountNumbers(formData)) {
-      return; // Stop execution if validation fails during editing
+  if (isEditing && !validateAccountNumbers(formData)) {
+    return;
+  }
+
+  try {
+    // 1. CLEAN THE DATA: Remove fields that should not be updated directly
+    // MongoDB will throw an error if you try to update _id
+    const { _id, userId, createdAt, updatedAt, __v, ...cleanData } =
+      formData as any;
+
+    const response = await fetch(`${apiUrl}/api/startup/profile`, {
+      method: "PATCH",
+      // 2. INCLUDE COOKIES: This is required for the backend to read req.cookies.token
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        // You can leave Authorization commented out if using cookies
+        // "Authorization": sessionStorage.getItem("authUser") || "",
+      },
+      body: JSON.stringify(cleanData),
+    });
+
+    if (!response.ok) {
+      // Helper to see exactly what the server is complaining about in the console
+      const errData = await response.json();
+      console.error("Server Validation Error:", errData);
+      throw new Error(errData.message || "Failed to update profile");
     }
 
-    try {
-      const response = await fetch("/api/startup/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) throw new Error("Failed to update profile");
-
-      const updatedProfile = await response.json();
-      setProfile(updatedProfile);
-      calculateProfileCompletion(updatedProfile);
-      setIsEditing(false);
-      setAccountMismatchError(false); // Clear any existing error
-      toast.success("Profile updated successfully");
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error("Failed to update profile");
-    }
-  };
-  //gunjan
-  // try {
-  //     const response = await fetch(
-  //       `${process.env.NEXT_PUBLIC_API_URL}/api/startup/profile/${session.user.id}`,
-  //       {
-  //         method: "PATCH",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify(formData),
-  //       }
-  //     );
-
-  //     if (!response.ok) throw new Error("Failed to update profile");
-
-  //     const updatedProfile = await response.json();
-  //     setProfile(updatedProfile);
-  //     calculateProfileCompletion(updatedProfile);
-  //     setIsEditing(false);
-  //     setAccountMismatchError(false);
-  //     toast.success("Profile updated successfully");
-  //   } catch (error) {
-  //     console.error("Error updating profile:", error);
-  //     toast.error("Failed to update profile");
-  //   }
-  // };
+    const updatedProfile = await response.json();
+    setProfile(updatedProfile);
+    calculateProfileCompletion(updatedProfile);
+    setIsEditing(false);
+    setAccountMismatchError(false);
+    toast.success("Profile updated successfully");
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    toast.error(
+      error instanceof Error ? error.message : "Failed to update profile",
+    );
+  }
+};
 
   const handleLookingForChange = (option: string) => {
     if (!profile) return;
