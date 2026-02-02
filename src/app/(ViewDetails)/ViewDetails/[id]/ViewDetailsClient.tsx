@@ -384,26 +384,28 @@ export default function ViewDetailsClient({
 
   useEffect(() => {
     const checkStartupExists = async () => {
-      if (!user?.id && !user?.email) return;
+      // Logic: If no facility, we can't send incubatorId
+      if (!facility?.serviceProviderId) return;
+
       try {
+        const token = sessionStorage.getItem("authUser");
+
         const res = await fetch(`${apiUrl}/api/checkuser`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: token || "", // REQUIRED: Backend finds userId from this
           },
-          // body: JSON.stringify({
-          //   incubatorId: facility?.serviceProviderId,
-          // }),
+          // NOW THIS IS VALID: You send incubatorId, Backend grabs userId from token
           body: JSON.stringify({
-            // 3. CHANGE: Send userId and email to match Backend Controller
-            userId: user.id || user.id,
-            email: user.email,
+            incubatorId: facility.serviceProviderId,
           }),
         });
+
         const data = await res.json();
 
         if (res.ok) {
-          setIsExisting(data.exists); // true or false
+          setIsExisting(data.exists);
         } else {
           console.error("Check user API error:", data.error);
           setIsExisting(false);
@@ -416,17 +418,11 @@ export default function ViewDetailsClient({
       }
     };
 
-    if (user?.id || user?.email) {
+    // Trigger when facility is available
+    if (facility?.serviceProviderId) {
       checkStartupExists();
     }
-    // Note: I removed 'facility' dependency because this specific backend API
-    // only checks the User, it doesn't seem to care about the facility.
-  }, [user]);
-
-  //   if (facility) {
-  //     checkStartupExists();
-  //   }
-  // }, [facility]);
+  }, [facility]);
 
   // Fetch startup profile
   useEffect(() => {
