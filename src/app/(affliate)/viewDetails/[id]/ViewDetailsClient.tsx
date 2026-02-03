@@ -2553,7 +2553,7 @@ export default function ViewDetailsClient({
 
   useEffect(() => {
     const checkFailedPayments = async () => {
-      if (!session?.user?.id) return;
+      if (!user?.id) return;
 
       // try {
       //   const response = await fetch(`/api/bookings/failed?facilityId=${facilityId}`);
@@ -2592,7 +2592,7 @@ export default function ViewDetailsClient({
     };
 
     checkFailedPayments();
-  }, [facilityId, session]);
+  }, [facilityId, user?.id]);
 
   if (loading) {
     return (
@@ -2641,7 +2641,7 @@ export default function ViewDetailsClient({
   };
 
   const handleBookNowClick = () => {
-    if (session?.user?.userType === "Service Provider") {
+    if (user?.userType === "Service Provider") {
       toast.error("Facility Partners cannot make bookings. Please use a startup account to book facilities.", {
         duration: 5000,
         icon: <AlertCircle className="h-5 w-5 text-red-500" />,

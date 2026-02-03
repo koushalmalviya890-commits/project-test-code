@@ -261,6 +261,64 @@
   // }
 
 
+
+  
+  // async function handleOTPRequest(body: any) {
+  //   const validatedData = requestOtpSchema.parse(body)
+  //   const { email } = validatedData
+
+  //   // Find user by email
+  //   const user = await User.findOne({ email }).select('+resetOTP +resetOTPCreatedAt +resetOTPExpiry')
+    
+  //   if (!user) {
+  //     // Return success message even if user doesn't exist for security
+  //     return NextResponse.json({
+  //       success: true,
+  //       message: 'If your email is registered with us, you will receive an OTP shortly.'
+  //     })
+  //   }
+
+  //   // Generate new OTP
+  //   const otp = generateOTP()
+  //   const now = new Date()
+  //   const otpExpiry = new Date(now.getTime() + 5 * 60 * 1000) // 5 minutes from now
+
+  //   // Update user with new OTP
+  //   await User.findByIdAndUpdate(user._id, {
+  //     resetOTP: otp,
+  //     resetOTPCreatedAt: now,
+  //     resetOTPExpiry: otpExpiry
+  //   })
+  //   try {
+  //     await sendOTPEmail(email, otp)
+  //    // console.log(`✅ OTP sent to ${email}`)
+
+  //     if (process.env.NODE_ENV === 'development') {
+  //      // console.log(`🔐 OTP for ${email}: ${otp}`)
+  //     }
+  //   } catch (emailError) {
+  //     console.error('❌ Failed to send OTP email:', emailError)
+
+  //     if (process.env.NODE_ENV === 'development') {
+  //      // console.log(`🔐 OTP (fallback log) for ${email}: ${otp}`)
+  //     }
+
+  //     return NextResponse.json({
+  //       success: true,
+  //       message: 'OTP generated, but email failed. Check logs in development.'
+  //     })
+  //   }
+
+  //   // ✅ THIS LINE WAS MISSING
+  //   return NextResponse.json({
+  //     success: true,
+  //     message: 'OTP sent successfully. Please check your email.'
+  //   })
+
+  // }
+
+
+
   export const runtime = 'nodejs'
   import { NextResponse } from 'next/server'
   import { z } from 'zod'
@@ -416,60 +474,6 @@
       return NextResponse.json({ error: 'Failed to process request' }, { status: 500 })
     }
   }
-
-  // async function handleOTPRequest(body: any) {
-  //   const validatedData = requestOtpSchema.parse(body)
-  //   const { email } = validatedData
-
-  //   // Find user by email
-  //   const user = await User.findOne({ email }).select('+resetOTP +resetOTPCreatedAt +resetOTPExpiry')
-    
-  //   if (!user) {
-  //     // Return success message even if user doesn't exist for security
-  //     return NextResponse.json({
-  //       success: true,
-  //       message: 'If your email is registered with us, you will receive an OTP shortly.'
-  //     })
-  //   }
-
-  //   // Generate new OTP
-  //   const otp = generateOTP()
-  //   const now = new Date()
-  //   const otpExpiry = new Date(now.getTime() + 5 * 60 * 1000) // 5 minutes from now
-
-  //   // Update user with new OTP
-  //   await User.findByIdAndUpdate(user._id, {
-  //     resetOTP: otp,
-  //     resetOTPCreatedAt: now,
-  //     resetOTPExpiry: otpExpiry
-  //   })
-  //   try {
-  //     await sendOTPEmail(email, otp)
-  //    // console.log(`✅ OTP sent to ${email}`)
-
-  //     if (process.env.NODE_ENV === 'development') {
-  //      // console.log(`🔐 OTP for ${email}: ${otp}`)
-  //     }
-  //   } catch (emailError) {
-  //     console.error('❌ Failed to send OTP email:', emailError)
-
-  //     if (process.env.NODE_ENV === 'development') {
-  //      // console.log(`🔐 OTP (fallback log) for ${email}: ${otp}`)
-  //     }
-
-  //     return NextResponse.json({
-  //       success: true,
-  //       message: 'OTP generated, but email failed. Check logs in development.'
-  //     })
-  //   }
-
-  //   // ✅ THIS LINE WAS MISSING
-  //   return NextResponse.json({
-  //     success: true,
-  //     message: 'OTP sent successfully. Please check your email.'
-  //   })
-
-  // }
 
   async function handleOTPRequest(body: any) {
   const validatedData = requestOtpSchema.parse(body)
