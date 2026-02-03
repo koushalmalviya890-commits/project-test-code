@@ -156,7 +156,7 @@ export default function ViewDetailsClient({
 }) {
   // const { data: session } = useSession();
   const { user } = useAuth();
-  const session = user ? { user } : null;
+  // const session = user ? { user } : null;
   const [facility, setFacility] = useState<Facility | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -388,14 +388,14 @@ export default function ViewDetailsClient({
       if (!facility?.serviceProviderId) return;
 
       try {
-        const token = sessionStorage.getItem("authUser");
+        // const token = sessionStorage.getItem("authUser");
 
         const res = await fetch(`${apiUrl}/api/checkuser`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: token || "", // REQUIRED: Backend finds userId from this
           },
+          credentials: "include", // Include cookies for authentication
           // NOW THIS IS VALID: You send incubatorId, Backend grabs userId from token
           body: JSON.stringify({
             incubatorId: facility.serviceProviderId,
