@@ -1168,6 +1168,7 @@ export default function ForgotPassword() {
   const [countdown, setCountdown] = useState(0)
   const [otpExpired, setOtpExpired] = useState(false)
   const router = useRouter()
+  const apiUrl = "http://localhost:3001"
 
   // Email form
   const emailForm = useForm<EmailFormData>({
@@ -1211,7 +1212,7 @@ export default function ForgotPassword() {
       setErrorMessage(null)
       setSuccessMessage(null)
 
-      const response = await fetch('/api/auth/reset-password-direct', {
+      const response = await fetch(`${apiUrl}/api/auth/reset-password-direct`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1250,7 +1251,7 @@ export default function ForgotPassword() {
         return
       }
 
-      const response = await fetch('/api/auth/reset-password-direct', {
+      const response = await fetch(`${apiUrl}/api/auth/reset-password-direct`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1283,7 +1284,7 @@ export default function ForgotPassword() {
       setErrorMessage(null)
       setSuccessMessage(null)
 
-      const response = await fetch('/api/auth/reset-password-direct', {
+      const response = await fetch(`${apiUrl}/api/auth/reset-password-direct`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1321,7 +1322,7 @@ export default function ForgotPassword() {
       setErrorMessage(null)
       setOtpExpired(false)
       
-      const response = await fetch('/api/auth/reset-password-direct', {
+      const response = await fetch(`${apiUrl}/api/auth/reset-password-direct`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

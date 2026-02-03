@@ -36,6 +36,8 @@ function ResetPasswordForm() {
   const token = searchParams.get('token')
   const email = searchParams.get('email')
 
+  const apiUrl = "http://localhost:3001"
+
   useEffect(() => {
     if (!token || !email) {
       setErrorMessage('Invalid or missing reset link parameters. Please request a new password reset.')
@@ -57,7 +59,7 @@ function ResetPasswordForm() {
       setIsSuccess(false)
 
       // Make API call to the password update endpoint
-      const response = await fetch('/api/auth/update-password', {
+      const response = await fetch(`${apiUrl}/api/auth/update-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

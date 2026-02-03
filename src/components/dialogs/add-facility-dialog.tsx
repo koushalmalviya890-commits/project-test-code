@@ -536,9 +536,10 @@ export function AddFacilityDialog({
         facilityType: selectedType || data.type,
       };
 
-      const response = await fetch("/api/facilities", {
+      const response = await fetch(`${apiUrl}/api/facilities`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // ⬅️ Critical for Auth
         body: JSON.stringify(formData),
       });
 

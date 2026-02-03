@@ -229,6 +229,7 @@ export function FacilityCard({
   className,
 }: FacilityCardProps) {
   // const { data: session } = useSession();
+  const [serverPrice, setServerPrice] = React.useState<number | null>(null);
   const [finalPrice, setFinalPrice] = React.useState<number | null>(null);
 const [reviewStats, setReviewStats] = React.useState<{
   totalReviews: number;
@@ -238,28 +239,39 @@ React.useEffect(() => {
   const fetchFinalPrice = async () => {
     if (!facility.details.rentalPlans?.length) return; // removed session check
 
-    const lowestBasePrice = Math.min(...facility.details.rentalPlans.map(plan => plan.price));
+    // const lowestBasePrice = Math.min(...facility.details.rentalPlans.map(plan => plan.price));
+
+    const lowestPlan = facility.details.rentalPlans.reduce((prev, curr) => 
+        prev.price < curr.price ? prev : curr
+      );
 
     try {
-      const res = await fetch("/api/pricing", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          facilityId: facility._id,
-          basePrice: Number(lowestBasePrice),
-        }),
-      });
+
+      const API_URL = "http://localhost:3001";
+
+     const res = await fetch(`${API_URL}/api/pricing/calculate-detail`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // Send auth cookie if available
+          body: JSON.stringify({
+            facilityId: facility._id,
+            rentalPlan: lowestPlan.name, // Backend needs the plan name
+            unitCount: 1,
+            bookingSeats: 1
+          }),
+        });
 
       const data = await res.json();
       if (data.success) {
         // const fixedFee = getFixedServiceFee(facility.facilityType);
-        setFinalPrice(data.data.finalPricebeforeGST); // use finalPricebeforeGST from API
+        // setFinalPrice(data.data.finalPricebeforeGST); // use finalPricebeforeGST from API
+      setServerPrice(data.data.finalPrice);
       } else {
         console.warn("Price fallback:", data.error);
-        const fixedFee = getFixedServiceFee(facility.facilityType);
-        setFinalPrice(lowestBasePrice + fixedFee);
+        // const fixedFee = getFixedServiceFee(facility.facilityType);
+        // setFinalPrice(lowestBasePrice + fixedFee);
       }
     } catch (err) {
       console.error("Error fetching price:", err);
@@ -272,7 +284,9 @@ React.useEffect(() => {
 React.useEffect(() => {
   const fetchReviewStats = async () => {
     try {
-      const res = await fetch(`/api/reviews?facilityId=${facility._id}`);
+
+      const API_URL = "http://localhost:3001";
+      const res = await fetch(`${API_URL}/api/reviews/reviews?facilityId=${facility._id}`);
       const data = await res.json();
 
       if (res.ok) {
@@ -296,12 +310,22 @@ React.useEffect(() => {
     if (!facility.details.rentalPlans?.length) return null;
 
     const lowestBasePrice = Math.min(...facility.details.rentalPlans.map(plan => plan.price));
-    const serviceFee = lowestBasePrice * 0.07; // Assuming 7% service fee
-    const gstOnServiceFee = serviceFee * 0.18; // 18% GST on service fee
-    const gstOnBasePrice = lowestBasePrice * 0.18; // 18% GST on base price
+  const fixedFee = getFixedServiceFee(facility.facilityType);
+    
+    // Estimate: Base + Fee + 18% GST (Rough estimate)
+    const estimatedTotal = (lowestBasePrice + fixedFee) * 1.18;
+    return estimatedTotal;
+  }, [facility]);
 
-    return lowestBasePrice + serviceFee;
-  }, [facility.details.rentalPlans]);
+  // Determine which price to show (Server > Fallback)
+  const displayPrice = serverPrice || totalPrice;
+  
+    //   const serviceFee = lowestBasePrice * 0.07; // Assuming 7% service fee
+  //   const gstOnServiceFee = serviceFee * 0.18; // 18% GST on service fee
+  //   const gstOnBasePrice = lowestBasePrice * 0.18; // 18% GST on base price
+
+  //   return lowestBasePrice + serviceFee;
+  // }, [facility.details.rentalPlans]);
 
   return (
     <Link 
@@ -369,13 +393,13 @@ React.useEffect(() => {
 
         <CardFooter className="flex justify-between items-center mt-auto py-3 flex-shrink-0 w-full overflow-hidden">
           <div className="flex flex-col gap-0.5 overflow-hidden min-w-0">
-            {totalPrice !== null ? (
+            {displayPrice !== null ? (
               <>
                 <span className="text-xs text-[#40404099] truncate">
                   Starting from
                 </span>
                 <span className="font-bold text-base tracking-[0.03px] text-[#0a0b0a] truncate">
-                  ₹{totalPrice.toLocaleString("en-IN", {
+                  ₹{displayPrice.toLocaleString("en-IN", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}/-

@@ -85,17 +85,17 @@ export function BookingModal({ isOpen, onClose, facility }: BookingModalProps) {
       try {
         setIsProfileLoading(true)
 
-        // // ✅ FIX 2: Point to Express Backend & Include Credentials
-        // const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+        // ✅ FIX 2: Point to Express Backend & Include Credentials
+        const API_URL = "http://localhost:3001";
         
-        // const response = await fetch(`${API_URL}/startup/profile`, {
-        //     method: 'GET',
-        //     credentials: 'include', // ⬅️ Sends the cookie
-        //     headers: { 'Content-Type': 'application/json' }
-        // });
+        const response = await fetch(`${API_URL}/api/startup/profile`, {
+            method: 'GET',
+            credentials: 'include', 
+            headers: { 'Content-Type': 'application/json' }
+        });
 
 
-        const response = await fetch('/api/startup/profile')
+        // const response = await fetch('/api/startup/profile')
         if (!response.ok) throw new Error('Failed to fetch profile')
         
         const data = await response.json()

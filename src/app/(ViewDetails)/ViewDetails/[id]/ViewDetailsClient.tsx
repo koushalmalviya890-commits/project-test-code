@@ -347,7 +347,7 @@ export default function ViewDetailsClient({
     const fetchFacility = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/facilities/${facilityId}`);
+        const response = await fetch(`${apiUrl}/api/facilities/${facilityId}`);
         if (!response.ok) {
           throw new Error("Failed to fetch facility details");
         }
@@ -1017,7 +1017,7 @@ export default function ViewDetailsClient({
 
         // Fetch facilities from the API using serviceProviderId
         const response = await fetch(
-          `/api/facilities/by-provider/${facility.serviceProviderId}`,
+          `${apiUrl}/api/facilities/by-provider/${facility.serviceProviderId}`,
         );
 
         if (!response.ok) {
@@ -2014,15 +2014,22 @@ export default function ViewDetailsClient({
                   );
                 }}
               >
-                <iframe
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={mapUrl || ""}
-                />
+               {mapUrl ? (
+    <iframe
+      width="100%"
+      height="100%"
+      style={{ border: 0 }}
+      loading="lazy"
+      allowFullScreen
+      referrerPolicy="no-referrer-when-downgrade"
+      src={mapUrl}
+    />
+  ) : (
+    // Optional: Placeholder while loading
+    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+      Loading Map...
+    </div>
+  )}
                 <div className="absolute inset-0 bg-transparent hover:bg-black/5 transition-colors" />
               </div>
             </div>
