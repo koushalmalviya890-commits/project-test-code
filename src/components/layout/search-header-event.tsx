@@ -96,12 +96,24 @@ function SearchHeaderClient() {
         // if (!session?.user) return;
          if (!user) return;
 
-        const response = await fetch(
-          // session.user.userType === 'startup' 
-            user.userType === 'startup' 
-            ? '/api/startup/profile'
-            : '/api/service-provider/profile'
-        );
+        // const response = await fetch(
+        //   // session.user.userType === 'startup' 
+        //     user.userType === 'startup' 
+        //     ? '/api/startup/profile'
+        //     : '/api/service-provider/profile'
+        // );
+        
+        
+        const API_URL = "http://localhost:3001";
+        const endpoint = user.userType === 'startup' 
+            ? '/api/startup/profile' 
+            : '/api/service-provider/profile';
+
+        const response = await fetch(`${API_URL}${endpoint}`, {
+             method: 'GET',
+             credentials: 'include', // ⬅️ Critical for Express Auth
+             headers: { 'Content-Type': 'application/json' }
+        })
         
         if (response.ok) {
           const data = await response.json();

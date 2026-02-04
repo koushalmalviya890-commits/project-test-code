@@ -255,7 +255,11 @@ export default function ServiceProviderDashboard() {
 
   const fetchServiceProviderProfile = async () => {
     try {
-      const response = await fetch("/api/service-provider/profile");
+      const response = await fetch(`${apiUrl}/api/service-provider/profile`, {
+        method: "GET",
+        credentials: "include", // ⬅️ CRITICAL: Sends the auth cookie
+      }
+      );
       const data = await response.json();
       if (data.error) {
         console.error("Error fetching profile:", data.error);
