@@ -152,7 +152,7 @@ export default function ViewProviderClient({
     const fetchServiceProvider = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/service-providers/${providerId}`);
+        const response = await fetch(`/api/service-provider/${providerId}`);
         if (!response.ok) {
           if (response.status === 401) {
             setError("You need to sign in to view provider details");

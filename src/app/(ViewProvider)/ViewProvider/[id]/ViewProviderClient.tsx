@@ -271,13 +271,15 @@ export default function ViewProviderClient({
   }
 }, [providerId, activeTab, api]) // Added 'api' to dependencies
 
-
+const apiUrl = "http://localhost:3001";
   // Fetch service provider data
   useEffect(() => {
     const fetchServiceProvider = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`/api/service-providers/${providerId}`)
+        // const response = await fetch(`/api/service-providers/${providerId}`)
+
+        const response = await fetch(`${apiUrl}/api/service-provider/${providerId}`)
         if (!response.ok) {
           // If we get an unauthorized error, we need to handle it gracefully
           if (response.status === 401) {
@@ -335,7 +337,7 @@ export default function ViewProviderClient({
     const fetchFacilities = async () => {
       try {
         setLoadingFacilities(true)
-        const response = await fetch(`/api/service-providers/${providerId}/facilities?page=${pagination.page}&limit=${pagination.limit}`)
+        const response = await fetch(`${apiUrl}/api/service-provider/${providerId}/facilities?page=${pagination.page}&limit=${pagination.limit}`)
         
         if (!response.ok) {
           // Handle unauthorized errors gracefully

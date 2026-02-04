@@ -118,6 +118,8 @@ export default function EarningsPage() {
     'linear-gradient(180deg, #12A454 0%, #47CC25 142.61%)'
   ];
 
+  const apiUrl = "http://localhost:3001"
+
   useEffect(() => {
     // if (session?.user?.id) {
       if (user?.id) {
@@ -131,7 +133,7 @@ export default function EarningsPage() {
       setIsLoading(true)
       
       // Use the new earnings API endpoint
-      const response = await fetch('/api/service-provider/earnings')
+      const response = await fetch(`${apiUrl}/api/service-provider/earnings`)
       
       if (!response.ok) {
         throw new Error(`Error fetching earnings: ${response.status}`)
