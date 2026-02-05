@@ -403,6 +403,7 @@ useEffect(() => {
         razorpay_signature: response.razorpay_signature,
         bookingId,
       }),
+      credentials: "include",
     }); 
 
     const data = await verifyResponse.json();
@@ -412,7 +413,7 @@ useEffect(() => {
         `/booking/success?bookingId=${bookingId}&paymentId=${response.razorpay_payment_id}`
       );
     } else {
-      setError("Payment verification failed");
+setError(data.message || "Payment verification failed");
       setProcessingPayment(false);
     }
   } catch (error) {

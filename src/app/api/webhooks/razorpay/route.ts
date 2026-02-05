@@ -8,13 +8,28 @@ export async function POST(req: NextRequest) {
   try {
     // Get environment variables within function scope for serverless
     const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET
+
+    if (!RAZORPAY_WEBHOOK_SECRET) {
+      console.error('RAZORPAY_WEBHOOK_SECRET is not set');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
     
     // Get the raw request body for signature verification
     const rawBody = await req.text()
-    const bodyData = JSON.parse(rawBody)
+  
 
     // Get the Razorpay signature from headers
     const razorpaySignature = req.headers.get('x-razorpay-signature')
+
+    const expectedSignature = crypto
+      .createHmac('sha256', RAZORPAY_WEBHOOK_SECRET)
+      .update(rawBody)
+      .digest('hex');
+
+    if (expectedSignature !== razorpaySignature) {
+      console.error('Invalid webhook signature');
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    }
 
     // Verify the webhook signature
     if (!verifyWebhookSignature(rawBody, razorpaySignature || '', RAZORPAY_WEBHOOK_SECRET)) {
@@ -23,6 +38,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Process the webhook event based on event type
+      const bodyData = JSON.parse(rawBody)
     const event = bodyData.event
 
     // Connect to the database
