@@ -6,14 +6,35 @@ import React, { useState } from "react";
 
 export function NewsletterSignup() {
   const [email, setEmail] = useState("");
+  const apiUrl = "localhost:3001";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically handle the newsletter subscription
-   // console.log("Subscribing email:", email);
-    // Reset the form
-    setEmail("");
-    // You could add success notification here
+
+    try {
+      const res = await fetch(
+        `${apiUrl}/api/newsletter`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        },
+      );
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(data.message); // replace with toast later
+        setEmail("");
+      } else {
+        alert("Something went wrong");
+      }
+    } catch (error) {
+      console.error("Newsletter error:", error);
+      alert("Failed to subscribe");
+    }
   };
 
   return (
