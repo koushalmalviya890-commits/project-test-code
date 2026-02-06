@@ -56,20 +56,20 @@
 //      // console.log(`No rental plans found for facility ${facility._id}`);
 //       return null;
 //     }
-    
+
 //     // Log all prices to debug
 //     const prices = facility.details.rentalPlans.map(plan => plan.price);
 //    // console.log(`Prices for facility ${facility._id}:`, prices);
-    
+
 //     // Find the lowest base price first
 //     const lowestBasePrice = Math.min(...prices);
-    
+
 //     // Calculate the fixed service fee based on facility type
 //     const fixedServiceFee = getFixedServiceFee(facility.facilityType);
-    
+
 //     // Add the service fee to the base price
 //     const priceWithFee = lowestBasePrice + fixedServiceFee;
-    
+
 //     return priceWithFee;
 //   }, [facility._id, facility.details.rentalPlans, facility.facilityType]);
 
@@ -102,7 +102,7 @@
 //               </span>
 //             </Badge>
 //           )}
-          
+
 //           {/* Facility Type Badge */}
 //           <div className="absolute bottom-5 left-5 z-10">
 //             <FacilityBadge 
@@ -166,7 +166,7 @@
 //       <div className="relative w-full h-[200px] bg-gray-200 rounded-t-[13px] flex-shrink-0">
 //         {/* Featured badge skeleton */}
 //         <div className="absolute top-5 left-0 bg-gray-300 w-[110px] h-7"></div>
-        
+
 //         {/* Facility type badge skeleton */}
 //         <div className="absolute bottom-5 left-5 bg-gray-300/50 w-[43px] h-10 rounded-md"></div>
 //       </div>
@@ -230,66 +230,70 @@ export function FacilityCard({
 }: FacilityCardProps) {
   // const { data: session } = useSession();
   const [finalPrice, setFinalPrice] = React.useState<number | null>(null);
-const [reviewStats, setReviewStats] = React.useState<{
-  totalReviews: number;
-  averageRating: number;
-} | null>(null);
-React.useEffect(() => {
-  const fetchFinalPrice = async () => {
-    if (!facility.details.rentalPlans?.length) return; // removed session check
+  const [reviewStats, setReviewStats] = React.useState<{
+    totalReviews: number;
+    averageRating: number;
+  } | null>(null);
 
-    const lowestBasePrice = Math.min(...facility.details.rentalPlans.map(plan => plan.price));
+const base_url = "http://localhost:3001";
 
-    try {
-      const res = await fetch("/api/pricing", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          facilityId: facility._id,
-          basePrice: Number(lowestBasePrice),
-        }),
-      });
+  React.useEffect(() => {
+    const fetchFinalPrice = async () => {
+      if (!facility.details.rentalPlans?.length) return; // removed session check
 
-      const data = await res.json();
-      if (data.success) {
-        // const fixedFee = getFixedServiceFee(facility.facilityType);
-        setFinalPrice(data.data.finalPricebeforeGST); // use finalPricebeforeGST from API
-      } else {
-        console.warn("Price fallback:", data.error);
-        const fixedFee = getFixedServiceFee(facility.facilityType);
-        setFinalPrice(lowestBasePrice + fixedFee);
-      }
-    } catch (err) {
-      console.error("Error fetching price:", err);
-    }
-  };
+      const lowestBasePrice = Math.min(...facility.details.rentalPlans.map(plan => plan.price));
 
-  fetchFinalPrice();
-}, [facility]); // removed session dependency
-
-React.useEffect(() => {
-  const fetchReviewStats = async () => {
-    try {
-      const res = await fetch(`/api/reviews?facilityId=${facility._id}`);
-      const data = await res.json();
-
-      if (res.ok) {
-        setReviewStats({
-          totalReviews: data.totalReviews,
-          averageRating: data.averageRating,
+      try {
+        const res = await fetch("/api/pricing", {
+      //const res = await fetch(`${base_url}/api/pricing/price`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            facilityId: facility._id,
+            basePrice: Number(lowestBasePrice),
+          }),
         });
-      } else {
-        console.warn("Review stats fetch failed:", data.error);
-      }
-    } catch (err) {
-      console.error("Error fetching review stats:", err);
-    }
-  };
 
-  fetchReviewStats();
-}, [facility._id]);
+        const data = await res.json();
+        if (data.success) {
+          // const fixedFee = getFixedServiceFee(facility.facilityType);
+          setFinalPrice(data.data.finalPricebeforeGST); // use finalPricebeforeGST from API
+        } else {
+          console.warn("Price fallback:", data.error);
+          const fixedFee = getFixedServiceFee(facility.facilityType);
+          setFinalPrice(lowestBasePrice + fixedFee);
+        }
+      } catch (err) {
+        console.error("Error fetching price:", err);
+      }
+    };
+
+    fetchFinalPrice();
+  }, [facility]); // removed session dependency
+
+  React.useEffect(() => {
+    const fetchReviewStats = async () => {
+      try {
+        const res = await fetch(`/api/reviews?facilityId=${facility._id}`);
+        const data = await res.json();
+
+        if (res.ok) {
+          setReviewStats({
+            totalReviews: data.totalReviews,
+            averageRating: data.averageRating,
+          });
+        } else {
+          console.warn("Review stats fetch failed:", data.error);
+        }
+      } catch (err) {
+        console.error("Error fetching review stats:", err);
+      }
+    };
+
+    fetchReviewStats();
+  }, [facility._id]);
 
   // Calculate total price (base price + service fee + GST + GST on service fee)
   const totalPrice = React.useMemo(() => {
@@ -304,25 +308,25 @@ React.useEffect(() => {
   }, [facility.details.rentalPlans]);
 
   return (
-    <Link 
+    <Link
       href={`/ViewDetails/${facility._id}`}
       target="_blank"
       rel="noopener noreferrer"
       className="block h-full w-full"
     >
-      <Card 
+      <Card
         className={cn(
           "flex flex-col w-full h-full rounded-[13px] overflow-hidden transition-all duration-300 cursor-pointer",
-          isHovered 
-            ? "shadow-[0px_8px_16px_rgba(0,0,0,0.1)] transform -translate-y-1" 
+          isHovered
+            ? "shadow-[0px_8px_16px_rgba(0,0,0,0.1)] transform -translate-y-1"
             : "shadow-[0px_1px_2px_#0000000d]",
           className
         )}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
       >
-        <div 
-          className="relative w-full h-[200px] bg-cover bg-center flex-shrink-0" 
+        <div
+          className="relative w-full h-[200px] bg-cover bg-center flex-shrink-0"
           style={{ backgroundImage: `url(${facility.details.images[0] || '/placeholder-facility.jpg'})` }}
         >
           {isFeatured && (
@@ -332,11 +336,11 @@ React.useEffect(() => {
               </span>
             </Badge>
           )}
-          
+
           {/* Facility Type Badge */}
           <div className="absolute bottom-5 left-5 z-10">
-            <FacilityBadge 
-              facilityType={facility.facilityType || "meeting-rooms"} 
+            <FacilityBadge
+              facilityType={facility.facilityType || "meeting-rooms"}
               isHovered={isHovered}
               variant="card"
             />
@@ -347,14 +351,14 @@ React.useEffect(() => {
           <h3 className="font-extrabold text-base text-black leading-normal line-clamp-2 min-h-[40px] break-words">
             {facility.details.name}
           </h3>
-{reviewStats && reviewStats.averageRating > 0 && (
-  <div className="flex items-center gap-1 text-sm text-[#555]">
-    <span className="font-medium text-[#000]">
-      ⭐ {reviewStats.averageRating.toFixed(1)}
-    </span>
-    <span className="text-xs text-[#666]">({reviewStats.totalReviews} reviews)</span>
-  </div>
-)}
+          {reviewStats && reviewStats.averageRating > 0 && (
+            <div className="flex items-center gap-1 text-sm text-[#555]">
+              <span className="font-medium text-[#000]">
+                ⭐ {reviewStats.averageRating.toFixed(1)}
+              </span>
+              <span className="text-xs text-[#666]">({reviewStats.totalReviews} reviews)</span>
+            </div>
+          )}
           <div className="flex flex-col w-full overflow-hidden">
             <div className="text-[14px] text-[#40404099] mb-1 overflow-hidden">
               <span className="font-medium text-[#404040] underline truncate block max-w-full">
