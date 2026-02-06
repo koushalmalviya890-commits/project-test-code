@@ -107,7 +107,14 @@ export default function BookingDetailsPage() {
         if (data.serviceProviderId) {
           try {
             const spResponse = await fetch(
-              `/api/service-providers/${data.serviceProviderId}`
+              `${base_url}/api/service-provider/${data.serviceProviderId}`,
+              {
+                method: "GET",
+                credentials: "include", // ⬅️ CRITICAL: Sends the auth cookie
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
             );
             if (spResponse.ok) {
               serviceProviderData = await spResponse.json();

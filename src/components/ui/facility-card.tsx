@@ -244,8 +244,8 @@ const base_url = "http://localhost:3001";
       const lowestBasePrice = Math.min(...facility.details.rentalPlans.map(plan => plan.price));
 
       try {
-        const res = await fetch("/api/pricing", {
-      //const res = await fetch(`${base_url}/api/pricing/price`, {
+        
+      const res = await fetch(`${base_url}/api/pricing/calculate-detail`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

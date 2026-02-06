@@ -26,6 +26,7 @@ import {
   Download,
   X,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 interface Customer {
   _id: string;
@@ -39,6 +40,7 @@ interface Customer {
 }
 
 export default function BookingsPage() {
+  const { user } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [startups, setStartups] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,13 +49,25 @@ export default function BookingsPage() {
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
   const [emailDomain, setEmailDomain] = useState(""); // Default email domain, change as needed
   const [searchTerm, setSearchTerm] = useState("");
+
   const apiUrl = "http://localhost:3001";
 
   useEffect(() => {
     const fetchCustomers = async () => {
+      if (!emailDomain) {
+        setCustomers([]);
+        return;
+      }
       try {
         // Fetch customers with email domain filter for the popup
-        const res = await fetch(`/api/customers?emailDomain=${emailDomain}`);
+        const res = await fetch(
+          `${apiUrl}/api/customers/search?emailDomain=${emailDomain}`,
+          {
+            method: "GET",
+            credentials: "include",
+          },
+        );
+
         const data = await res.json();
         if (res.ok) {
           setCustomers(data);
@@ -67,55 +81,50 @@ export default function BookingsPage() {
       }
     };
 
-    fetchCustomers();
+    const timeoutId = setTimeout(() => {
+      fetchCustomers();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
   }, [emailDomain]);
 
-  useEffect(() => {
-    const fetchStartups = async () => {
-      try {
-        
-        const token = sessionStorage.getItem("authUser");
-        const res = await fetch(`${apiUrl}/api/fetchstartups`, {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: token || "",
-            "Content-Type": "application/json",
-          },
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          setStartups(data);
-        } else {
-          console.error("Error fetching startups:", data.message);
-        }
-      } catch (err) {
-        console.error("Failed to fetch startups", err);
-      } finally {
-        setLoading(false);
+  const fetchStartups = async () => {
+    if (!user?.id) return;
+    try {
+      const res = await fetch(`${apiUrl}/api/customers`, {
+        method: "GET",
+        credentials: "include",
+      });
+      const data = await res.json();
+      console.log("My Customers Data:", data);
+      if (res.ok) {
+        setStartups(data);
+      } else {
+        console.error("Error fetching startups:", data.message);
       }
-    };
-
-    fetchStartups();
-  }, []);
+    } catch (err) {
+      console.error("Failed to fetch startups", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    if (user?.id) {
+      fetchStartups();
+    }
+  }, [user?.id]);
 
   const handleAddStartup = async (startupId: string) => {
     try {
-      const token = sessionStorage.getItem("authUser");
-      const res = await fetch(`${apiUrl}/api/fetchstartups`, {
+      const res = await fetch(`${apiUrl}/api/customers`, {
         method: "POST",
-        credentials: "include", 
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token || "", 
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ startupId }),
       });
 
       if (res.ok) {
-        // Success toast
+        // Success toast animation
         const toast = document.createElement("div");
         toast.className =
           "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-in";
@@ -123,21 +132,20 @@ export default function BookingsPage() {
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
 
-        setSelectedCustomers([...selectedCustomers, startupId]);
+        fetchStartups();
 
-        const refreshRes = await fetch(`${apiUrl}/api/fetchstartups`, {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: token || "",
-            "Content-Type": "application/json",
-          },
-        });
-        const refreshData = await refreshRes.json();
-        setStartups(refreshData);
+        // setSelectedCustomers([...selectedCustomers, startupId]);
 
+        // // Refresh startups list
+        // const refreshRes = await fetch('/api/fecthstartups');
+        // const refreshData = await refreshRes.json();
+        // setStartups(refreshData);
+
+        // Close the popup after successful addition
         setShowPopup(false);
         setSearchQuery("");
+        setEmailDomain("");
+        // Clear search query for next time
       } else {
         console.error("Failed to add startup");
       }
@@ -148,19 +156,14 @@ export default function BookingsPage() {
 
   const handleRemoveStartup = async (startupId: string) => {
     try {
-      const token = sessionStorage.getItem("authUser");
-      const res = await fetch(`${apiUrl}/api/fetchstartups`, {
+      const res = await fetch(`${apiUrl}/api/customers`, {
         method: "DELETE",
-        credentials: "include", 
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token || "", 
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ startupId }),
       });
-
       if (res.ok) {
-        // Success toast
+        // Success toast animation
         const toast = document.createElement("div");
         toast.className =
           "fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-in";
@@ -168,16 +171,11 @@ export default function BookingsPage() {
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
 
-        const refreshRes = await fetch(`${apiUrl}/api/fetchstartups`, {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: token || "",
-            "Content-Type": "application/json",
-          },
-        });
-        const refreshData = await refreshRes.json();
-        setStartups(refreshData);
+        // Refresh startups list
+        // const refreshRes = await fetch('/api/fecthstartups');
+        // const refreshData = await refreshRes.json();
+        // setStartups(refreshData);
+        fetchStartups();
       } else {
         console.error("Failed to remove startup");
       }
@@ -197,7 +195,9 @@ export default function BookingsPage() {
   };
 
   const filteredStartups = startups.filter((customer) =>
-    customer.startupName?.toLowerCase().includes(searchTerm.toLowerCase()),
+    (customer.startupName || "")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase()),
   );
 
   const filteredCustomers = customers.filter((cust) => {
@@ -356,7 +356,8 @@ export default function BookingsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-slate-200/60">
-                {startups.length === 0 ? (
+                {startups.length === 0 ? 
+                (
                   // 👉 No customers in DB at all
                   <TableRow>
                     <TableCell colSpan={8} className="h-64">

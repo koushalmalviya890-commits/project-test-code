@@ -26,13 +26,19 @@ export default function CouponsPage() {
     usageLimit: ''
   })
 
+  const apiUrl = "http://localhost:3001"
+
   useEffect(() => {
     fetchCoupons()
   }, [])
 
   const fetchCoupons = async () => {
     try {
-      const res = await fetch('/api/service-provider/coupons')
+      const res = await fetch(`${apiUrl}/api/service-provider/coupons`,{
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json'},
+        credentials: 'include'
+      });
       const data = await res.json()
       if (data.success) {
         setCoupons(data.data)
@@ -47,9 +53,10 @@ export default function CouponsPage() {
     setLoading(true)
     
     try {
-      const res = await fetch('/api/service-provider/coupons', {
+      const res = await fetch(`${apiUrl}/api/service-provider/coupons`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           ...formData,
           discount: parseFloat(formData.discount),
@@ -86,8 +93,9 @@ export default function CouponsPage() {
     if (!confirm('Are you sure you want to delete this coupon?')) return
 
     try {
-      const res = await fetch(`/api/service-provider/coupons/${couponId}`, {
-        method: 'DELETE'
+      const res = await fetch(`${apiUrl}/api/service-provider/coupons/${couponId}`, {
+        method: 'DELETE',
+        credentials: 'include'
       })
 
       const data = await res.json()

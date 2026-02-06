@@ -299,7 +299,7 @@ export default function ServiceProviderProfile() {
         // ✅ Point to Express Backend
       
         
-        const response = await fetch(`${apiUrl}/service-provider/profile`, {
+        const response = await fetch(`${apiUrl}/api/service-provider/profile`, {
             method: 'GET',
             credentials: 'include', // ⬅️ Critical for Auth
             headers: { 'Content-Type': 'application/json' }
@@ -548,7 +548,7 @@ export default function ServiceProviderProfile() {
 
 // const  = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
-      const response = await fetch(`${apiUrl}/service-provider/profile`, {
+      const response = await fetch(`${apiUrl}/api/service-provider/profile`, {
           method: 'PATCH', // Matches the route defined in Step 2
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include', // ⬅️ Critical

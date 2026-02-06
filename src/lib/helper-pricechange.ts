@@ -9,11 +9,14 @@ export default async function fetchDynamicPrice({
   unitCount: number;
   bookingSeats: number;
 }) {
-  const res = await fetch("/api/pricing-detail-page", {
+  const apiUrl = "http://localhost:3001"
+  // const res = await fetch("/api/pricing-detail-page", {
+  const res = await fetch(`${apiUrl}/api/pricing/calculate-detail`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify({
       facilityId,
       rentalPlan,

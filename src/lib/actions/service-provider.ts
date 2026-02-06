@@ -237,127 +237,127 @@ return {
   }
 }
 
-export async function updateServiceProviderProfile(data: ServiceProviderProfile) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      throw new Error('Not authenticated')
-    }
+// export async function updateServiceProviderProfile(data: ServiceProviderProfile) {
+//   try {
+//     const session = await getServerSession(authOptions)
+//     if (!session?.user?.id) {
+//       throw new Error('Not authenticated')
+//     }
 
-    await connectDB()
+//     await connectDB()
 
-    // Ensure timings and images are properly formatted before update
-    const updateData = {
-      ...data,
-      features: Array.isArray(data.features) ? data.features : [],
-      images: Array.isArray(data.images) ? data.images : [],
-      invoiceType: data.invoiceType || 'cumma', // Added invoiceType to update data
-      gstNumber: data.gstNumber === '' ? null : data.gstNumber,
-      applyGst:data.applyGst ||"no",
-      settlementType:data.settlementType ||"monthly",
-      invoiceTemplate:data.invoiceTemplate || "template1",
- // ✅ Add this line
-      timings: {
-        monday: {
-          isOpen: data.timings.monday.isOpen,
-          openTime: data.timings.monday.openTime || '',
-          closeTime: data.timings.monday.closeTime || ''
-        },
-        tuesday: {
-          isOpen: data.timings.tuesday.isOpen,
-          openTime: data.timings.tuesday.openTime || '',
-          closeTime: data.timings.tuesday.closeTime || ''
-        },
-        wednesday: {
-          isOpen: data.timings.wednesday.isOpen,
-          openTime: data.timings.wednesday.openTime || '',
-          closeTime: data.timings.wednesday.closeTime || ''
-        },
-        thursday: {
-          isOpen: data.timings.thursday.isOpen,
-          openTime: data.timings.thursday.openTime || '',
-          closeTime: data.timings.thursday.closeTime || ''
-        },
-        friday: {
-          isOpen: data.timings.friday.isOpen,
-          openTime: data.timings.friday.openTime || '',
-          closeTime: data.timings.friday.closeTime || ''
-        },
-        saturday: {
-          isOpen: data.timings.saturday.isOpen,
-          openTime: data.timings.saturday.openTime || '',
-          closeTime: data.timings.saturday.closeTime || ''
-        },
-        sunday: {
-          isOpen: data.timings.sunday.isOpen,
-          openTime: data.timings.sunday.openTime || '',
-          closeTime: data.timings.sunday.closeTime || ''
-        }
-      },
-      updatedAt: new Date()
-    }
+//     // Ensure timings and images are properly formatted before update
+//     const updateData = {
+//       ...data,
+//       features: Array.isArray(data.features) ? data.features : [],
+//       images: Array.isArray(data.images) ? data.images : [],
+//       invoiceType: data.invoiceType || 'cumma', // Added invoiceType to update data
+//       gstNumber: data.gstNumber === '' ? null : data.gstNumber,
+//       applyGst:data.applyGst ||"no",
+//       settlementType:data.settlementType ||"monthly",
+//       invoiceTemplate:data.invoiceTemplate || "template1",
+//  // ✅ Add this line
+//       timings: {
+//         monday: {
+//           isOpen: data.timings.monday.isOpen,
+//           openTime: data.timings.monday.openTime || '',
+//           closeTime: data.timings.monday.closeTime || ''
+//         },
+//         tuesday: {
+//           isOpen: data.timings.tuesday.isOpen,
+//           openTime: data.timings.tuesday.openTime || '',
+//           closeTime: data.timings.tuesday.closeTime || ''
+//         },
+//         wednesday: {
+//           isOpen: data.timings.wednesday.isOpen,
+//           openTime: data.timings.wednesday.openTime || '',
+//           closeTime: data.timings.wednesday.closeTime || ''
+//         },
+//         thursday: {
+//           isOpen: data.timings.thursday.isOpen,
+//           openTime: data.timings.thursday.openTime || '',
+//           closeTime: data.timings.thursday.closeTime || ''
+//         },
+//         friday: {
+//           isOpen: data.timings.friday.isOpen,
+//           openTime: data.timings.friday.openTime || '',
+//           closeTime: data.timings.friday.closeTime || ''
+//         },
+//         saturday: {
+//           isOpen: data.timings.saturday.isOpen,
+//           openTime: data.timings.saturday.openTime || '',
+//           closeTime: data.timings.saturday.closeTime || ''
+//         },
+//         sunday: {
+//           isOpen: data.timings.sunday.isOpen,
+//           openTime: data.timings.sunday.openTime || '',
+//           closeTime: data.timings.sunday.closeTime || ''
+//         }
+//       },
+//       updatedAt: new Date()
+//     }
 
-    const updatedProfile = await ServiceProvider.findOneAndUpdate(
-      { userId: new mongoose.Types.ObjectId(session.user.id) },
-      updateData,
-      { new: true }
-    ).select('-__v').lean() as ServiceProviderDocument
+//     const updatedProfile = await ServiceProvider.findOneAndUpdate(
+//       { userId: new mongoose.Types.ObjectId(session.user.id) },
+//       updateData,
+//       { new: true }
+//     ).select('-__v').lean() as ServiceProviderDocument
 
-    if (!updatedProfile) {
-      throw new Error('Profile not found')
-    }
+//     if (!updatedProfile) {
+//       throw new Error('Profile not found')
+//     }
 
-    // Convert MongoDB document to plain object and handle ObjectIds
-    const plainUpdatedProfile = JSON.parse(JSON.stringify(updatedProfile))
+//     // Convert MongoDB document to plain object and handle ObjectIds
+//     const plainUpdatedProfile = JSON.parse(JSON.stringify(updatedProfile))
 
-    // Transform MongoDB document to match our schema
-    const transformedProfile: ServiceProviderProfile = {
-      serviceProviderType: plainUpdatedProfile.serviceProviderType as ServiceProviderProfile['serviceProviderType'],
-      serviceName: plainUpdatedProfile.serviceName,
-      address: plainUpdatedProfile.address,
-      city: plainUpdatedProfile.city,
-      stateProvince: plainUpdatedProfile.stateProvince,
-      zipPostalCode: plainUpdatedProfile.zipPostalCode,
-      primaryContact1Name: plainUpdatedProfile.primaryContact1Name,
-      primaryContact1Designation: plainUpdatedProfile.primaryContact1Designation,
-      primaryContactNumber: plainUpdatedProfile.primaryContactNumber,
-      contact2Name: plainUpdatedProfile.contact2Name,
-      contact2Designation: plainUpdatedProfile.contact2Designation,
-      alternateContactNumber: plainUpdatedProfile.alternateContactNumber,
-      alternateEmailId: plainUpdatedProfile.alternateEmailId,
-      primaryEmailId: plainUpdatedProfile.primaryEmailId,
-      websiteUrl: plainUpdatedProfile.websiteUrl,
-      logoUrl: plainUpdatedProfile.logoUrl,
-      features: plainUpdatedProfile.features || [],
-      images: plainUpdatedProfile.images || [],
-      invoiceType: plainUpdatedProfile.invoiceType || 'cumma', // Added missing invoiceType
-      invoiceTemplate: plainUpdatedProfile.invoiceTemplate || 'template1',
-      gstNumber: plainUpdatedProfile.gstNumber ?? '', // ✅ Add this line
-      applyGst:plainUpdatedProfile.applyGst || 'no',
-      settlementType: plainUpdatedProfile.settlementType || 'monthly', // Added settlementType
-      bankName: plainUpdatedProfile.bankName || null,
-      accountNumber: plainUpdatedProfile.accountNumber || null,
-      ifscCode: plainUpdatedProfile.ifscCode || null,
-      accountHolderName: plainUpdatedProfile.accountHolderName || null,
-      bankBranch: plainUpdatedProfile.bankBranch || null,
-      // ✅ Add this line
-      timings: plainUpdatedProfile.timings || {
-        monday: { isOpen: false, openTime: '', closeTime: '' },
-        tuesday: { isOpen: false, openTime: '', closeTime: '' },
-        wednesday: { isOpen: false, openTime: '', closeTime: '' },
-        thursday: { isOpen: false, openTime: '', closeTime: '' },
-        friday: { isOpen: false, openTime: '', closeTime: '' },
-        saturday: { isOpen: false, openTime: '', closeTime: '' },
-        sunday: { isOpen: false, openTime: '', closeTime: '' }
-      }
-    }
+//     // Transform MongoDB document to match our schema
+//     const transformedProfile: ServiceProviderProfile = {
+//       serviceProviderType: plainUpdatedProfile.serviceProviderType as ServiceProviderProfile['serviceProviderType'],
+//       serviceName: plainUpdatedProfile.serviceName,
+//       address: plainUpdatedProfile.address,
+//       city: plainUpdatedProfile.city,
+//       stateProvince: plainUpdatedProfile.stateProvince,
+//       zipPostalCode: plainUpdatedProfile.zipPostalCode,
+//       primaryContact1Name: plainUpdatedProfile.primaryContact1Name,
+//       primaryContact1Designation: plainUpdatedProfile.primaryContact1Designation,
+//       primaryContactNumber: plainUpdatedProfile.primaryContactNumber,
+//       contact2Name: plainUpdatedProfile.contact2Name,
+//       contact2Designation: plainUpdatedProfile.contact2Designation,
+//       alternateContactNumber: plainUpdatedProfile.alternateContactNumber,
+//       alternateEmailId: plainUpdatedProfile.alternateEmailId,
+//       primaryEmailId: plainUpdatedProfile.primaryEmailId,
+//       websiteUrl: plainUpdatedProfile.websiteUrl,
+//       logoUrl: plainUpdatedProfile.logoUrl,
+//       features: plainUpdatedProfile.features || [],
+//       images: plainUpdatedProfile.images || [],
+//       invoiceType: plainUpdatedProfile.invoiceType || 'cumma', // Added missing invoiceType
+//       invoiceTemplate: plainUpdatedProfile.invoiceTemplate || 'template1',
+//       gstNumber: plainUpdatedProfile.gstNumber ?? '', // ✅ Add this line
+//       applyGst:plainUpdatedProfile.applyGst || 'no',
+//       settlementType: plainUpdatedProfile.settlementType || 'monthly', // Added settlementType
+//       bankName: plainUpdatedProfile.bankName || null,
+//       accountNumber: plainUpdatedProfile.accountNumber || null,
+//       ifscCode: plainUpdatedProfile.ifscCode || null,
+//       accountHolderName: plainUpdatedProfile.accountHolderName || null,
+//       bankBranch: plainUpdatedProfile.bankBranch || null,
+//       // ✅ Add this line
+//       timings: plainUpdatedProfile.timings || {
+//         monday: { isOpen: false, openTime: '', closeTime: '' },
+//         tuesday: { isOpen: false, openTime: '', closeTime: '' },
+//         wednesday: { isOpen: false, openTime: '', closeTime: '' },
+//         thursday: { isOpen: false, openTime: '', closeTime: '' },
+//         friday: { isOpen: false, openTime: '', closeTime: '' },
+//         saturday: { isOpen: false, openTime: '', closeTime: '' },
+//         sunday: { isOpen: false, openTime: '', closeTime: '' }
+//       }
+//     }
 
-    return {
-      success: true,
-      data: transformedProfile
-    }
-  } catch (error: any) {
-    console.error('Error updating profile:', error)
-    return { error: error.message }
-  }
-}
+//     return {
+//       success: true,
+//       data: transformedProfile
+//     }
+//   } catch (error: any) {
+//     console.error('Error updating profile:', error)
+//     return { error: error.message }
+//   }
+// }

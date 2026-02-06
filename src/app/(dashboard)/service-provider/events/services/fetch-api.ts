@@ -19,7 +19,7 @@ const getBaseURL = () => {
   if (typeof window !== "undefined") {
     // In the browser, use relative URL if calling same-origin,
     // or use NEXT_PUBLIC_BASEURL if explicitly set to another origin.
-    return process.env.NEXT_PUBLIC_BASEURL || "";
+    return process.env.NEXT_PUBLIC_BASEURL || "http://localhost:3001";
   }
   // On the server, require an absolute origin for cross-origin calls.
   return process.env.BASE_URL || process.env.NEXT_PUBLIC_BASEURL || "http://localhost:3001";

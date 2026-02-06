@@ -49,6 +49,7 @@ interface FacilityDetails {
 interface BookingDetails {
   facilityId: string;
   facility?: FacilityDetails;
+  startupId: string;
   // duration: {
     rentalPlan: string;
     unitCount: number;
@@ -102,6 +103,9 @@ export default function BookingDetailsClient() {
     redirect: string;
   } | null>(null);
 
+  const apiUrl = "http://localhost:3001"; // Replace with your actual API URL
+
+
   useEffect(() => {
     // Check if user is authenticated
     if (status === "unauthenticated") {
@@ -131,10 +135,14 @@ export default function BookingDetailsClient() {
       ) {
         throw new Error("Missing required booking details");
       }
-
+const startupId = user?.id;
+if (!startupId) {
+  throw new Error("User not authenticated");
+}
       // Convert string dates to Date objects
       const parsedDetails = {
         ...decodedData,
+        startupId,
         // timing: {
         //   ...decodedData.timing,
           startDate: new Date(decodedData.startDate),
@@ -171,7 +179,7 @@ export default function BookingDetailsClient() {
 
   const fetchFacilityDetails = async (facilityId: string) => {
     try {
-      const response = await fetch(`/api/facilities/${facilityId}`);
+      const response = await fetch(`${apiUrl}/api/facilities/${facilityId}`);
       if (!response.ok) throw new Error("Failed to fetch facility details");
 
       const facilityData = await response.json();
@@ -233,7 +241,6 @@ useEffect(() => {
  
 
 
-
   const handleProceedToPayment = async () => {
     if (!bookingDetails || !user?.id) return;
 
@@ -241,28 +248,30 @@ useEffect(() => {
       setProcessingPayment(true);
 
       // Create a payment order
-      const response = await fetch("/api/payments/razorpay/order", {
+      const response = await fetch(`${apiUrl}/api/facility-bookings/payments/create-order`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         //added credentials try to check it again if not required remove it
-        // credentials: "include",
+        credentials: "include",
         body: JSON.stringify({
           facilityId: bookingDetails.facilityId,
           rentalPlan: bookingDetails.rentalPlan,
           bookingSeats: bookingDetails.bookingSeats,
-          // timing: {
-            startDate: bookingDetails.startDate.toISOString(),
-            endDate: bookingDetails.endDate.toISOString(),
-          // },
+          startupId: bookingDetails.startupId,
+          // All other fields remain exactly the same...
+          unitCount: bookingDetails.unitCount,
+          unitLabel: bookingDetails.unitLabel,
+          bookingUnitLabel: bookingDetails.label,
+  startDate: new Date(bookingDetails.startDate).toISOString(),
+        endDate: new Date(bookingDetails.endDate).toISOString(),
           contactNumber: bookingDetails.contactNumber,
-          // pricing: bookingDetails.pricing,
           originalBaseAmount: bookingDetails.originalBaseAmount,
           baseAmount: bookingDetails.baseAmount,
           perUnitPrice: bookingDetails.perUnitPrice,
           serviceFee: bookingDetails.serviceFee,
-          gstOnServiceFee : bookingDetails.gstOnServiceFee,
+          gstOnServiceFee: bookingDetails.gstOnServiceFee,
           gstAmount: bookingDetails.gstAmount,
           totalBeforeDiscount: bookingDetails.totalBeforeDiscount,
           discount: bookingDetails.discount,
@@ -385,7 +394,7 @@ useEffect(() => {
   setProcessingPayment(true); // triggers back/refresh block via useEffect
 
   try {
-    const verifyResponse = await fetch("/api/payments/razorpay/verify", {
+    const verifyResponse = await fetch(`${apiUrl}/api/facility-bookings/payments/verify-signature`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -394,6 +403,7 @@ useEffect(() => {
         razorpay_signature: response.razorpay_signature,
         bookingId,
       }),
+      credentials: "include",
     }); 
 
     const data = await verifyResponse.json();
@@ -403,7 +413,7 @@ useEffect(() => {
         `/booking/success?bookingId=${bookingId}&paymentId=${response.razorpay_payment_id}`
       );
     } else {
-      setError("Payment verification failed");
+setError(data.message || "Payment verification failed");
       setProcessingPayment(false);
     }
   } catch (error) {

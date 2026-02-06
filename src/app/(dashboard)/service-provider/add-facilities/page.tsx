@@ -27,7 +27,8 @@ import {
   getServiceProviderProfileCompletionPercentage,
   getServiceProviderIncompleteFields,
 } from "@/lib/utils/profile-completion";
-import { getServiceProviderProfile } from "@/lib/actions/service-provider";
+// import { getServiceProviderProfile } from "@/lib/actions/service-provider";
+import { useAuth } from "@/context/AuthContext";
 
 const facilityTypes = [
   {
@@ -115,11 +116,20 @@ export default function AddFacilities() {
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [incompleteFields, setIncompleteFields] = useState<string[]>([]);
   const [isProfileComplete, setIsProfileComplete] = useState(true);
-
+  const { user } = useAuth();
+  const apiUrl = "http://localhost:3001";
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const result = await getServiceProviderProfile();
+        if (!user?.id) return;
+
+        const response = await fetch(`${apiUrl}/api/service-provider/profile`, {
+          method: "GET",
+          credentials: "include", // ⬅️ Critical for Auth
+          headers: { "Content-Type": "application/json" },
+        });
+        const result = await response.json();
+        // const result = await getServiceProviderProfile();
 
         if (result.error) {
           // console.error(`Profile fetch failed: ${result.error}`);
@@ -173,8 +183,9 @@ export default function AddFacilities() {
 
   const handleSubmit = async (data: any) => {
     try {
-      const response = await fetch("/api/facilities", {
+      const response = await fetch(`${apiUrl}/api/facilities`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "Cache-Control": "no-cache",

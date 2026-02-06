@@ -28,7 +28,7 @@ export function CouponInput({
   const [couponCode, setCouponCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
-
+const apiUrl = 'http://localhost:3001';
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
         toast.error('Please enter a coupon code')
@@ -38,14 +38,27 @@ export function CouponInput({
     setLoading(true)
 
     try {
-      const res = await fetch(`/api/facilities/${facilityId}/validate-coupon`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          couponCode: couponCode.toUpperCase(),
-          bookingAmount
-        })
-      })
+      // const res = await fetch(`/api/facilities/${facilityId}/validate-coupon`, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     couponCode: couponCode.toUpperCase(),
+      //     bookingAmount
+      //   })
+      // })
+
+       const res = await fetch(
+        `${apiUrl}/api/service-provider/${facilityId}/validate-coupon`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            couponCode: couponCode.toUpperCase(),
+            bookingAmount,
+          }),
+        },
+      );
+
 
       const data = await res.json()
 

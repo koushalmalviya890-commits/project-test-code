@@ -8,6 +8,7 @@ interface User {
   email: string;
   name: string;
   userType?: string;
+  logoUrl?: string; 
 }
 
 interface AuthContextType {
@@ -75,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       { withCredentials: true },
     );
     setUser(null);
+    sessionStorage.removeItem("authUser");
     router.push("/sign-in");
   };
   const update = (newData: Partial<User>) => {

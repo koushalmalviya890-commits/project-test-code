@@ -1,3 +1,5 @@
+//COuponID route to handle updating and deleting a coupon for a service provider
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'

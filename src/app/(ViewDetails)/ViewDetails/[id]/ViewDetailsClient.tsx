@@ -156,7 +156,7 @@ export default function ViewDetailsClient({
 }) {
   // const { data: session } = useSession();
   const { user } = useAuth();
-  const session = user ? { user } : null;
+  // const session = user ? { user } : null;
   const [facility, setFacility] = useState<Facility | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -212,35 +212,6 @@ export default function ViewDetailsClient({
   const [couponError, setCouponError] = useState("");
   const apiUrl = "http://localhost:3001";
 
-  // Add this useEffect to auto-select if only one room
-  // useEffect(() => {
-  //   if (
-  //     facility?.facilityType === "event-workspace" &&
-  //     facility?.details?.roomDetails?.length === 1
-  //   ) {
-  //     setSelectedRooms([0]); // Auto-select the first (and only) room
-  //     setBookingSeats(1); // Set booking seats to 1
-  //   }
-  // }, [facility]);
-
-  // Add this function to handle room selection
-  // const toggleRoomSelection = (roomIndex: number) => {
-  //   setSelectedRooms((prev) => {
-  //     if (prev.includes(roomIndex)) {
-  //       // Remove room from selection
-  //       const newSelection = prev.filter((idx) => idx !== roomIndex);
-  //       setBookingSeats(newSelection.length || 1);
-  //       return newSelection;
-  //     } else {
-  //       // Add room to selection
-  //       const newSelection = [...prev, roomIndex];
-  //       setBookingSeats(newSelection.length);
-  //       return newSelection;
-  //     }
-  //   });
-  // };
-
-  // Function to load Razorpay script dynamically
   const loadRazorpayScript = () => {
     return new Promise<boolean>((resolve) => {
       const script = document.createElement("script");
@@ -347,7 +318,7 @@ export default function ViewDetailsClient({
     const fetchFacility = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/facilities/${facilityId}`);
+        const response = await fetch(`${apiUrl}/api/facilities/${facilityId}`);
         if (!response.ok) {
           throw new Error("Failed to fetch facility details");
         }
@@ -384,26 +355,28 @@ export default function ViewDetailsClient({
 
   useEffect(() => {
     const checkStartupExists = async () => {
-      if (!user?.id && !user?.email) return;
+      // Logic: If no facility, we can't send incubatorId
+      if (!facility?.serviceProviderId) return;
+
       try {
+        // const token = sessionStorage.getItem("authUser");
+
         const res = await fetch(`${apiUrl}/api/checkuser`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          // body: JSON.stringify({
-          //   incubatorId: facility?.serviceProviderId,
-          // }),
+          credentials: "include", // Include cookies for authentication
+          // NOW THIS IS VALID: You send incubatorId, Backend grabs userId from token
           body: JSON.stringify({
-            // 3. CHANGE: Send userId and email to match Backend Controller
-            userId: user.id || user.id,
-            email: user.email,
+            incubatorId: facility.serviceProviderId,
           }),
         });
+
         const data = await res.json();
 
         if (res.ok) {
-          setIsExisting(data.exists); // true or false
+          setIsExisting(data.exists);
         } else {
           console.error("Check user API error:", data.error);
           setIsExisting(false);
@@ -416,17 +389,11 @@ export default function ViewDetailsClient({
       }
     };
 
-    if (user?.id || user?.email) {
+    // Trigger when facility is available
+    if (facility?.serviceProviderId) {
       checkStartupExists();
     }
-    // Note: I removed 'facility' dependency because this specific backend API
-    // only checks the User, it doesn't seem to care about the facility.
-  }, [user]);
-
-  //   if (facility) {
-  //     checkStartupExists();
-  //   }
-  // }, [facility]);
+  }, [facility]);
 
   // Fetch startup profile
   useEffect(() => {
@@ -441,7 +408,13 @@ export default function ViewDetailsClient({
 
       try {
         setIsProfileLoading(true);
-        const response = await fetch("/api/startup/profile");
+        const response = await fetch(`${apiUrl}/api/startup/profile`,{
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials:"include",
+        });
         if (!response.ok) throw new Error("Failed to fetch profile");
 
         const data = await response.json();
@@ -545,7 +518,7 @@ export default function ViewDetailsClient({
 
     try {
       const res = await fetch(
-        `/api/service-provider/${facilityId}/validate-coupon`,
+        `${apiUrl}/api/service-provider/${facilityId}/validate-coupon`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -672,23 +645,6 @@ export default function ViewDetailsClient({
   const bookingUnitLabelPlural =
     bookingUnitLabel + (bookingSeats > 1 ? "s" : "");
 
-  // // Calculate amounts for display and payment
-  // const basePrice = selectedPlan ? getSelectedPlanPrice() : 0;
-  // const baseAmount = basePrice * unitCount;  // Base price multiplied by units (without service fee)
-
-  // // Calculate fixed service fee - only applied once regardless of unit count
-  // const fixedServiceFee = selectedPlan ? getFixedServiceFee(facility?.facilityType || '') : 0;
-
-  // // Calculate total amount with service fee added once
-  // const totalBaseAmount = baseAmount + fixedServiceFee;
-
-  // // GST is set to 0 (removed the 18% calculation)
-  // const gstAmount = 0;
-
-  // // Total amount is now just the base amount + fixed service fee (without GST)
-  // const totalAmount = totalBaseAmount;
-
-  // Handle booking submission
   const getMaxSeats = () => {
     if (!facility?.facilityType || !facility.details) return 1;
 
@@ -703,8 +659,6 @@ export default function ViewDetailsClient({
         return 1;
     }
   };
-
-  const base_url = "http://localhost:3001";
 
   const handleBookingSubmit = async () => {
     // Check if user is signed in
@@ -908,7 +862,7 @@ export default function ViewDetailsClient({
         // });
 
         const response = await fetch(
-          `${base_url}/api/bookings`,
+          `${apiUrl}/api/bookings`,
           {
             method: "POST",
             credentials: "include", // IMPORTANT (send JWT cookie)
@@ -1017,7 +971,7 @@ export default function ViewDetailsClient({
 
         // Fetch facilities from the API using serviceProviderId
         const response = await fetch(
-          `/api/facilities/by-provider/${facility.serviceProviderId}`,
+          `${apiUrl}/api/facilities/by-provider/${facility.serviceProviderId}`,
         );
 
         if (!response.ok) {
@@ -1111,7 +1065,7 @@ export default function ViewDetailsClient({
         // );
 
         const response = await fetch(
-          `${base_url}/api/bookings/failed?facilityId=${facilityId}`,
+          `${apiUrl}/api/bookings/failed?facilityId=${facilityId}`,
           {
             method: "GET",
             credentials: "include", // IMPORTANT (send JWT cookie)
@@ -2014,15 +1968,22 @@ export default function ViewDetailsClient({
                   );
                 }}
               >
-                <iframe
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={mapUrl || ""}
-                />
+               {mapUrl ? (
+    <iframe
+      width="100%"
+      height="100%"
+      style={{ border: 0 }}
+      loading="lazy"
+      allowFullScreen
+      referrerPolicy="no-referrer-when-downgrade"
+      src={mapUrl}
+    />
+  ) : (
+    // Optional: Placeholder while loading
+    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+      Loading Map...
+    </div>
+  )}
                 <div className="absolute inset-0 bg-transparent hover:bg-black/5 transition-colors" />
               </div>
             </div>
@@ -2050,28 +2011,7 @@ export default function ViewDetailsClient({
                       <div className="text-2xl font-semibold text-gray-900">
                         {facility.details.seatingCapacity || 0} people
                       </div>
-                      {/* {facility.details.features?.length > 0 && (
-                        <div className="mt-3">
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">
-                            Features:
-                          </h4>
-                          <div className="flex flex-wrap gap-2">
-                            {facility.details.features.slice(0, 5).map((feature: string, index: number) => (
-                              <span 
-                                key={index}
-                                className="bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full"
-                              >
-                                {feature}
-                              </span>
-                            ))}
-                            {facility.details.features.length > 5 && (
-                              <span className="text-xs text-gray-500 self-center">
-                                +{facility.details.features.length - 5} more
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )} */}
+                     
                     </div>
 
                     {/* Rental Plans */}
@@ -2235,78 +2175,6 @@ export default function ViewDetailsClient({
                           </p>
                         </div>
                       )}
-
-                      {/* Booking Duration Selection */}
-                      {/* <div className="mb-4 sm:mb-6">
-                        <h3 className="text-sm font-medium mb-2 sm:mb-3">
-                          Choose Booking Duration
-                        </h3>
-                        {sortedRentalPlans.map((plan) => {
-                          const isSelected = selectedPlan?.name === plan.name;
-                          const fixedFeePerUnit = getFixedServiceFee(
-                            facility?.facilityType || ""
-                          );
-
-                          let fallbackPrice;
-                          if (session?.user) {
-                            if (
-                              session?.user &&
-                              !isProfileLoading &&
-                              isExisting === false
-                            ) {
-                              const distanceBasedFee =
-                                plan.price *
-                                unitCount *
-                                0.07;
-                              fallbackPrice =
-                                plan.price * unitCount +
-                                distanceBasedFee;
-                            } else {
-                              const fixedFee =
-                                fixedFeePerUnit *
-                                unitCount;
-                              fallbackPrice =
-                                plan.price * unitCount +
-                                fixedFee;
-                            }
-                          } else {
-                            const distanceBasedFee =
-                              plan.price *
-                              unitCount *
-                              0.07;
-                            fallbackPrice =
-                              plan.price * unitCount +
-                              distanceBasedFee;
-                          }
-
-                          const totalPrice = Math.round(fallbackPrice);
-
-                          return (
-                            <button
-                              key={plan.name}
-                              onClick={() => {
-                                setSelectedPlan(plan);
-                                setSelectedDate(null);
-                                setSelectedTime("");
-                                setUnitCount(1);
-                                setPriceDetails(null);
-                              }}
-                              className={`w-full flex items-center justify-between p-2 sm:p-3 mt-2 sm:mt-3 rounded-lg border transition-all ${
-                                isSelected
-                                  ? "border-primary bg-primary/5 text-primary"
-                                  : "border-gray-200 hover:border-primary/50"
-                              }`}
-                            >
-                              <span className="font-medium">
-                                {plan.name === "One Day (24 Hours)"
-                                  ? "Daily"
-                                  : plan.name}
-                              </span>
-                              <span>₹{plan.price.toLocaleString()}</span>
-                            </button>
-                          );
-                        })}
-                      </div> */}
 
                       {/* Date and Time Selection */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 sm:mb-6">
@@ -2621,39 +2489,7 @@ export default function ViewDetailsClient({
                       <div className="flex justify-between font-semibold pt-3 border-t text-sm sm:text-base">
                         <span>Total Fare (Inclusive of all taxes)</span>
                         <span>
-                          {/* {
-                           
-                            selectedPlan
-                              ? (() => {
-                                  const basePrice =
-                                    selectedPlan.price *
-                                    unitCount *
-                                    bookingSeats;
-                                  const serviceFee =
-                                    isExisting === true
-                                      ? getFixedServiceFee(
-                                          facility?.facilityType || ""
-                                        ) *
-                                        unitCount *
-                                        bookingSeats
-                                      : basePrice * 0.07;
-                                  const companygst = serviceFee * 0.18;
-                                  // console.log("Company GST:", companygst);
-                                  const subtotal = basePrice + serviceFee;
-                                  // console.log("subtotal" , subtotal)
-                                  // const totalaftergst = companygst + subtotal;
-                                  const gstAmount =
-                                    priceDetails?.gstAmount &&
-                                    priceDetails?.gstAmount > 0
-                                      ? priceDetails.gstAmount
-                                      : 0;
-                                  // console.log("GST Amount:", gstAmount);
-                                  const totalAmount =
-                                    subtotal + gstAmount + companygst;
-                                  // console.log("Total Amount:", totalAmount);
-                                  return `₹${totalAmount.toFixed(2)}`;
-                                })()
-                              : "₹0.00" */}
+                          
                           ₹{totalAmount?.toFixed(2) || "0.00"}
                         </span>
                       </div>
@@ -2941,37 +2777,7 @@ export default function ViewDetailsClient({
                               Total Price
                             </span>
                             <span className="text-sm font-semibold text-primary">
-                              {/* {selectedPlan
-                                ? (() => {
-                                    const basePrice =
-                                      selectedPlan.price *
-                                      unitCount *
-                                      bookingSeats;
-                                    const serviceFee =
-                                      isExisting === true
-                                        ? getFixedServiceFee(
-                                            facility?.facilityType || ""
-                                          ) *
-                                          unitCount *
-                                          bookingSeats
-                                        : basePrice * 0.07;
-                                    const companygst = serviceFee * 0.18;
-                                    // console.log("Company GST:", companygst);
-                                    const subtotal = basePrice + serviceFee;
-                                    // console.log("subtotal" , subtotal)
-                                    // const totalaftergst = companygst + subtotal;
-                                    const gstAmount =
-                                      priceDetails?.gstAmount &&
-                                      priceDetails?.gstAmount > 0
-                                        ? priceDetails.gstAmount
-                                        : 0;
-                                    // console.log("GST Amount:", gstAmount);
-                                    const totalAmount =
-                                      subtotal + gstAmount + companygst;
-                                    // console.log("Total Amount:", totalAmount);
-                                    return `₹${totalAmount.toFixed(2)}`;
-                                  })()
-                                : "₹0.00"} */}
+                             
                               ₹{totalAmount?.toFixed(2) || "0.00"}
                             </span>
                           </div>
@@ -3626,3 +3432,211 @@ export default function ViewDetailsClient({
     </div>
   );
 }
+ {/* {facility.details.features?.length > 0 && (
+                        <div className="mt-3">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">
+                            Features:
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {facility.details.features.slice(0, 5).map((feature: string, index: number) => (
+                              <span 
+                                key={index}
+                                className="bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full"
+                              >
+                                {feature}
+                              </span>
+                            ))}
+                            {facility.details.features.length > 5 && (
+                              <span className="text-xs text-gray-500 self-center">
+                                +{facility.details.features.length - 5} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )} */}
+
+{/* {
+                           
+                            selectedPlan
+                              ? (() => {
+                                  const basePrice =
+                                    selectedPlan.price *
+                                    unitCount *
+                                    bookingSeats;
+                                  const serviceFee =
+                                    isExisting === true
+                                      ? getFixedServiceFee(
+                                          facility?.facilityType || ""
+                                        ) *
+                                        unitCount *
+                                        bookingSeats
+                                      : basePrice * 0.07;
+                                  const companygst = serviceFee * 0.18;
+                                  // console.log("Company GST:", companygst);
+                                  const subtotal = basePrice + serviceFee;
+                                  // console.log("subtotal" , subtotal)
+                                  // const totalaftergst = companygst + subtotal;
+                                  const gstAmount =
+                                    priceDetails?.gstAmount &&
+                                    priceDetails?.gstAmount > 0
+                                      ? priceDetails.gstAmount
+                                      : 0;
+                                  // console.log("GST Amount:", gstAmount);
+                                  const totalAmount =
+                                    subtotal + gstAmount + companygst;
+                                  // console.log("Total Amount:", totalAmount);
+                                  return `₹${totalAmount.toFixed(2)}`;
+                                })()
+                              : "₹0.00" */}
+ {/* {selectedPlan
+                                ? (() => {
+                                    const basePrice =
+                                      selectedPlan.price *
+                                      unitCount *
+                                      bookingSeats;
+                                    const serviceFee =
+                                      isExisting === true
+                                        ? getFixedServiceFee(
+                                            facility?.facilityType || ""
+                                          ) *
+                                          unitCount *
+                                          bookingSeats
+                                        : basePrice * 0.07;
+                                    const companygst = serviceFee * 0.18;
+                                    // console.log("Company GST:", companygst);
+                                    const subtotal = basePrice + serviceFee;
+                                    // console.log("subtotal" , subtotal)
+                                    // const totalaftergst = companygst + subtotal;
+                                    const gstAmount =
+                                      priceDetails?.gstAmount &&
+                                      priceDetails?.gstAmount > 0
+                                        ? priceDetails.gstAmount
+                                        : 0;
+                                    // console.log("GST Amount:", gstAmount);
+                                    const totalAmount =
+                                      subtotal + gstAmount + companygst;
+                                    // console.log("Total Amount:", totalAmount);
+                                    return `₹${totalAmount.toFixed(2)}`;
+                                  })()
+                                : "₹0.00"} */}
+
+ {/* Booking Duration Selection */}
+                      {/* <div className="mb-4 sm:mb-6">
+                        <h3 className="text-sm font-medium mb-2 sm:mb-3">
+                          Choose Booking Duration
+                        </h3>
+                        {sortedRentalPlans.map((plan) => {
+                          const isSelected = selectedPlan?.name === plan.name;
+                          const fixedFeePerUnit = getFixedServiceFee(
+                            facility?.facilityType || ""
+                          );
+
+                          let fallbackPrice;
+                          if (session?.user) {
+                            if (
+                              session?.user &&
+                              !isProfileLoading &&
+                              isExisting === false
+                            ) {
+                              const distanceBasedFee =
+                                plan.price *
+                                unitCount *
+                                0.07;
+                              fallbackPrice =
+                                plan.price * unitCount +
+                                distanceBasedFee;
+                            } else {
+                              const fixedFee =
+                                fixedFeePerUnit *
+                                unitCount;
+                              fallbackPrice =
+                                plan.price * unitCount +
+                                fixedFee;
+                            }
+                          } else {
+                            const distanceBasedFee =
+                              plan.price *
+                              unitCount *
+                              0.07;
+                            fallbackPrice =
+                              plan.price * unitCount +
+                              distanceBasedFee;
+                          }
+
+                          const totalPrice = Math.round(fallbackPrice);
+
+                          return (
+                            <button
+                              key={plan.name}
+                              onClick={() => {
+                                setSelectedPlan(plan);
+                                setSelectedDate(null);
+                                setSelectedTime("");
+                                setUnitCount(1);
+                                setPriceDetails(null);
+                              }}
+                              className={`w-full flex items-center justify-between p-2 sm:p-3 mt-2 sm:mt-3 rounded-lg border transition-all ${
+                                isSelected
+                                  ? "border-primary bg-primary/5 text-primary"
+                                  : "border-gray-200 hover:border-primary/50"
+                              }`}
+                            >
+                              <span className="font-medium">
+                                {plan.name === "One Day (24 Hours)"
+                                  ? "Daily"
+                                  : plan.name}
+                              </span>
+                              <span>₹{plan.price.toLocaleString()}</span>
+                            </button>
+                          );
+                        })}
+                      </div> */}
+
+                      
+  // Add this useEffect to auto-select if only one room
+  // useEffect(() => {
+  //   if (
+  //     facility?.facilityType === "event-workspace" &&
+  //     facility?.details?.roomDetails?.length === 1
+  //   ) {
+  //     setSelectedRooms([0]); // Auto-select the first (and only) room
+  //     setBookingSeats(1); // Set booking seats to 1
+  //   }
+  // }, [facility]);
+
+  // Add this function to handle room selection
+  // const toggleRoomSelection = (roomIndex: number) => {
+  //   setSelectedRooms((prev) => {
+  //     if (prev.includes(roomIndex)) {
+  //       // Remove room from selection
+  //       const newSelection = prev.filter((idx) => idx !== roomIndex);
+  //       setBookingSeats(newSelection.length || 1);
+  //       return newSelection;
+  //     } else {
+  //       // Add room to selection
+  //       const newSelection = [...prev, roomIndex];
+  //       setBookingSeats(newSelection.length);
+  //       return newSelection;
+  //     }
+  //   });
+  // };
+
+  // Function to load Razorpay script dynamically
+  
+  // // Calculate amounts for display and payment
+  // const basePrice = selectedPlan ? getSelectedPlanPrice() : 0;
+  // const baseAmount = basePrice * unitCount;  // Base price multiplied by units (without service fee)
+
+  // // Calculate fixed service fee - only applied once regardless of unit count
+  // const fixedServiceFee = selectedPlan ? getFixedServiceFee(facility?.facilityType || '') : 0;
+
+  // // Calculate total amount with service fee added once
+  // const totalBaseAmount = baseAmount + fixedServiceFee;
+
+  // // GST is set to 0 (removed the 18% calculation)
+  // const gstAmount = 0;
+
+  // // Total amount is now just the base amount + fixed service fee (without GST)
+  // const totalAmount = totalBaseAmount;
+
+  // Handle booking submission

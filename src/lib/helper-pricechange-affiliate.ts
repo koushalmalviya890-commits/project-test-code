@@ -9,7 +9,11 @@ export default async function fetchDynamicPrice({
   unitCount: number;
   bookingSeats: number;
 }) {
-  const res = await fetch("/api/affiliate/user/pricing-detail-page", {
+
+  const API_URL = process.env.NEXT_PUBLIC_BASEURL || "http://localhost:3001";
+
+  
+const res = await fetch(`${API_URL}/api/affiliate/pricing/calculate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

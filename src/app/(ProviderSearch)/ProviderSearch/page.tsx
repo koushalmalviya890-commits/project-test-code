@@ -48,11 +48,11 @@ export default function ProviderSearchPage() {
     const fetchProviders = async () => {
       try {
         setIsLoading(true);
-        // const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+        const API_URL = "http://localhost:3001";
         
         // // Use the absolute URL for the backend
-        // const response = await fetch(`${API_URL}/service-providers`);
-        const response = await fetch('/api/service-providers');
+        const response = await fetch(`${API_URL}/api/service-provider`);
+        // const response = await fetch('/api/service-providers');
         if (!response.ok) {
           throw new Error('Failed to fetch providers');
         }
