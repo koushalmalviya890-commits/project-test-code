@@ -292,21 +292,21 @@ export default function ServiceProviderDashboard() {
 
       // const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
-      // // ✅ 3. Fetch with Credentials
-      // // We pass serviceProviderId if your backend needs it, otherwise the cookie handles auth
-      // const response = await fetch(
-      //   `${API_URL}/service-provider/dashboard-data?date=${dateStr}&userId=${serviceProviderId}`, 
-      //   {
-      //     method: "GET",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //     },
-      //     credentials: "include", // ⬅️ CRITICAL: Sends the auth cookie
-      //   }
-      // );
+      // ✅ 3. Fetch with Credentials
+      // We pass serviceProviderId if your backend needs it, otherwise the cookie handles auth
       const response = await fetch(
-        `/api/dashboard?date=${dateStr}&serviceProviderId=${serviceProviderId}`
+        `${apiUrl}/api/dashboard?date=${dateStr}`, 
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // ⬅️ CRITICAL: Sends the auth cookie
+        }
       );
+      // const response = await fetch(
+      //   `/api/dashboard?date=${dateStr}&serviceProviderId=${serviceProviderId}`
+      // );
 
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
@@ -347,7 +347,7 @@ export default function ServiceProviderDashboard() {
     }
   };
 
-  const base_url = "http://localhost:3001";
+
 
   // Fetch bookings data for the charts
   const fetchBookingsData = async () => {
@@ -355,7 +355,7 @@ export default function ServiceProviderDashboard() {
       // Fetch all bookings directly from the bookings API
       //const bookingsResponse = await fetch("/api/bookings");
       const bookingsResponse = await fetch(
-        `${base_url}/api/bookings`,
+        `${apiUrl}/api/bookings`,
         {
           method: "GET",
           credentials: "include", // IMPORTANT (send JWT cookie)
