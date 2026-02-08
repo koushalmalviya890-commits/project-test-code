@@ -231,6 +231,8 @@ function SearchPageClient() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null)
 
+  const apiUrl = "http://localhost:3001"
+
   // Synchronize dialog filters with main filters when dialog opens
   useEffect(() => {
     if (isFilterOpen) {
@@ -333,8 +335,16 @@ function SearchPageClient() {
       }
 
       // Make the API request
-      const response = await fetch('/api/facilities/search?' + queryParams)
+      // const response = await fetch('/api/facilities/search?' + queryParams)
       
+        const response = await fetch(`${apiUrl}/api/facilities/search?${queryParams.toString()}`, {
+       // 👇 CHANGE 2: Add credentials if your search relies on user-specific data (optional for public search, but good practice)
+       credentials: 'include', 
+       headers: {
+         'Content-Type': 'application/json'
+       }
+    })
+
       if (!response.ok) {
         throw new Error('Failed to fetch facilities')
       }

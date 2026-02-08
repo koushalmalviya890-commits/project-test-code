@@ -92,7 +92,7 @@ export default function EarningsPage() {
   const [earnings, setEarnings] = useState<EarningsData>({
     totalEarnings: 0,
     monthlyEarnings: 0,
-    pendingPayouts: 4000, // Hardcoded value as requested
+    pendingPayouts: 0, // Hardcoded value as requested
     transactions: []
   })
 
@@ -133,7 +133,13 @@ export default function EarningsPage() {
       setIsLoading(true)
       
       // Use the new earnings API endpoint
-      const response = await fetch(`${apiUrl}/api/service-provider/earnings`)
+      const response = await fetch(`${apiUrl}/api/service-provider/earnings`,{
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
       
       if (!response.ok) {
         throw new Error(`Error fetching earnings: ${response.status}`)
