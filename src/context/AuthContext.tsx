@@ -41,11 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           withCredentials: true, // ✅ Critical for persistence
         });
         setUser(data.user);
-        sessionStorage.setItem("authUser", JSON.stringify(data.user));
       } catch (error) {
         setUser(null); // Clear session if token is invalid/expired
-        sessionStorage.removeItem("authUser");
-        
       } finally {
         setLoading(false);
       }
@@ -53,12 +50,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkUser();
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (user) sessionStorage.setItem("authUser", JSON.stringify(user));
+    else sessionStorage.removeItem("authUser");
+  }, [user]);
+
   const login = async (credentials: any) => {
     const { data } = await axios.post(`${apiUrl}/api/auth/login`, credentials, {
       withCredentials: true,
     });
+   
+
     setUser(data.user);
-    sessionStorage.setItem("authUser", JSON.stringify(data.user));
 
     if (!data.user.userType) router.push("/auth/choose-account-type");
     else
@@ -76,7 +80,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       { withCredentials: true },
     );
     setUser(null);
-    sessionStorage.removeItem("authUser");
     router.push("/sign-in");
   };
   const update = (newData: Partial<User>) => {

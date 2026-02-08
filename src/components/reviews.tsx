@@ -17,11 +17,11 @@ interface FacilityReviewsProps {
 export default function FacilityReviews({ facilityId }: FacilityReviewsProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(false);
-
+const apiUrl = "http://localhost:3001";
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/reviews?facilityId=${facilityId}`);
+      const res = await fetch(`${apiUrl}/api/reviews?facilityId=${facilityId}`);
       if (!res.ok) throw new Error("Failed to load reviews");
       const data = await res.json();
       setReviews(data.reviews);

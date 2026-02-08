@@ -261,6 +261,7 @@ export default function ServiceProviderDashboard() {
       }
       );
       const data = await response.json();
+      console.log("Profile API response:", data);
       if (data.error) {
         console.error("Error fetching profile:", data.error);
       } else {
@@ -292,21 +293,21 @@ export default function ServiceProviderDashboard() {
 
       // const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
-      // // ✅ 3. Fetch with Credentials
-      // // We pass serviceProviderId if your backend needs it, otherwise the cookie handles auth
-      // const response = await fetch(
-      //   `${API_URL}/service-provider/dashboard-data?date=${dateStr}&userId=${serviceProviderId}`, 
-      //   {
-      //     method: "GET",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //     },
-      //     credentials: "include", // ⬅️ CRITICAL: Sends the auth cookie
-      //   }
-      // );
+      // ✅ 3. Fetch with Credentials
+      // We pass serviceProviderId if your backend needs it, otherwise the cookie handles auth
       const response = await fetch(
-        `/api/dashboard?date=${dateStr}&serviceProviderId=${serviceProviderId}`
+        `${apiUrl}/api/dashboard?date=${dateStr}`, 
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // ⬅️ CRITICAL: Sends the auth cookie
+        }
       );
+      // const response = await fetch(
+      //   `/api/dashboard?date=${dateStr}&serviceProviderId=${serviceProviderId}`
+      // );
 
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
@@ -347,7 +348,7 @@ export default function ServiceProviderDashboard() {
     }
   };
 
-  const base_url = "http://localhost:3001";
+
 
   // Fetch bookings data for the charts
   const fetchBookingsData = async () => {
@@ -355,7 +356,7 @@ export default function ServiceProviderDashboard() {
       // Fetch all bookings directly from the bookings API
       //const bookingsResponse = await fetch("/api/bookings");
       const bookingsResponse = await fetch(
-        `${base_url}/api/bookings`,
+        `${apiUrl}/api/bookings`,
         {
           method: "GET",
           credentials: "include", // IMPORTANT (send JWT cookie)
@@ -664,17 +665,17 @@ export default function ServiceProviderDashboard() {
           const bookingEndDate = new Date(booking.endDate);
 
           // Log for debugging
-          //// console.log("Booking dates:", {
-          //   id: booking._id,
-          //   facilityName: booking.facilityName,
-          //   startupName: booking.startupName,
-          //   startDate: booking.startDate,
-          //   endDate: booking.endDate,
-          //   rawStartDate: bookingStartDate.toString(),
-          //   rawEndDate: bookingEndDate.toString(),
-          //   startHours: bookingStartDate.getHours(),
-          //   endHours: bookingEndDate.getHours(),
-          // });
+           console.log("Booking dates:", {
+            id: booking._id,
+            facilityName: booking.facilityName,
+            startupName: booking.startupName,
+            startDate: booking.startDate,
+            endDate: booking.endDate,
+            rawStartDate: bookingStartDate.toString(),
+            rawEndDate: bookingEndDate.toString(),
+            startHours: bookingStartDate.getHours(),
+            endHours: bookingEndDate.getHours(),
+          });
 
           const dayStart = new Date(selectedDate);
           dayStart.setHours(0, 0, 0, 0);
@@ -731,58 +732,6 @@ export default function ServiceProviderDashboard() {
     }
   }, [dashboardData, selectedDate]);
 
-  // New function to fetch recent notifications
-  // const fetchRecentNotifications = async () => {
-  //   try {
-  //     // if (!session?.user?.id) return;
-  //     if (!user?.id) return;
-
-
-  //     const apiUrl = "http://localhost:3001";
-  //     // Updated API call with correct parameters
-  //     // const response = await fetch(
-  //     //   "/api/notifications?limit=3&type=booking&status=approved"
-  //     // );
-
-  //     const response = await fetch(
-  //       `${apiUrl}/notifications?limit=3&type=booking&status=approved`,
-  //       {
-  //         // ✅ 3. CRITICAL: Allow Express to read the cookie
-  //         credentials: 'include',
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         }
-  //       }
-  //     );
-
-
-  //     if (response.ok) {
-  //       const data = await response.json();
-
-  //       // Transform notifications for display - preserve the original message
-  //       const transformedNotifications = data.notifications.map(
-  //         (notification: any) => ({
-  //           _id: notification._id,
-  //           userName: notification.metadata?.startupName || "A startup",
-  //           facilityName: notification.metadata?.facilityName || "your facility",
-  //           status: "approved",
-  //           createdAt: notification.createdAt,
-  //           isRead: notification.isRead,
-  //           message: notification.message, // Add the original message
-  //         })
-  //       );
-
-  //       setRecentNotifications(transformedNotifications);
-  //     } else {
-  //       console.error(
-  //         "Failed to fetch recent notifications:",
-  //         await response.text()
-  //       );
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching recent notifications:", error);
-  //   }
-  // };
   const fetchRecentNotifications = async () => {
     try {
       // if (!session?.user?.id) return;
@@ -1002,7 +951,7 @@ export default function ServiceProviderDashboard() {
       {/* Dashboard Header */}
       <div className="flex flex-col space-y-3 sm:space-y-4 mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tighter">
-          Hello, {userProfile?.serviceName || "SNS Incubation Center"}
+          Hello, {userProfile?.data.serviceName || "Check with team"}
         </h1>
         <p className="text-base sm:text-lg text-muted-foreground opacity-60">
           Let's see the current updates
