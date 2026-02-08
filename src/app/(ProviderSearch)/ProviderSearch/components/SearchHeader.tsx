@@ -38,8 +38,8 @@ const API_URL = "http://localhost:3001";
         //     : '/api/service-provider/profile'
         // );
         const endpoint = user.userType === 'startup' 
-            ? '/startup/profile' 
-            : '/service-provider/profile';
+            ? '/api/startup/profile' 
+            : '/api/service-provider/profile';
 
         const response = await fetch(`${API_URL}${endpoint}`, {
             method: 'GET',

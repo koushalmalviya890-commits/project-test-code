@@ -209,7 +209,7 @@ export default function ExtensionRequestDialog() {
 
   const fetchExtensionRequests = async () => {
     try {
-      const res = await fetch("/api/startup/extent-booking");
+      const res = await fetch(`${apiUrl}/api/extent-bookings/extent-booking`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setRequests(data);

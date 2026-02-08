@@ -129,7 +129,7 @@ export default function BookingDetailsPage() {
         if (data.bookedBy) {
           try {
             const startupResponse = await fetch(
-              `/api/startup_by_userid?userId=${data.bookedBy}`
+              `${base_url}/api/startup/startup_by_userid?userId=${data.bookedBy}`
             );
             if (startupResponse.ok) {
               startupData = await startupResponse.json();
@@ -144,7 +144,7 @@ export default function BookingDetailsPage() {
         if (data.facilityId) {
           try {
             const facilityResponse = await fetch(
-              `/api/facilities/${data.facilityId}`
+              `${base_url}/api/facilities/${data.facilityId}`
             );
             if (facilityResponse.ok) {
               facilityData = await facilityResponse.json();
