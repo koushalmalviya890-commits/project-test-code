@@ -194,7 +194,7 @@ function SearchPageClient() {
   const maxPriceFromUrl = parseInt(searchParams.get('maxPrice') || '100000')
   const showFiltersFromUrl = searchParams.get('showFilters') === 'true'
   const pageFromUrl = parseInt(searchParams.get('page') || '1')
-
+const apiUrl = "http://localhost:3001"
 
   
   // State
@@ -342,7 +342,12 @@ function SearchPageClient() {
       }
 
       // Make the API request
-      const response = await fetch('/api/private-facilities/search-private?' + queryParams)
+      const response = await fetch(`${apiUrl}/api/private-facilities/search-private?${queryParams.toString()}`, {
+         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
   // const response = await fetch(`${apiUrl}/api/facilities/search?${queryParams.toString()}`, {
   //      // 👇 CHANGE 2: Add credentials if your search relies on user-specific data (optional for public search, but good practice)
   //      credentials: 'include', 

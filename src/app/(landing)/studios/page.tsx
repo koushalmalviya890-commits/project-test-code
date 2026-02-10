@@ -176,6 +176,7 @@ export default function StudiosPage() {
   const [studioFormLoading, setStudioFormLoading] = useState(false)
   const [studioFormSuccess, setStudioFormSuccess] = useState(false)
   const [studioFormError, setStudioFormError] = useState(false)
+  const apiUrl = 'http://localhost:3001'
 
   const faqItems = [
     {
@@ -220,7 +221,7 @@ export default function StudiosPage() {
           'Multimedia Studio'
         ].join(',')
         
-        const response = await fetch(`/api/facilities/search?` + new URLSearchParams({
+        const response = await fetch(`${apiUrl}/api/facilities/search?` + new URLSearchParams({
           propertyTypes: studioTypes,
           limit: '8',
           isFeatured: 'true'

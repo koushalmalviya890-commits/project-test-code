@@ -1,3 +1,4 @@
+// /private-facilities/search-private
 import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import { ObjectId, Sort } from 'mongodb'

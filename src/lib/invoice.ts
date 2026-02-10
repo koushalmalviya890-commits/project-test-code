@@ -1,6 +1,7 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { connectToDatabase } from "./mongodb";
 import { ObjectId } from "mongodb";
+import puppeteer, { Browser } from "puppeteer";
 
 import { logToDB } from "./logToDB";
 import axios from "axios";
@@ -20,19 +21,20 @@ const s3Client = new S3Client({
  * @returns The URL of the stored invoice
  */
 export async function generateAndStoreInvoice(
-  bookingId: string
+  bookingId: string,
 ): Promise<string | null> {
- // console.log(`Starting invoice generation for booking ${bookingId}`);
+  // console.log(`Starting invoice generation for booking ${bookingId}`);
+  // let browser: Browser | undefined;
   let browser;
 
   try {
     // Connect to the database
-   // console.log("Connecting to database for invoice generation");
+    // console.log("Connecting to database for invoice generation");
     const { db } = await connectToDatabase();
     await logToDB(db, "info", `Connecting to database for invoice generation `);
 
     // Find the booking
-   // console.log(`Fetching booking data for ${bookingId}`);
+    // console.log(`Fetching booking data for ${bookingId}`);
     await logToDB(db, "info", `Fetching booking data for ${bookingId} `);
     const booking = await db.collection("bookings").findOne({
       _id: new ObjectId(bookingId),
@@ -42,10 +44,10 @@ export async function generateAndStoreInvoice(
       await logToDB(
         db,
         "info",
-        `Invoice generation failed: Booking ${bookingId} not found`
+        `Invoice generation failed: Booking ${bookingId} not found`,
       );
       console.error(
-        `Invoice generation failed: Booking ${bookingId} not found`
+        `Invoice generation failed: Booking ${bookingId} not found`,
       );
       return null;
     }
@@ -53,9 +55,9 @@ export async function generateAndStoreInvoice(
     await logToDB(
       db,
       "info",
-      `Booking found with facilityId: ${booking.facilityId} and startupId: ${booking.startupId}`
+      `Booking found with facilityId: ${booking.facilityId} and startupId: ${booking.startupId}`,
     );
-   // console.log(
+    // console.log(
     //   `Booking found with facilityId: ${booking.facilityId} and startupId: ${booking.startupId}`
     // );
 
@@ -72,14 +74,14 @@ export async function generateAndStoreInvoice(
         await logToDB(
           db,
           "info",
-          `Invoice generation: Facility not found for booking ${bookingId}, facilityId: ${booking.facilityId}`
+          `Invoice generation: Facility not found for booking ${bookingId}, facilityId: ${booking.facilityId}`,
         );
         console.error(
-          `Invoice generation: Facility not found for booking ${bookingId}, facilityId: ${booking.facilityId}`
+          `Invoice generation: Facility not found for booking ${bookingId}, facilityId: ${booking.facilityId}`,
         );
       } else {
         await logToDB(db, "info", `Found facility: ${facility.details?.name} `);
-       // console.log(`Found facility: ${facility.details?.name}`);
+        // console.log(`Found facility: ${facility.details?.name}`);
       }
 
       // Fetch startup data
@@ -97,14 +99,14 @@ export async function generateAndStoreInvoice(
         await logToDB(
           db,
           "info",
-          `Invoice generation: Startup not found for booking ${bookingId}, startupId: ${booking.startupId}`
+          `Invoice generation: Startup not found for booking ${bookingId}, startupId: ${booking.startupId}`,
         );
         console.error(
-          `Invoice generation: Startup not found for booking ${bookingId}, startupId: ${booking.startupId}`
+          `Invoice generation: Startup not found for booking ${bookingId}, startupId: ${booking.startupId}`,
         );
       } else {
         await logToDB(db, "info", `Found startup: ${startup.startupName} `);
-       // console.log(`Found startup: ${startup.startupName}`);
+        // console.log(`Found startup: ${startup.startupName}`);
       }
 
       // Fetch incubator data if available
@@ -116,9 +118,9 @@ export async function generateAndStoreInvoice(
           await logToDB(
             db,
             "info",
-            `Found serviceProvider: ${serviceProvider.serviceName}`
+            `Found serviceProvider: ${serviceProvider.serviceName}`,
           );
-         // console.log(
+          // console.log(
           //   `Found serviceProvider: ${serviceProvider.serviceName}`
           // );
         }
@@ -127,10 +129,10 @@ export async function generateAndStoreInvoice(
       await logToDB(
         db,
         "info",
-        `Error fetching related data for invoice generation: ${error}`
+        `Error fetching related data for invoice generation: ${error}`,
       );
       console.error(
-        `Error fetching related data for invoice generation: ${error}`
+        `Error fetching related data for invoice generation: ${error}`,
       );
     }
 
@@ -139,10 +141,10 @@ export async function generateAndStoreInvoice(
       await logToDB(
         db,
         "info",
-        `Missing facility or startup data for booking ${bookingId}. Using default values for invoice.`
+        `Missing facility or startup data for booking ${bookingId}. Using default values for invoice.`,
       );
       console.warn(
-        `Missing facility or startup data for booking ${bookingId}. Using default values for invoice.`
+        `Missing facility or startup data for booking ${bookingId}. Using default values for invoice.`,
       );
 
       facility = facility || {
@@ -166,10 +168,10 @@ export async function generateAndStoreInvoice(
     // Generate a unique invoice number
     const invoiceNumber = `INV-${bookingId.substring(0, 8)}-${Date.now().toString().substring(9, 13)}`;
     await logToDB(db, "info", `Generated invoice number: ${invoiceNumber}`);
-   // console.log(`Generated invoice number: ${invoiceNumber}`);
+    // console.log(`Generated invoice number: ${invoiceNumber}`);
 
     // Create invoice content as HTML
-   // console.log("Generating invoice content as HTML");
+    // console.log("Generating invoice content as HTML");
     let invoiceHTML: string;
 
     if (serviceProvider?.invoiceType === "cumma") {
@@ -181,7 +183,7 @@ export async function generateAndStoreInvoice(
         invoiceNumber,
         invoiceDate: new Date(),
       });
-    } 
+    }
     // else if (serviceProvider?.invoiceType === "self") {
     //   if (serviceProvider.invoiceTemplate === "template2") {
     //     invoiceHTML = generateTemplate2InvoiceHTML({
@@ -203,7 +205,7 @@ export async function generateAndStoreInvoice(
     //       invoiceDate: new Date(),
     //     });
     //   }
-    // } 
+    // }
     else {
       // Fallback to default
       invoiceHTML = generateProfessionalInvoiceHTML({
@@ -218,23 +220,51 @@ export async function generateAndStoreInvoice(
 
     const accessKey = "ed1d01b7e7626fc1cdf1cc04f0f61075";
 
+    // Try HTTPS first, fallback to HTTP if needed (free plan doesn't support HTTPS)
+
+    console.log("Invoice HTML length:", invoiceHTML?.length);
+    console.log(
+      "Invoice HTML first 100 chars:",
+      invoiceHTML?.substring(0, 100),
+    );
+
+    if (!invoiceHTML) {
+      throw new Error("invoiceHTML is undefined or null");
+    }
+
     const response = await axios.post(
       `http://api.pdflayer.com/api/convert?access_key=${accessKey}`,
       new URLSearchParams({
         document_html: invoiceHTML,
         document_name: "invoice.pdf",
-        test: "0",
-      }),
+        page_size: "A4",
+        test: "0", // Set to '1' for testing without using quota
+      }).toString(),
       {
-        responseType: "arraybuffer", // IMPORTANT: to receive binary PDF data
+        responseType: "arraybuffer",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
-      }
+      },
     );
+
     const pdfBuffer = Buffer.from(response.data);
-    // const browser = await puppeteer.launch({ headless:true, });/
-    //const htmlBuffer = Buffer.from(invoiceHTML, 'utf-8');
+
+    // Check if response is JSON (error response) instead of PDF
+    const responseStr = Buffer.from(pdfBuffer).toString("utf8", 0, 100);
+    if (responseStr.includes('{"success":false')) {
+      const errorData = JSON.parse(Buffer.from(pdfBuffer).toString("utf8"));
+      await logToDB(
+        db,
+        "error",
+        `PDFLayer API Error: ${JSON.stringify(errorData)}`,
+      );
+      throw new Error(
+        `PDFLayer API Error: ${errorData.error?.info || JSON.stringify(errorData)}`,
+      );
+    }
+    // const browser = await puppeteer.launch({ headless:true, });
+    // const htmlBuffer = Buffer.from(invoiceHTML, 'utf-8');
     try {
       // Upload the PDF to S3
       const bucketName = process.env.AWS_BUCKET_NAME || "cumma-images";
@@ -242,9 +272,9 @@ export async function generateAndStoreInvoice(
       await logToDB(
         db,
         "info",
-        `Uploading PDF invoice to S3: ${bucketName}/${s3Key} `
+        `Uploading PDF invoice to S3: ${bucketName}/${s3Key} `,
       );
-     // console.log(`Uploading PDF invoice to S3: ${bucketName}/${s3Key}`);
+      // console.log(`Uploading PDF invoice to S3: ${bucketName}/${s3Key}`);
       await s3Client.send(
         new PutObjectCommand({
           Bucket: bucketName,
@@ -253,23 +283,23 @@ export async function generateAndStoreInvoice(
           ContentType: "application/pdf",
           ContentDisposition: `attachment; filename="${invoiceNumber}.pdf"`,
           // Remove ACL parameter as it's not supported by the bucket
-        })
+        }),
       );
 
       // Get the URL of the uploaded file
       const region = process.env.AWS_REGION || "eu-north-1";
       const invoiceUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${s3Key}`;
-     // console.log(`PDF Invoice uploaded successfully. URL: ${invoiceUrl}`);
+      // console.log(`PDF Invoice uploaded successfully. URL: ${invoiceUrl}`);
       await logToDB(
         db,
         "info",
-        `PDF Invoice uploaded successfully. URL: ${invoiceUrl}`
+        `PDF Invoice uploaded successfully. URL: ${invoiceUrl}`,
       );
-     // console.log(`Updating booking ${bookingId} with invoice URL`);
+      // console.log(`Updating booking ${bookingId} with invoice URL`);
       await logToDB(
         db,
         "info",
-        `Updating booking ${bookingId} with invoice URL`
+        `Updating booking ${bookingId} with invoice URL`,
       );
       // Update the booking record with the invoice URL
       try {
@@ -280,21 +310,21 @@ export async function generateAndStoreInvoice(
               invoiceUrl,
               invoiceGeneratedAt: new Date(),
             },
-          }
+          },
         );
 
-       // console.log("Invoice URL updated successfully in the booking record.");
+        // console.log("Invoice URL updated successfully in the booking record.");
         await logToDB(
           db,
           "info",
-          `Invoice URL updated successfully in the booking record.`
+          `Invoice URL updated successfully in the booking record.`,
         );
       } catch (dbError) {
         console.error(`Error updating booking with invoice URL: ${dbError}`);
         await logToDB(
           db,
           "info",
-          `Error updating booking with invoice URL: ${dbError}`
+          `Error updating booking with invoice URL: ${dbError}`,
         );
         if (dbError instanceof Error) {
           console.error(`Details: ${dbError.message}`);
@@ -303,24 +333,24 @@ export async function generateAndStoreInvoice(
 
       // Attempt to send the invoice by email
       try {
-       // console.log(
+        // console.log(
         //   `Attempting to send invoice email for booking ${bookingId}`
         // );
         await logToDB(
           db,
           "info",
-          `Attempting to send invoice email for booking ${bookingId} `
+          `Attempting to send invoice email for booking ${bookingId} `,
         );
         await sendInvoiceEmail(bookingId, invoiceUrl, startup, facility);
       } catch (emailError) {
         console.error(
           `Error sending invoice email for booking ${bookingId}:`,
-          emailError
+          emailError,
         );
         await logToDB(
           db,
           "info",
-          `Error sending invoice email for booking ${emailError}`
+          `Error sending invoice email for booking ${emailError}`,
         );
       }
 
@@ -328,12 +358,12 @@ export async function generateAndStoreInvoice(
     } catch (error) {
       console.error(
         `Error uploading PDF invoice to S3 for booking ${bookingId}:`,
-        error
+        error,
       );
       await logToDB(
         db,
         "info",
-        `Error uploading PDF invoice to S3 for booking ${error}`
+        `Error uploading PDF invoice to S3 for booking ${error}`,
       );
       if (error instanceof Error) {
         console.error(`Error details: ${error.message}`);
@@ -347,7 +377,11 @@ export async function generateAndStoreInvoice(
     return null;
   } finally {
     // if (browser) {
-    //   // await browser.close();
+    //   try {
+    //     await browser.close();
+    //   } catch (closeError) {
+    //     console.error('Error closing browser in finally block:', closeError);
+    //   }
     // }
   }
 }
@@ -359,19 +393,19 @@ async function sendInvoiceEmail(
   bookingId: string,
   invoiceUrl: string,
   startup: any,
-  facility: any
+  facility: any,
 ): Promise<void> {
   try {
     const recipientEmail = startup.startupMailId || startup.email;
 
     if (!recipientEmail) {
       console.error(
-        `No valid email found for startup ${startup._id || "unknown"}. Cannot send invoice email.`
+        `No valid email found for startup ${startup._id || "unknown"}. Cannot send invoice email.`,
       );
       return;
     }
 
-   // console.log(
+    // console.log(
     //   `Sending invoice email to ${recipientEmail} for booking ${bookingId}`
     // );
 
@@ -389,7 +423,7 @@ async function sendInvoiceEmail(
           recipientEmail: recipientEmail,
           forceSend: false,
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -400,12 +434,12 @@ async function sendInvoiceEmail(
       // Don't throw — log and return so background tasks continue.
       console.error(
         `Invoice email API returned non-OK for booking ${bookingId}:`,
-        { status: response.status, details: errorData }
+        { status: response.status, details: errorData },
       );
       return;
     }
 
-   // console.log(
+    // console.log(
     //   `Invoice email sent automatically to ${recipientEmail} for booking ${bookingId}`
     // );
   } catch (error) {
@@ -440,8 +474,8 @@ function generateProfessionalInvoiceHTML(data: InvoiceData): string {
 
   // Format currency for display
   const formatCurrency = (amount: number | null | undefined) => {
-    if (!amount && amount !== 0) return "₹0.00";
-    return `₹${Number(amount).toFixed(2)}`;
+    if (!amount && amount !== 0) return "Rs. 0.00";
+    return `Rs. ${Number(amount).toFixed(2)}`;
   };
 
   // Format date for display
@@ -477,12 +511,27 @@ function generateProfessionalInvoiceHTML(data: InvoiceData): string {
   // Calculate amounts
   const serviceFee = booking.serviceFee || 0;
   const originalBaseAmount = booking.baseAmount + serviceFee || 0;
-  const gstOnServiceFee = (serviceFee * 0.18);
+  const gstOnServiceFee = serviceFee * 0.18;
   const bookingSeats = booking.bookingSeats || 0;
   const gstAmount = booking.gstAmount || 0;
   const grandTotal = originalBaseAmount;
   const totalAmount = booking.amount || 0;
-const totalGst = gstOnServiceFee + gstAmount;
+  const totalGst = gstOnServiceFee + gstAmount;
+  //  ${
+  //                 serviceProvider
+  //                   ? `
+  //               <div class="info-row">
+  //                 <table>
+  //                   <tr>
+  //                     <td class="info-label">Service Provider:</td>
+  //                     <td class="info-value">${serviceProvider?.serviceName || "N/A"}</td>
+  //                   </tr>
+  //                 </table>
+  //               </div>
+  //               `
+  //                   : ""
+  //               }
+  // 
   return `
 <!DOCTYPE html>
 <html>
@@ -490,7 +539,6 @@ const totalGst = gstOnServiceFee + gstAmount;
   <meta charset="UTF-8">
   <title>Invoice ${invoiceNumber}</title>
    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     * {
       margin: 0;
@@ -499,7 +547,7 @@ const totalGst = gstOnServiceFee + gstAmount;
     }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       line-height: 1.4;
       color: #1a1a1a;
       background-color: #ffffff;
@@ -619,6 +667,7 @@ const totalGst = gstOnServiceFee + gstAmount;
     }
 
     .info-value {
+      font-family: Arial, 'Segoe UI', -apple-system, sans-serif;
       font-weight: 500;
       color: #1f2937;
       text-align: right;
@@ -673,6 +722,7 @@ const totalGst = gstOnServiceFee + gstAmount;
     }
 
     .detail-value {
+      font-family: Arial, 'Segoe UI', -apple-system, sans-serif;
       font-size: 12px;
       font-weight: 500;
       color: #1f2937;
@@ -693,6 +743,7 @@ const totalGst = gstOnServiceFee + gstAmount;
     }
 
     .breakdown-table {
+      font-family: Arial, 'Segoe UI', -apple-system, sans-serif;
       width: 100%;
       border-collapse: collapse;
     }
@@ -719,6 +770,7 @@ const totalGst = gstOnServiceFee + gstAmount;
     }
 
     .breakdown-table td:last-child {
+      font-family: Arial, 'Segoe UI', -apple-system, sans-serif;
       text-align: right;
       font-weight: 500;
     }
@@ -918,7 +970,9 @@ const totalGst = gstOnServiceFee + gstAmount;
                   </tr>
                 </table>
               </div>
-                            ${startup.gstnumber ? `
+                            ${
+                              startup.gstnumber
+                                ? `
 <div class="info-row">
     <table>
       <tr>
@@ -927,21 +981,17 @@ const totalGst = gstOnServiceFee + gstAmount;
       </tr>
     </table>
 </div>
-` : ''}
-              ${
-                serviceProvider
-                  ? `
-              <div class="info-row">
-                <table>
-                  <tr>
-                    <td class="info-label">serviceProvider:</td>
-                    <td class="info-value">${serviceProvider?.serviceName || "N/A"}</td>
-                  </tr>
-                </table>
-              </div>
-              `
-                  : ""
-              }
+`
+                                : ""
+                            }
+             <div class="info-row">
+    <table>
+      <tr>
+        <td class="info-label">Startup Address:</td>
+        <td class="info-value">${startup?.address}</td>
+      </tr>
+    </table>
+</div>
             </div>
           </td>
         </tr>
@@ -955,6 +1005,10 @@ const totalGst = gstOnServiceFee + gstAmount;
           <td>
             <div class="facility-info">
               <div class="section-title">Facility Information</div>
+              <div class="detail-item">
+                <div class="detail-label">Service Provider Name</div>
+                <div class="detail-value">${serviceProvider?.serviceName || "N/A"}</div>
+              </div>
               <div class="detail-item">
                 <div class="detail-label">Facility Name</div>
                 <div class="detail-value">${facility.details?.name || "N/A"}</div>
@@ -1084,7 +1138,6 @@ const totalGst = gstOnServiceFee + gstAmount;
 </html>
   `;
 }
-   
 
 function generateTemplate1InvoiceHTML(data: InvoiceData): string {
   const {
@@ -1128,12 +1181,12 @@ function generateTemplate1InvoiceHTML(data: InvoiceData): string {
       return "N/A";
     }
   };
-const serviceFee = booking?.serviceFee || 0;
+  const serviceFee = booking?.serviceFee || 0;
   const originalBaseAmount = booking?.baseAmount + serviceFee || 0;
-  
+
   const bookingSeats = booking?.bookingSeats || 1;
   const gstAmount = booking?.gstAmount || 0;
-  const grandTotal =  booking?.amount || originalBaseAmount;
+  const grandTotal = booking?.amount || originalBaseAmount;
   const totalAmount =
     booking?.amount || originalBaseAmount + serviceFee + gstAmount;
   const gstPercentage =
@@ -1573,12 +1626,12 @@ function generateTemplate2InvoiceHTML(data: InvoiceData): string {
     }
   };
 
-   const serviceFee = booking?.serviceFee || 0;
+  const serviceFee = booking?.serviceFee || 0;
   const originalBaseAmount = booking?.originalBaseAmount + serviceFee || 0;
- 
+
   const bookingSeats = booking?.bookingSeats || 1;
   const gstAmount = booking?.gstAmount || 0;
-  const grandTotal =  booking?.amount || originalBaseAmount;
+  const grandTotal = booking?.amount || originalBaseAmount;
   const totalAmount =
     booking?.amount || originalBaseAmount + serviceFee + gstAmount;
 
