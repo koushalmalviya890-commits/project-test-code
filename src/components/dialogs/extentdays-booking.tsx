@@ -27,7 +27,9 @@ interface BookingExtensionDialogProps {
 
 interface ExtensionRequest {
   status: string
+  extentDays: number
 }
+
 
 export default function BookingExtensionDialog({ 
   bookingId, 
@@ -46,93 +48,96 @@ export default function BookingExtensionDialog({
   const apiUrl ="http://localhost:3001";
 
   const fetchExtensionRequests = async (id: string) => {
-    try {
-      // Fetch requests specifically for this booking
-      const res = await fetch(`${apiUrl}/api/extent-booking/${id}`);
+   try {
+      // Calls the new route: /api/extent-booking/status/:bookingId
+      const res = await fetch(`${apiUrl}/api/extent-booking/status/${id}`, {
+        credentials: 'include' // Important for auth
+      });
       const data = await res.json();
-
-      // Check if there is any pending request for this booking
-      if (Array.isArray(data)) {
-        // Assuming your backend returns an array of requests
-        const hasPending = data.some((req: ExtensionRequest) => req.status === "pending");
-        setIsRequested(hasPending);
+if (Array.isArray(data) && data.length > 0) {
+        // The backend sorts by createdAt: -1, so index 0 is the latest
+        const latestRequest = data[0]; 
+        
+        if (latestRequest.status === 'pending') {
+          setIsRequested(true);
+        } else {
+          setIsRequested(false);
+        }
+      } else {
+        setIsRequested(false);
       }
     } catch (error) {
       console.error("Failed to check extension status", error);
     }
   };
 
-  useEffect(() => {
-    if (bookingId) {
+useEffect(() => {
+    if (bookingId && isOpen) {
       fetchExtensionRequests(bookingId);
     }
-  }, [bookingId]);
+  }, [bookingId, isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  // Validate days
-  if (!extentDays || parseInt(extentDays) <= 0) {
-    toast.error('Please enter a valid number of days');
-    return;
-  }
-
-  // Validate User ID (Required by backend to find Startup)
-  if (!user?.id) {
-    toast.error('User session not found');
-    return;
-  }
-
-  setIsLoading(true);
-
-  try {
-    // CALCULATION: Backend expects 'requestedEndDate', so we calculate it here
-    const daysToAdd = parseInt(extentDays);
-    const startDate = new Date(currentEndDate); // Ensure currentEndDate is a valid Date string/object
-    const finalDate = new Date(startDate);
-    finalDate.setDate(startDate.getDate() + daysToAdd);
-
-    const response = await fetch(`${apiUrl}/api/extent-booking`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId: user.id,            // REQUIRED: Your backend uses this to find the startup
-        bookingId: bookingId,       // REQUIRED: Link to the booking
-        requestedEndDate: finalDate.toISOString(), // REQUIRED: Calculated date
-        reason: "Extension requested" // Optional: You might want to add a text input for this
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to send extension request');
+    if (!extentDays || parseInt(extentDays) <= 0) {
+      toast.error('Please enter a valid number of days');
+      return;
     }
 
-    setIsRequested(true);
-    setIsOpen(false);
-    toast.success('Extension request sent successfully!');
-
-    // Refresh the list immediately after successful submission
-    fetchExtensionRequests(bookingId);
-
-    if (onExtensionRequested) {
-      onExtensionRequested(bookingId, daysToAdd);
+    if (!user?.id) {
+      toast.error('User session not found');
+      return;
     }
 
-  } catch (error) {
-    console.error('Error sending extension request:', error);
-    toast.error(
-      typeof error === 'object' && error !== null && 'message' in error
-        ? (error as { message?: string }).message
-        : 'Failed to send extension request.'
-    );
-  } finally {
-    setIsLoading(false);
-  }
-};
+    setIsLoading(true);
+
+    try {
+      // ✅ UPDATED: Send 'extentDays' directly to match backend
+      const response = await fetch(`${apiUrl}/api/extent-booking`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          bookingId,
+          extentDays: parseInt(extentDays), // Backend expects this number
+          facilityId,
+          incubatorId,
+          startupId
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 409) {
+           setIsRequested(true); // Already exists
+           toast.error('Extension already requested.');
+           return;
+        }
+        throw new Error(data.error || 'Failed to send extension request');
+      }
+
+      setIsRequested(true);
+      setIsOpen(false);
+      toast.success('Extension request sent successfully!');
+
+      // Check status again to verify state
+      fetchExtensionRequests(bookingId);
+
+      if (onExtensionRequested) {
+        onExtensionRequested(bookingId, parseInt(extentDays));
+      }
+
+    } catch (error) {
+      console.error('Error sending extension request:', error);
+      toast.error('Failed to send extension request.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const calculateNewEndDate = () => {
     if (!extentDays || parseInt(extentDays) <= 0) return null
@@ -143,11 +148,12 @@ export default function BookingExtensionDialog({
     return newDate.toLocaleDateString()
   }
 
-useEffect(()=>{
-  if (!isOpen) {
-    setExtentDays('');
-  }
-})
+// Reset form when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setExtentDays('');
+    }
+  }, [isOpen])
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -170,55 +176,60 @@ useEffect(()=>{
             Request to extend your booking period. The service provider will review your request.
           </DialogDescription>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="extentDays">Extension Days</Label>
-            <Input
-              id="extentDays"
-              type="number"
-              placeholder="Enter number of days"
-              value={extentDays}
-              onChange={(e) => setExtentDays(e.target.value)}
-              min="1"
-              required
-            />
-          </div>
-          
-          <div className="bg-gray-50 p-3 rounded-md space-y-2">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Current End Date:</span>
-              <span className="text-sm font-medium">
-                {new Date(currentEndDate).toLocaleDateString()}
-              </span>
+      {isRequested ? (
+           <div className="py-4 text-center text-amber-600 bg-amber-50 rounded-md">
+             You have a pending extension request for this booking.
+           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="extentDays">Extension Days</Label>
+              <Input
+                id="extentDays"
+                type="number"
+                placeholder="Enter number of days"
+                value={extentDays}
+                onChange={(e) => setExtentDays(e.target.value)}
+                min="1"
+                required
+              />
             </div>
             
-            {calculateNewEndDate() && (
+            <div className="bg-gray-50 p-3 rounded-md space-y-2">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-gray-600">New End Date:</span>
-                <span className="text-sm font-medium text-green-600">
-                  {calculateNewEndDate()}
+                <Calendar className="h-4 w-4 text-gray-500" />
+                <span className="text-sm text-gray-600">Current End Date:</span>
+                <span className="text-sm font-medium">
+                  {new Date(currentEndDate).toLocaleDateString()}
                 </span>
               </div>
-            )}
-          </div>
-          
-          <div className="flex justify-end gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Sending...' : 'Send Request'}
-            </Button>
-          </div>
-        </form>
+              
+              {calculateNewEndDate() && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-gray-600">New End Date:</span>
+                  <span className="text-sm font-medium text-green-600">
+                    {calculateNewEndDate()}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOpen(false)}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? 'Sending...' : 'Send Request'}
+              </Button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   )

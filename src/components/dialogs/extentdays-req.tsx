@@ -200,22 +200,32 @@ export default function ExtensionRequestDialog() {
 
   // Fetch data initially and optionally poll
   useEffect(() => {
-    fetchExtensionRequests();
-
-    // Optional: auto-refresh every 60 seconds
-    const interval = setInterval(fetchExtensionRequests, 60000);
+   if(open) { // Optimization: Only fetch when dialog opens
+        fetchExtensionRequests();
+    }
+    const interval = setInterval(() => {
+        if(open) fetchExtensionRequests();
+    }, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [open]);
 
-  const fetchExtensionRequests = async () => {
+const fetchExtensionRequests = async () => {
     try {
-      const res = await fetch(`${apiUrl}/api/extent-bookings/extent-booking`);
+      setLoading(true);
+      // ✅ CHANGE 1: Correct URL (Removed extra /extent-bookings path segment)
+      const res = await fetch(`${apiUrl}/api/extent-booking`, {
+        credentials: 'include' // ✅ CHANGE 2: Send auth cookie
+      });
+      
       const data = await res.json();
+      
       if (Array.isArray(data)) {
         setRequests(data);
       }
     } catch (error) {
       console.error("Failed to fetch extension requests", error);
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -230,6 +240,7 @@ export default function ExtensionRequestDialog() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials:'include',
         body: JSON.stringify({ status }),
       });
 
