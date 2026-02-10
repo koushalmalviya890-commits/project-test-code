@@ -1,4 +1,4 @@
-// app/api/startup/bookings/extend/route.ts
+// app/api/startup/extent-booking/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";

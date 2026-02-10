@@ -33,12 +33,26 @@ export default function RateReviewDialog({
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const apiUrl = "http://localhost:3001";
+
   const handleSubmit = async () => {
+    // Validation: Ensure rating is selected
+    if (rating === 0) {
+      toast.error("Please select a star rating");
+      return;
+    }
+
     try {
       setSubmitting(true);
 
-      const response = await fetch("/api/reviews", {
+      // ✅ 2. Update Fetch Call
+      const response = await fetch(`${apiUrl}/api/reviews`, {
         method: "POST",
+        headers: { 
+          "Content-Type": "application/json" 
+        },
+        // ✅ 3. CRITICAL: Send auth cookies to Express
+        credentials: "include", 
         body: JSON.stringify({
           bookingId,
           startupId,
@@ -47,17 +61,13 @@ export default function RateReviewDialog({
           rating,
           comment,
         }),
-        headers: { "Content-Type": "application/json" },
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        // Show error and reset state if needed
         toast.error(data.error || "Failed to submit review");
-        setOpen(false); // ❌ Optional: Close even on error?
-        setRating(0);
-        setComment("");
+        // Don't close dialog on error so user can fix/retry
         return;
       }
 
@@ -66,14 +76,10 @@ export default function RateReviewDialog({
       // Reset state on success
       setRating(0);
       setComment("");
-      setOpen(false); // ✅ Close dialog
+      setOpen(false); 
     } catch (error) {
       console.error("Error submitting review:", error);
       toast.error("Something went wrong");
-
-      setOpen(false); // Optional: only if you want to close on error
-      setRating(0);
-      setComment("");
     } finally {
       setSubmitting(false);
     }
@@ -88,7 +94,7 @@ useEffect(()=>{
   }
 }, [open]);
 
-  return (
+return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">Rate & Review</Button>
@@ -99,33 +105,55 @@ useEffect(()=>{
         </DialogHeader>
 
         {/* Star Rating */}
-        <div className="flex items-center space-x-2 mb-4">
+        <div className="flex items-center justify-center space-x-2 mb-4 mt-2">
           {[1, 2, 3, 4, 5].map((star) => (
             <Star
               key={star}
-              size={24}
+              size={32} // Made slightly larger for better UX
               onMouseEnter={() => setHoverRating(star)}
               onMouseLeave={() => setHoverRating(0)}
               onClick={() => setRating(star)}
-              className={`cursor-pointer transition-colors ${
+              className={`cursor-pointer transition-colors duration-200 ${
                 (hoverRating || rating) >= star
                   ? "fill-yellow-400 text-yellow-400"
-                  : "text-gray-400"
+                  : "text-gray-300"
               }`}
             />
           ))}
         </div>
+        
+        {/* Rating Label (Optional UX improvement) */}
+        <div className="text-center text-sm text-gray-500 mb-4 h-5">
+          {hoverRating > 0 ? (
+            <span>
+              {hoverRating === 1 && "Poor"}
+              {hoverRating === 2 && "Fair"}
+              {hoverRating === 3 && "Average"}
+              {hoverRating === 4 && "Good"}
+              {hoverRating === 5 && "Excellent"}
+            </span>
+          ) : rating > 0 ? (
+            <span>
+              {rating === 1 && "Poor"}
+              {rating === 2 && "Fair"}
+              {rating === 3 && "Average"}
+              {rating === 4 && "Good"}
+              {rating === 5 && "Excellent"}
+            </span>
+          ) : null}
+        </div>
 
         {/* Comment Box */}
         <Textarea
-          placeholder="Write your review..."
+          placeholder="Share your experience with this facility..."
           value={comment}
           onChange={(e) => setComment(e.target.value)}
+          className="min-h-[100px]"
         />
 
         <DialogFooter>
-          <Button onClick={handleSubmit} disabled={submitting}>
-            {submitting ? "Submitting..." : "Submit"}
+          <Button onClick={handleSubmit} disabled={submitting || rating === 0}>
+            {submitting ? "Submitting..." : "Submit Review"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -189,7 +189,7 @@ export default function MyFacilities() {
       if (!user?.id) return; // Guard clause
 
       setIsLoading(true);
-      const response = await fetch(`${apiUrl}/api/facilities`, {
+      const response = await fetch(`${apiUrl}/api/facilities/protected`, {
         method: "GET",
         credentials: "include",
         headers: {
@@ -338,10 +338,10 @@ export default function MyFacilities() {
     if (!selectedFacility) return;
 
     try {
-     // console.log(
-      //   "Form data received in handleEditSubmit:",
-      //   JSON.stringify(formData, null, 2)
-      // );
+     console.log(
+        "Form data received in handleEditSubmit:",
+        JSON.stringify(formData, null, 2)
+      );
 
       // First, fetch the current facility data again to make sure we have the most recent version
       const fetchResponse = await fetch(
@@ -678,10 +678,10 @@ export default function MyFacilities() {
         timings: timings,
       };
 
-     // console.log(
-      //   "Final payload being sent:",
-      //   JSON.stringify(payload, null, 2)
-      // );
+     console.log(
+        "Final payload being sent:",
+        JSON.stringify(payload, null, 2)
+      );
 
       const response = await fetch(`${apiUrl}/api/facilities/${selectedFacility._id}`, {
         method: "PATCH",

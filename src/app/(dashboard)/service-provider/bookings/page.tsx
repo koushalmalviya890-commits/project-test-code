@@ -573,7 +573,7 @@ export default function BookingsPage() {
                     <div className="flex justify-between items-center pt-2">
                       <div className="flex flex-col gap-2">
                         <StatusActions
-                          bookingId={booking._id.toString()}
+                          bookingId={booking._id}
                           status={booking.status as 'pending' | 'approved' | 'rejected'}
                         />
                         <p className="font-semibold text-lg text-gray-900">
@@ -675,7 +675,7 @@ export default function BookingsPage() {
                         </TableCell>
                         <TableCell className="py-4 px-6 text-center">
                           <StatusActions
-                            bookingId={booking._id.toString()}
+                            bookingId={booking._id}
                             status={booking.status as 'pending' | 'approved' | 'rejected'}
                           />
                         </TableCell>

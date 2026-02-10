@@ -254,6 +254,8 @@ export default function Home() {
   // Track hovered card index
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
 
+const apiUrl = "http://localhost:3001"
+
   // Calculate max slides based on window width
   useEffect(() => {
     const calculateMaxSlides = () => {
@@ -425,7 +427,7 @@ const handleSearch = () => {
       setLoading(true);
       setError(null);
       const response = await fetch(
-        "/api/facilities/search?" +
+        `${apiUrl}/api/facilities/search?` +
           new URLSearchParams({
             isFeatured: "true",
             limit: "8",
