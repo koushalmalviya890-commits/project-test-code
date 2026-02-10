@@ -211,7 +211,7 @@ useEffect(() => {
 }, [processingPayment]);
  
 
-
+const baseUrl = "http://localhost:3001"; 
 
   const handleProceedToPayment = async () => {
     if (!bookingDetails) return;
@@ -220,7 +220,8 @@ useEffect(() => {
       setProcessingPayment(true);
 
       // Create a payment order
-      const response = await fetch("/api/affiliate/user/payments/razorpay/order", {
+      //const response = await fetch("/api/affiliate/user/payments/razorpay/order", {
+      const response = await fetch(`${baseUrl}/api/affiliate/user/payments/order`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -356,7 +357,8 @@ useEffect(() => {
   setProcessingPayment(true); // triggers back/refresh block via useEffect
 
   try {
-    const verifyResponse = await fetch("/api/affiliate/user/payments/razorpay/verify", {
+    // const verifyResponse = await fetch("/api/affiliate/user/payments/razorpay/verify", {
+    const verifyResponse = await fetch(`${baseUrl}/api/affiliate/user/payments/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

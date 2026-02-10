@@ -55,6 +55,9 @@ const [reviewStats, setReviewStats] = React.useState<{
   totalReviews: number;
   averageRating: number;
 } | null>(null);
+
+const baseUrl = "http://localhost:3001";
+
 React.useEffect(() => {
   const fetchFinalPrice = async () => {
     if (!facility.details.rentalPlans?.length) return; // removed session check
@@ -62,7 +65,8 @@ React.useEffect(() => {
     const lowestBasePrice = Math.min(...facility.details.rentalPlans.map(plan => plan.price));
 
     try {
-      const res = await fetch("/api/affiliate/user/pricing", {
+      //const res = await fetch("/api/affiliate/user/pricing", {
+        const res = await fetch(`${baseUrl}/api/affiliate/user/pricing`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

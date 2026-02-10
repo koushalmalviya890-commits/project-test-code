@@ -129,7 +129,6 @@ export async function sendServiceProviderNotificationEmail({
 
 
 
-
 export async function sendReminderEmailToStartup({
   to,
   startupName,
@@ -300,9 +299,6 @@ export async function sendBookingExtensionNotificationToProvider({
     throw error;
   }
 }
-
-
-
 
 export async function sendFacilityContactMail({
   to,

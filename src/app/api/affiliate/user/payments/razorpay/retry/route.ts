@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
             updatedAt: new Date(),
           },
           $unset: {
-            retryToken: ""  // Remove the field completely
+            retryToken: ""  
           },
           $push: {
             paymentRetries: retryAttempt

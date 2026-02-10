@@ -2375,6 +2375,8 @@ export default function ViewDetailsClient({
     setIsAffiliateDialogOpen(true);
   };
 
+  const baseUrl = "http://localhost:3001";
+
   const handleAffiliateSubmit = async () => {
     if (!affiliateMailId || affiliateContactNumber.length < 10) {
       toast.error("Please provide both email and contact number correctly ", {
@@ -2388,7 +2390,8 @@ export default function ViewDetailsClient({
       setProcessingPayment(true);
 
       // Send affiliate data to API
-      const affiliateResponse = await fetch("/api/affiliate/user", {
+      //const affiliateResponse = await fetch("/api/affiliate/user", {
+      const affiliateResponse = await fetch(`${baseUrl}/api/affiliate/user`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
