@@ -6,7 +6,7 @@ import React, { useState } from "react";
 
 export function NewsletterSignup() {
   const [email, setEmail] = useState("");
-  const apiUrl = "localhost:3001";
+  const apiUrl = "http://localhost:3001";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

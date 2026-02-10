@@ -42,17 +42,24 @@ export default function RateReviewDialog({
       return;
     }
 
+    const token = sessionStorage.getItem("authUser");
+    if (!token) {
+      toast.error("You must be logged in to submit a review");
+      return;
+    }
+
     try {
       setSubmitting(true);
 
       // ✅ 2. Update Fetch Call
       const response = await fetch(`${apiUrl}/api/reviews`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json" 
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": token,
         },
         // ✅ 3. CRITICAL: Send auth cookies to Express
-        credentials: "include", 
+        credentials: "include",
         body: JSON.stringify({
           bookingId,
           startupId,
