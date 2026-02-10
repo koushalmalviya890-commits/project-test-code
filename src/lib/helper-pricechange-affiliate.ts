@@ -13,7 +13,7 @@ export default async function fetchDynamicPrice({
   const API_URL = process.env.NEXT_PUBLIC_BASEURL || "http://localhost:3001";
 
   
-const res = await fetch(`${API_URL}/api/affiliate/pricing/calculate`, {
+const res = await fetch(`${API_URL}/api/affiliate/pricing-detail-page`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

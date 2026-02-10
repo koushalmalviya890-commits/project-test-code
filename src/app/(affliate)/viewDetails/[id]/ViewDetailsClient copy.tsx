@@ -2400,6 +2400,8 @@ export default function ViewDetailsClient({
     setIsAffiliateDialogOpen(true);
   };
 
+  const baseUrl = "http://localhost:3001";
+
   const handleAffiliateSubmit = async () => {
     if (!affiliateMailId || !affiliateContactNumber) {
       toast.error("Please provide both email and contact number", {
