@@ -33,6 +33,7 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
         setLoading(true);
         
         //const response = await fetch(`/api/bookings/${bookingId}`);
+        console.log(`Checking for invoice availability (attempt ${attempts + 1}/${maxAttempts})...`);
 
         const response = await fetch(
           `${base_url}/api/bookings/${bookingId}`,
@@ -97,17 +98,19 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
     };
   }, [bookingId]);
 
+  console.log('InvoiceDownload state:', { invoiceUrl, loading, error });
+
   const handleEmailInvoice = async () => {
     try {
-      const response = await fetch('/api/invoices/email', {
-        method: 'POST',
+      const response = await fetch(`${base_url}/api/invoices/email`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           bookingId,
           // When user manually clicks, always force send the email
-          forceSend: true 
+          forceSend: true,
         }),
       });
 
