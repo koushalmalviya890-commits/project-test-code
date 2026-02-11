@@ -16,6 +16,8 @@ export default function InvoiceButton({
   variant = 'full'
 }: InvoiceButtonProps) {
   const [sending, setSending] = useState(false);
+    const base_url = "http://localhost:3001";
+
 
   const handleSendEmail = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -25,15 +27,16 @@ export default function InvoiceButton({
     
     try {
       setSending(true);
-      const response = await fetch('/api/invoices/email', {
-        method: 'POST',
+      const response = await fetch(`${base_url}/api/invoices/email`, {
+        method: "POST",
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           bookingId,
           // When user manually clicks, always force send the email
-          forceSend: true 
+          forceSend: true,
         }),
       });
 
