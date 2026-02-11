@@ -103,141 +103,114 @@ export default function BookingDetailsPage() {
         }
 
         const data = await response.json();
-        //// console.log(data, `for service provider booking detail`);
-        // Fetch service provider details if serviceProviderId exists
-        let serviceProviderData = null;
-        if (data.serviceProviderId) {
-          try {
-            const spResponse = await fetch(
-              `${base_url}/api/service-provider/${data.serviceProviderId}`
-            );
-            if (spResponse.ok) {
-              serviceProviderData = await spResponse.json();
-            }
-          } catch (error) {
-            // Silent catch - continue with null data
-          }
+        // console.log(data, `for service provider booking detail`);
+        const bookingData = data.booking || data;
+
+// 2. Prepare Parallel Fetches for related data
+        const promises = [];
+
+       // A. Service Provider Fetch
+        if (bookingData.serviceProviderId) {
+          promises.push(
+            fetch(`${base_url}/api/service-provider/${bookingData.serviceProviderId}`, {
+              credentials: "include",
+            })
+              .then(res => res.ok ? res.json() : null)
+              .catch(() => null)
+          );
+        } else {
+          promises.push(Promise.resolve(null));
         }
 
-        // Fetch startup details if bookedBy exists
-        let startupData = null;
-        if (data.bookedBy) {
-          try {
-            const startupResponse = await fetch(
-              `${base_url}/api/startup_by_userid?userId=${data.bookedBy}`
-            );
-            if (startupResponse.ok) {
-              startupData = await startupResponse.json();
-            }
-          } catch (error) {
-            // Silent catch - continue with null data
-          }
+        // B. Startup Fetch
+        // Note: Our updated controller returns 'bookedBy' as the ID
+        if (bookingData.bookedBy) {
+          promises.push(
+            fetch(`${base_url}/api/startup/startup_by_userid?userId=${bookingData.bookedBy}`, {
+              credentials: "include",
+            })
+              .then(res => res.ok ? res.json() : null)
+              .catch(() => null)
+          );
+        } else {
+          promises.push(Promise.resolve(null));
         }
-
         // Fetch facility details to get complete data including images
-        let facilityData = null;
-        if (data.facilityId) {
-          try {
-            const facilityResponse = await fetch(
-              `${base_url}/api/facilities/${data.facilityId}`
-            );
-            if (facilityResponse.ok) {
-              facilityData = await facilityResponse.json();
-            }
-          } catch (error) {
-            // Silent catch - continue with null data
-          }
+       if (bookingData.facilityId) {
+           promises.push(
+            fetch(`${base_url}/api/facilities/${bookingData.facilityId}`, {
+              credentials: "include",
+            })
+              .then(res => res.ok ? res.json() : null)
+              .catch(() => null)
+          );
+        } else {
+           promises.push(Promise.resolve(null));
         }
 
-        // Get images from the API response
+        // 3. Execute Parallel Fetches
+        const [serviceProviderData, startupData, facilityData] = await Promise.all(promises);
+        // 4. Resolve Images
         let facilityImages: string[] = [];
-
-        // Try to extract images from various possible paths in the data
-        if (
-          facilityData &&
-          facilityData.details &&
-          Array.isArray(facilityData.details.images)
-        ) {
-          // First priority: direct facility data if available
-          facilityImages = facilityData.details.images;
-        } else if (
-          data.facility &&
-          data.facility.details &&
-          Array.isArray(data.facility.details.images)
-        ) {
-          // Second priority: nested facility.details.images
-          facilityImages = data.facility.details.images;
-        } else if (data.facility && Array.isArray(data.facility.images)) {
-          // Third priority: facility.images (flattened structure)
-          facilityImages = data.facility.images;
+        if (facilityData?.details?.images) {
+            facilityImages = facilityData.details.images;
+        } else if (bookingData.facility?.details?.images) { // nested
+            facilityImages = bookingData.facility.details.images;
+        } else if (bookingData.images) { // flat from controller
+            facilityImages = bookingData.images;
         }
-
+        
         // Transform data to match BookingDetails interface if needed
         // This handles potential differences in API response structure
+       // 5. Construct Final Object
         const transformedData: BookingDetails = {
-          _id: data._id || "",
-          bookingId: data.bookingId || data._id || "",
-          rentalPlan: data.rentalPlan || "",
-          status: data.status || "",
-          paymentStatus: data.paymentStatus || "",
-          amount: data.amount || 0,
-          baseAmount: data.baseAmount,
-          gstAmount: data.gstAmount,
-          startDate: data.startDate || "",
-          endDate: data.endDate || "",
-          whatsappNumber: data.whatsappNumber || "",
-          invoiceUrl: data.invoiceUrl || null,
-          invoiceEmailHistory: data.invoiceEmailHistory || [],
-          serviceFee: data.serviceFee || 0,
-          unitCount: data.unitCount || 1,
-          bookingSeats: data.bookingSeats || 1, // Default to 1 if not provided
-          // Handle nested facility data
+          _id: bookingData._id,
+          bookingId: bookingData.bookingId || bookingData._id,
+          rentalPlan: bookingData.rentalPlan || "",
+          status: bookingData.status || "",
+          paymentStatus: bookingData.paymentStatus || "",
+          amount: bookingData.amount || 0,
+          baseAmount: bookingData.baseAmount,
+          gstAmount: bookingData.gstAmount,
+          serviceFee: bookingData.serviceFee,
+          startDate: bookingData.startDate || "",
+          endDate: bookingData.endDate || "",
+          whatsappNumber: bookingData.whatsappNumber || "",
+          invoiceUrl: bookingData.invoiceUrl,
+          invoiceEmailHistory: bookingData.invoiceEmailHistory || [],
+          unitCount: bookingData.unitCount || 1,
+          bookingSeats: bookingData.bookingSeats || 1,
+
           facility: {
-            name:
-              data.facilityName ||
-              facilityData?.details?.name ||
-              data.facility?.details?.name ||
-              data.facility?.name ||
-              "",
-            facilityType:
-              data.facilityType ||
-              facilityData?.facilityType ||
-              data.facility?.facilityType ||
-              "",
+            name: bookingData.facilityName || facilityData?.details?.name || "Unknown Facility",
+            facilityType: bookingData.facilityType || facilityData?.facilityType || "",
             images: facilityImages,
-            address:
-              data.address ||
-              facilityData?.address ||
-              data.facility?.address ||
-              "",
-            city: data.city || facilityData?.city || data.facility?.city || "",
-            state:
-              data.state || facilityData?.state || data.facility?.state || "",
+            address: bookingData.address || facilityData?.address || "",
+            city: bookingData.city || facilityData?.city || "",
+            state: bookingData.state || facilityData?.state || "",
           },
 
-          // Handle startup data, prioritizing the fetched startup details
           startup: {
-            startupName: startupData?.startupName || "",
+            startupName: startupData?.startupName || bookingData.bookedByName || "Unknown Startup",
             logoUrl: startupData?.logoUrl || "",
-            founderName: startupData?.contactName || "",
-            primaryContactNumber:
-              startupData?.contactNumber || data.whatsappNumber || "",
+            founderName: startupData?.founderName || startupData?.contactName || "",
+            primaryContactNumber: startupData?.primaryContactNumber || bookingData.whatsappNumber || "",
             city: startupData?.city || "",
-            emailId: startupData?.email || "",
+            emailId: startupData?.startupMailId || startupData?.email || "",
           },
 
-          // Handle service provider data, prioritizing the fetched service provider details
           serviceProvider: {
-            serviceName: serviceProviderData?.serviceName || "",
+            serviceName: serviceProviderData?.serviceName || "Unknown Provider",
             logoUrl: serviceProviderData?.logoUrl || "",
             features: serviceProviderData?.features || [],
           },
         };
 
         setBookingDetails(transformedData);
+
       } catch (error) {
         console.error("Error fetching booking details:", error);
-        setError("Failed to load booking details. Please try again.");
+        setError("Failed to load booking details.");
       } finally {
         setIsLoading(false);
       }

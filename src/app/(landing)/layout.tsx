@@ -149,6 +149,7 @@ export default function LandingLayout({
   // const { data: session } = useSession();
   const { user, logout } = useAuth();
   const session = { user }; // Adapted to match useSession structure
+  const [isClient, setIsClient] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -193,6 +194,10 @@ export default function LandingLayout({
         clearTimeout(dropdownTimeoutRef.current);
       }
     };
+  }, []);
+
+  useEffect(() => {
+    setIsClient(true);
   }, []);
 
   useEffect(() => {
@@ -407,15 +412,13 @@ export default function LandingLayout({
 
               {/* Auth Buttons / Profile */}
               <div className="md:flex items-center gap-4">
-            {/*    {session?.user ? ( */}
-                    {user ? (
+                {isClient && user ? (
                   <div className="flex items-center gap-4">
                     <Link
                       href={
-                        // session.user.userType === "startup"
-user.userType === "startup"
+                        user.userType === "startup"
                         ? "/startup/bookings"
-                          : "/service-provider/dashboard"
+                        : "/service-provider/dashboard"
                       }
                     >
                       <Button
@@ -456,10 +459,9 @@ user.userType === "startup"
                         <div className="space-y-4 mb-4">
                           <Link
                             href={
-                              // session.user.userType === "startup"
                               user.userType === "startup"
                               ? "/startup/profile"
-                                : "/service-provider/profile"
+                              : "/service-provider/profile"
                             }
                             className="block w-full"
                           >
@@ -469,10 +471,9 @@ user.userType === "startup"
                           </Link>
                           <Link
                             href={
-                              // session.user.userType === "startup"
-                               user.userType === "startup"
-                                ? "/startup/bookings"
-                                : "/service-provider/dashboard"
+                              user.userType === "startup"
+                              ? "/startup/bookings"
+                              : "/service-provider/dashboard"
                             }
                             className="block w-full"
                           >

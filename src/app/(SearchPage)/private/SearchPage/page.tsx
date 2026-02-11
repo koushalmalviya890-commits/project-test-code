@@ -343,6 +343,7 @@ const apiUrl = "http://localhost:3001"
 
       // Make the API request
       const response = await fetch(`${apiUrl}/api/private-facilities/search-private?${queryParams.toString()}`, {
+        method:'GET',
          credentials: 'include',
         headers: {
           'Content-Type': 'application/json'

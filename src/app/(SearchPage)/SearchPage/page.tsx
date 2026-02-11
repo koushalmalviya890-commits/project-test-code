@@ -182,22 +182,45 @@ function SearchPageClient() {
 
   // URL Parameters
 
-  const typeFromUrl = searchParams.get('type')
-  const searchFromUrl = searchParams.get('search')
-  const searchScopeFromUrl = searchParams.get('searchScope')
-  const propertyTypesFromUrl = searchParams.get('propertyTypes')?.split(',').filter(Boolean) || []
-  const categoryFromUrl = searchParams.get('category')
-  const sortByFromUrl = searchParams.get('sortBy')
-  const listingStatusFromUrl = searchParams.get('listingStatus') || 'All'
-  const minPriceFromUrl = parseInt(searchParams.get('minPrice') || '0')
-  const maxPriceFromUrl = parseInt(searchParams.get('maxPrice') || '100000')
-  const showFiltersFromUrl = searchParams.get('showFilters') === 'true'
-  const pageFromUrl = parseInt(searchParams.get('page') || '1')
+  const [isClient, setIsClient] = useState(false)
+
+// URL Parameters - Initialize with defaults
+const [urlParams, setUrlParams] = useState({
+  typeFromUrl: '',
+  searchFromUrl: '',
+  searchScopeFromUrl: '',
+  propertyTypesFromUrl: [] as string[],
+  categoryFromUrl: '',
+  sortByFromUrl: '',
+  listingStatusFromUrl: 'All',
+  minPriceFromUrl: 0,
+  maxPriceFromUrl: 100000,
+  showFiltersFromUrl: false,
+  pageFromUrl: 1
+})
+
+// Initialize URL params on client side only
+useEffect(() => {
+  setIsClient(true)
+  setUrlParams({
+    typeFromUrl: searchParams.get('type') || '',
+    searchFromUrl: searchParams.get('search') || '',
+    searchScopeFromUrl: searchParams.get('searchScope') || '',
+    propertyTypesFromUrl: searchParams.get('propertyTypes')?.split(',').filter(Boolean) || [],
+    categoryFromUrl: searchParams.get('category') || '',
+    sortByFromUrl: searchParams.get('sortBy') || '',
+    listingStatusFromUrl: searchParams.get('listingStatus') || 'All',
+    minPriceFromUrl: parseInt(searchParams.get('minPrice') || '0'),
+    maxPriceFromUrl: parseInt(searchParams.get('maxPrice') || '100000'),
+    showFiltersFromUrl: searchParams.get('showFilters') === 'true',
+    pageFromUrl: parseInt(searchParams.get('page') || '1')
+  })
+}, [searchParams])
 
   // State
   const [facilities, setFacilities] = useState<Facility[]>([])
   const [pagination, setPagination] = useState<PaginationData>({
-    currentPage: pageFromUrl,
+    currentPage: urlParams.pageFromUrl,
     totalPages: 1,
     totalItems: 0,
     itemsPerPage: ITEMS_PER_PAGE
@@ -205,26 +228,26 @@ function SearchPageClient() {
   
   // Main filter state - derived from URL parameters
   const [filters, setFilters] = useState({
-    searchTerm: searchFromUrl || '',
-    propertyTypes: propertyTypesFromUrl.length > 0 
-      ? propertyTypesFromUrl.includes('All') 
+    searchTerm: urlParams.searchFromUrl || '',
+    propertyTypes: urlParams.propertyTypesFromUrl.length > 0 
+      ? urlParams.propertyTypesFromUrl.includes('All') 
         ? ['All'] 
-        : propertyTypesFromUrl
-      : categoryFromUrl && categoryToPropertyTypeMapping[categoryFromUrl]
-        ? [categoryFromUrl] // Use the category as a filter if it exists in our mapping
-        : typeFromUrl 
-          ? [typeFromUrl] 
+        : urlParams.propertyTypesFromUrl
+      : urlParams.categoryFromUrl && categoryToPropertyTypeMapping[urlParams.categoryFromUrl]
+        ? [urlParams.categoryFromUrl] // Use the category as a filter if it exists in our mapping
+        : urlParams.typeFromUrl 
+          ? [urlParams.typeFromUrl] 
           : ['All'],
-    category: categoryFromUrl || '',
-    listingStatus: listingStatusFromUrl,
-    priceRange: [minPriceFromUrl, maxPriceFromUrl] as [number, number],
-    sortBy: sortByFromUrl || 'newest'
+    category: urlParams.categoryFromUrl || '',
+    listingStatus: urlParams.listingStatusFromUrl,
+    priceRange: [urlParams.minPriceFromUrl, urlParams.maxPriceFromUrl] as [number, number],
+    sortBy: urlParams.sortByFromUrl || 'newest'
   })
 
   // Filter dialog state - synchronized with main filters when dialog opens
   const [dialogFilters, setDialogFilters] = useState({...filters})
   
-  const [isFilterOpen, setIsFilterOpen] = useState(showFiltersFromUrl)
+  const [isFilterOpen, setIsFilterOpen] = useState(urlParams.showFiltersFromUrl)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedFacility, setSelectedFacility] = useState<BookingFacility | null>(null)
@@ -325,8 +348,8 @@ function SearchPageClient() {
         queryParams.set('propertyTypes', propertyTypesForQuery.join(','))
       }
 
-      if (searchScopeFromUrl) {
-        queryParams.set('searchScope', searchScopeFromUrl)
+      if (urlParams.searchScopeFromUrl) {
+        queryParams.set('searchScope', urlParams.searchScopeFromUrl)
       }
       
       // Add category to query if it exists
@@ -378,8 +401,8 @@ function SearchPageClient() {
     let hasChanges = false
     
     // Update search term
-    if (searchFromUrl !== null && searchFromUrl !== filters.searchTerm) {
-      newFilters.searchTerm = searchFromUrl
+    if (urlParams.searchFromUrl !== null && urlParams.searchFromUrl !== filters.searchTerm) {
+      newFilters.searchTerm = urlParams.searchFromUrl
       hasChanges = true
     }
     
@@ -426,8 +449,8 @@ function SearchPageClient() {
     }
     
     // Update category
-    if (categoryFromUrl !== filters.category) {
-      newFilters.category = categoryFromUrl || ''
+    if (urlParams.categoryFromUrl !== filters.category) {
+      newFilters.category = urlParams.categoryFromUrl || ''
       hasChanges = true
     }
     
@@ -760,11 +783,11 @@ function SearchPageClient() {
         <div className="container mx-auto px-4 py-8">
           <div className="mb-6">
             <h1 className="text-2xl font-bold mb-2">
-              {typeFromUrl ? `${typeFromUrl} Facilities` : 'All Facilities'}
+              {urlParams.typeFromUrl ? `${urlParams.typeFromUrl} Facilities` : 'All Facilities'}
             </h1>
-            {searchFromUrl && (
+            {urlParams.searchFromUrl && (
               <p className="text-gray-600">
-                Search results for: <span className="font-medium">{searchFromUrl}</span>
+                Search results for: <span className="font-medium">{urlParams.searchFromUrl}</span>
               </p>
             )}
             {!loading && facilities.length > 0 && (
