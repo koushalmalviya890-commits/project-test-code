@@ -48,6 +48,8 @@ export default function InvoicePage() {
 
   const base_url = "http://localhost:3001";
 
+  console.log("Booking object:", bookingDetails);
+
   useEffect(() => {
     const fetchBookingDetails = async () => {
       try {

@@ -76,6 +76,8 @@ export default function BookingDetailsPage() {
 
   const base_url = "http://localhost:3001";
 
+  //console.log("Booking:- ", bookingDetails);
+
   useEffect(() => {
     const fetchBookingDetails = async () => {
       try {

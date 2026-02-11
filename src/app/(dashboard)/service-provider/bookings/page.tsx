@@ -632,6 +632,7 @@ export default function BookingsPage() {
                     const bookingDate = safelyParseDate(booking.bookedOn);
                     const startDate = safelyParseDate(booking.startDate);
                     const endDate = safelyParseDate(booking.endDate);
+          
 
                     return (
                       <TableRow key={booking._id || index} className="hover:bg-gray-50 divide-x divide-gray-200">
