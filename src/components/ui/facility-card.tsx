@@ -276,7 +276,7 @@ const base_url = "http://localhost:3001";
   React.useEffect(() => {
     const fetchReviewStats = async () => {
       try {
-        const res = await fetch(`/api/reviews?facilityId=${facility._id}`);
+        const res = await fetch(`${base_url}/api/reviews?facilityId=${facility._id}`);
         const data = await res.json();
 
         if (res.ok) {

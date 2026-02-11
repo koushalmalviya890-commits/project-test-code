@@ -76,15 +76,17 @@ function SearchHeaderClient() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [keyword, setKeyword] = useState(searchParams.get('search') || '');
+  const [keyword, setKeyword] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<number | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
-  // Update keyword when search param changes
+  // Initialize on client side only
   useEffect(() => {
+    setIsClient(true);
     setKeyword(searchParams.get('search') || '');
   }, [searchParams]);
 
@@ -269,10 +271,8 @@ if(!user) return;
           </div>
 
           {/* User profile section */}
-          {/* {session?.user ? ( */}
-          {user ? (
+          {isClient && user ? (
             <div className="flex items-center gap-4">
-              {/* <Link href={session.user.userType === 'startup' ? '/startup/bookings' : '/service-provider/dashboard'}> */}
               <Link href={user.userType === 'startup' ? '/startup/bookings' : '/service-provider/dashboard'}>
                 <Button size="sm" className="h-10 px-6 bg-green-500 hover:bg-green-600 text-white rounded-md font-medium">
                   Dashboard
@@ -304,7 +304,6 @@ if(!user) return;
                   alignOffset={0}
                   avoidCollisions={true}
                 >
-                  {/* Logo header */}
                   <div className="flex justify-center mb-5">
                     <Image 
                       src="/logo-green.png" 
@@ -315,11 +314,9 @@ if(!user) return;
                     />
                   </div>
                   
-                  {/* Account section */}
                   <div className="space-y-2.5 mb-5">
                     <Link 
-                      // href={session.user.userType === 'startup' ? '/startup/profile' : '/service-provider/profile'}
-                       href={user.userType === 'startup' ? '/startup/profile' : '/service-provider/profile'}
+                      href={user.userType === 'startup' ? '/startup/profile' : '/service-provider/profile'}
                       className="flex items-center h-8 text-base font-bold text-gray-800 hover:text-green-500 transition-colors px-2 rounded-md"
                     >
                       Profile
@@ -332,7 +329,6 @@ if(!user) return;
                     </Link>
                   </div>
                   
-                  {/* Sign out section */}
                   <div className="pt-4 border-t border-gray-200">
                     <button
                       onClick={handleSignOut}
@@ -371,7 +367,6 @@ if(!user) return;
                   alignOffset={0}
                   avoidCollisions={true}
                 >
-                  {/* Logo header */}
                   <div className="flex justify-center mb-5">
                     <Image 
                       src="/logo-green.png" 
@@ -382,7 +377,6 @@ if(!user) return;
                     />
                   </div>
                   
-                  {/* Options section */}
                   <div className="space-y-2.5">
                     <Link 
                       href="/sign-up"

@@ -225,14 +225,15 @@ export default function ViewDetailsClient({
 
   // Add this state to track calculated price details
   const [priceDetails, setPriceDetails] = useState<{
-    isExistingUser: any;
+    isExistingUser: boolean;
     basePrice: number;
     fixedFee: number;
-    gstAmount: number;
-    gstOnServiceFee: number;
+    gstAmount: number;  // Match backend field name
+    gstOnServiceFee?: number;
     finalPrice: number;
     hasGST: boolean;
     bookingSeats: number;
+    finalPricebeforeGST : number;
   } | null>(null);
 
   // Add this useEffect to calculate prices when selection changes
@@ -251,27 +252,25 @@ export default function ViewDetailsClient({
       } catch (error) {
         console.error("Error calculating price details:", error);
         // Fallback to client-side calculation if API fails
-        const basePrice = selectedPlan.price * unitCount * bookingSeats;
+        const basePriceCalc = selectedPlan.price * unitCount * bookingSeats;
         const serviceFee =
           isExisting === true
-            ? getFixedServiceFee(facility?.facilityType || "") *
-            unitCount *
-            bookingSeats
-            : basePrice * 0.07;
+            ? getFixedServiceFee(facility?.facilityType || "") // Match backend: flat rate for existing users
+            : basePriceCalc * 0.07;
         const gstOnServiceFee = serviceFee * 0.18;
-        const subtotal = basePrice + serviceFee;
-        // console.log("testing total", subtotal)
         const gstAmount = 0; // Fallback GST amount
+        const finalPricebeforeGST  = 
 
         setPriceDetails({
-          basePrice: subtotal,
+          basePrice: basePriceCalc,  // Pure base price without fee
           fixedFee: serviceFee,
-          gstAmount,
+          gstAmount,  // Match backend field name
           gstOnServiceFee: gstOnServiceFee,
-          finalPrice: basePrice + serviceFee + gstOnServiceFee + gstAmount,
+          finalPrice: basePriceCalc + serviceFee + gstOnServiceFee + gstAmount,
           isExistingUser: isExisting === true,
           hasGST: false,
           bookingSeats,
+          finalPricebeforeGST : basePriceCalc
         });
       }
     };
@@ -300,18 +299,13 @@ export default function ViewDetailsClient({
     priceDetails?.gstOnServiceFee ?? fixedServiceFee * 0.18;
   // console.log(fixedServiceFee, `vshvchscvhjcv`);
   const gstAmount =
-    priceDetails?.hasGST &&
-      priceDetails?.hasGST === true &&
-      priceDetails?.gstAmount &&
-      priceDetails.gstAmount > 0
-      ? priceDetails?.gstAmount && priceDetails.gstAmount > 0
-        ? priceDetails.gstAmount
-        : currentBaseRent * 0.18
+    priceDetails?.hasGST === true && priceDetails?.gstAmount && priceDetails.gstAmount > 0
+      ? priceDetails.gstAmount
       : 0;
-  console.log(gstAmount, `for gast amount only`);
+  console.log(gstAmount, `for gst amount only`);
   const displayTotalGst = gstAmount + gstOnServiceFee;
   console.log(displayTotalGst);
-  const totalAmount = basePrice + displayTotalGst;
+  // const totalAmount = basePrice + displayTotalGst;
 
   // Fetch facility data
   useEffect(() => {
@@ -1161,6 +1155,25 @@ export default function ViewDetailsClient({
     // Open booking modal for non-service provider users
     setIsBookingModalOpen(true);
   };
+
+  const displayBasePrice = priceDetails 
+    ? priceDetails.finalPricebeforeGST 
+    : (() => {
+        if (!selectedPlan) return 0;
+        const rawRent = selectedPlan.price * unitCount * bookingSeats;
+        // Match backend logic for existing vs new user fee
+        const estimatedFee = isExisting === true
+          ? getFixedServiceFee(facility?.facilityType || "") // Backend: fixed fee for existing
+          : rawRent * 0.07; // Backend: 7% for new users
+        return rawRent + estimatedFee;
+      })();
+
+  // 2. Get GST Amount (Backend source of truth)
+  const displayGST = displayTotalGst;
+
+  // 3. Get Total Amount (Backend source of truth)
+  // If backend isn't ready, we sum our local estimates
+  const totalAmount = displayBasePrice + displayGST;
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-7xl">
@@ -2449,7 +2462,7 @@ export default function ViewDetailsClient({
                           ) : null}
                         </span>
                         <span>
-                          {selectedPlan
+                          {/* {selectedPlan
                             ? (() => {
                               const basePrice =
                                 selectedPlan.price * unitCount * bookingSeats;
@@ -2471,7 +2484,8 @@ export default function ViewDetailsClient({
                               const finalTotalPrice = basePrice + serviceFee;
                               return `₹${finalTotalPrice.toFixed(2)}`;
                             })()
-                            : "₹0.00"}
+                            : "₹0.00"} */}
+                            ₹{displayBasePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
 
@@ -2483,6 +2497,12 @@ export default function ViewDetailsClient({
                           <span>₹{displayTotalGst.toFixed(2)}</span>
                         </div>
                       )}
+                      {/* {displayGST > 0 && (
+                          <div className="flex justify-between text-sm sm:text-base text-gray-600">
+                            <span>GST (18%)</span>
+                            <span>₹{displayGST.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                        )} */}
                       {/* GST if applicable (END OF CORRECTED LOGIC) */}
 
                       {/* Total Fare */}
@@ -2490,8 +2510,7 @@ export default function ViewDetailsClient({
                         <span>Total Fare (Inclusive of all taxes)</span>
                         <span>
                           
-                          ₹{totalAmount?.toFixed(2) || "0.00"}
-                        </span>
+₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}                        </span>
                       </div>
                     </div>
 
@@ -2557,48 +2576,64 @@ export default function ViewDetailsClient({
                       <h3 className="text-sm font-medium mb-2 sm:mb-3">
                         Choose Booking Duration
                       </h3>
-                      {sortedRentalPlans.map((plan) => {
-                        const isSelected = selectedPlan?.name === plan.name;
+                     {sortedRentalPlans.map((plan) => {
+  const isSelected = selectedPlan?.name === plan.name;
 
-                        const basePrice = plan.price;
-                        const fixedFeePerUnit = getFixedServiceFee(
-                          facility?.facilityType || "",
-                        );
-                        let planServiceFee = 0;
-                        // if (session?.user && isExisting === true) {
-                        if (user && isExisting === true) {
-                          planServiceFee = fixedFeePerUnit;
-                        } else {
-                          planServiceFee = basePrice * 0.07;
-                        }
+  // 1. Get the Raw Rent (e.g., 10,000)
+  const rawUnitPrice = plan.price;
 
-                        const displayPrice = basePrice + planServiceFee;
+  // 2. Determine Service Fee Logic
+  let unitServiceFee = 0;
 
-                        return (
-                          <button
-                            key={plan.name}
-                            onClick={() => {
-                              setSelectedPlan(plan);
-                              setSelectedDate(null);
-                              setSelectedTime("");
-                              setUnitCount(1);
-                              setBookingSeats(1);
-                            }}
-                            className={`w-full flex items-center justify-between p-2 sm:p-3 mt-2 sm:mt-3 rounded-lg border transition-all text-sm sm:text-base ${isSelected
-                              ? "border-primary bg-primary/5 text-primary"
-                              : "border-gray-200 hover:border-primary/50"
-                              }`}
-                          >
-                            <span className="font-medium">
-                              {plan.name === "One Day (24 Hours)"
-                                ? "Daily"
-                                : plan.name}
-                            </span>
-                            <span>₹{displayPrice.toFixed(2)}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
+  if (isExisting === true) {
+    // EXISTING STARTUP: Use Fixed Flat Fee (e.g., 500)
+    // Note: getFixedServiceFee returns the total fee per booking usually. 
+    // If it's per unit, use as is. If it's per booking, we divide? 
+    // Usually fixed fee is per invoice, but for the button display, we add it directly.
+    unitServiceFee = getFixedServiceFee(facility?.facilityType || "");
+  } else {
+    // NEW USER / GUEST: Use 7% of the Rent
+    unitServiceFee = rawUnitPrice * 0.07;
+  }
+
+  // 3. Calculate Final Display Price (Rent + Fee)
+  const displayUnitPrice = rawUnitPrice + unitServiceFee;
+
+  return (
+    <button
+      key={plan.name}
+      onClick={() => {
+        setSelectedPlan(plan);
+        setSelectedDate(null);
+        setSelectedTime("");
+        setUnitCount(1);
+        setBookingSeats(1);
+      }}
+      className={`w-full flex items-center justify-between p-2 sm:p-3 mt-2 sm:mt-3 rounded-lg border transition-all text-sm sm:text-base ${
+        isSelected
+          ? "border-primary bg-primary/5 text-primary"
+          : "border-gray-200 hover:border-primary/50"
+      }`}
+    >
+      <div className="flex flex-col items-start">
+        <span className="font-medium">
+          {plan.name === "One Day (24 Hours)" ? "Daily" : plan.name}
+        </span>
+      </div>
+      
+      <div className="text-right">
+        <span className="font-semibold block">
+          ₹{displayUnitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
+        {/* Optional: Debug text to see what logic is applying */}
+        {/* <span className="text-[10px] text-gray-400">
+           {isExisting === true ? "(Fixed Fee)" : "(+7% Fee)"}
+        </span> */}
+      </div>
+    </button>
+  );
+})}
+                      </div>
 
                     {/* booking units and slots */}
                     <div className="mb-4 sm:mb-6">

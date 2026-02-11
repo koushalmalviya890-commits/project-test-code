@@ -641,7 +641,7 @@ export default function ServiceProviderProfile() {
               variant="ghost"
               size="sm"
               onClick={() => {
-                const qrLink = `https://cumma.in/private/SearchPage?id=${profileUserId}`;
+                const qrLink = `http://localhost:3000/private/SearchPage?id=${profileUserId}`;
                 navigator.clipboard.writeText(qrLink);
                 toast.success("QR link copied to clipboard");
               }}

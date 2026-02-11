@@ -96,7 +96,7 @@ React.useEffect(() => {
 React.useEffect(() => {
   const fetchReviewStats = async () => {
     try {
-      const res = await fetch(`/api/reviews?facilityId=${facility._id}`);
+      const res = await fetch(`${baseUrl}/api/reviews?facilityId=${facility._id}`);
       const data = await res.json();
 
       if (res.ok) {
