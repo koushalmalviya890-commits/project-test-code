@@ -2274,7 +2274,7 @@ export default function ViewDetailsClient({
     const fetchFacility = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/facilities/${facilityId}`);
+        const response = await fetch(`${base_url}/api/facilities/${facilityId}`);
         if (!response.ok) {
           throw new Error("Failed to fetch facility details");
         }
@@ -2283,7 +2283,7 @@ export default function ViewDetailsClient({
 
         if (data && data.address) {
           const address = `${data.address}, ${data.city}, ${data.state}, ${data.pincode}, ${data.country}`;
-          const mapResponse = await fetch(`/api/maps?query=${encodeURIComponent(address)}`);
+          const mapResponse = await fetch(`${base_url}/api/maps?query=${encodeURIComponent(address)}`);
           if (mapResponse.ok) {
             const mapData = await mapResponse.json();
             setMapUrl(mapData.embedUrl);
@@ -2507,7 +2507,7 @@ export default function ViewDetailsClient({
 
       try {
         setLoadingRelatedFacilities(true);
-        const response = await fetch(`/api/facilities/by-provider/${facility.serviceProviderId}`);
+        const response = await fetch(`${base_url}/api/facilities/by-provider/${facility.serviceProviderId}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch related facilities: ${response.status}`);
         }

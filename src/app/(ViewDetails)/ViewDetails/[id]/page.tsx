@@ -4,10 +4,10 @@ import ViewDetailsClient from './ViewDetailsClient'
 export default async function ViewDetailsPage({
   params
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
   // Ensure params is fully resolved
- const { id } = await Promise.resolve(params)
+  const { id } = await params
   
   return (
     <Suspense fallback={

@@ -4,14 +4,14 @@ import ViewDetailsClient from './ViewDetailsClient'
 export default async function ViewDetailsPage({
   params , searchParams
 }: {
-  params: { id: string }
-   searchParams: {
+  params: Promise<{ id: string }>
+   searchParams: Promise<{
     affiliateId: string;
-  };
+  }>;
 }) {
   // Ensure params is fully resolved
-  const id = params.id
-  const affiliateId = searchParams.affiliateId;
+  const { id } = await params
+  const { affiliateId } = await searchParams;
 
   return (
     <Suspense fallback={

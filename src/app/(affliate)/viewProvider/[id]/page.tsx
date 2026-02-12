@@ -3,29 +3,30 @@ import { Metadata } from "next";
 import ViewProviderClient from "./ViewProviderClient";
 
 type Props = {
-  params: {
+  params: Promise<{
     id: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     affiliateId: string;
-  };
+  }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
   return {
     title: "Service Provider Details | Cumma",
     description: "View details about this service provider and their facilities",
   };
 }
 
-export default function Page({ params, searchParams }: Props) {
-  //// console.log(params.id, "provider id from params");
-  //// console.log(searchParams.affiliateId, "affiliate id from query");
+export default async function Page({ params, searchParams }: Props) {
+  const { id } = await params;
+  const { affiliateId } = await searchParams;
 
   return (
     <ViewProviderClient
-      providerId={params.id}
-      affiliateId={searchParams.affiliateId}
+      providerId={id}
+      affiliateId={affiliateId}
     />
   );
 }

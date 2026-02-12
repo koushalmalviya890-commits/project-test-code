@@ -228,12 +228,12 @@ export default function ViewDetailsClient({
     isExistingUser: boolean;
     basePrice: number;
     fixedFee: number;
-    gstAmount: number;  // Match backend field name
+    gstAmount: number; // Match backend field name
     gstOnServiceFee?: number;
     finalPrice: number;
     hasGST: boolean;
     bookingSeats: number;
-    finalPricebeforeGST : number;
+    finalPricebeforeGST: number;
   } | null>(null);
 
   // Add this useEffect to calculate prices when selection changes
@@ -259,18 +259,16 @@ export default function ViewDetailsClient({
             : basePriceCalc * 0.07;
         const gstOnServiceFee = serviceFee * 0.18;
         const gstAmount = 0; // Fallback GST amount
-        const finalPricebeforeGST  = 
-
-        setPriceDetails({
-          basePrice: basePriceCalc,  // Pure base price without fee
+        const finalPricebeforeGST = setPriceDetails({
+          basePrice: basePriceCalc, // Pure base price without fee
           fixedFee: serviceFee,
-          gstAmount,  // Match backend field name
+          gstAmount, // Match backend field name
           gstOnServiceFee: gstOnServiceFee,
           finalPrice: basePriceCalc + serviceFee + gstOnServiceFee + gstAmount,
           isExistingUser: isExisting === true,
           hasGST: false,
           bookingSeats,
-          finalPricebeforeGST : basePriceCalc
+          finalPricebeforeGST: basePriceCalc,
         });
       }
     };
@@ -299,11 +297,13 @@ export default function ViewDetailsClient({
     priceDetails?.gstOnServiceFee ?? fixedServiceFee * 0.18;
   // console.log(fixedServiceFee, `vshvchscvhjcv`);
   const gstAmount =
-    priceDetails?.hasGST === true && priceDetails?.gstAmount && priceDetails.gstAmount > 0
+    priceDetails?.hasGST === true &&
+    priceDetails?.gstAmount &&
+    priceDetails.gstAmount > 0
       ? priceDetails.gstAmount
       : 0;
   console.log(gstAmount, `for gst amount only`);
-  const displayTotalGst = gstAmount + gstOnServiceFee;
+  const displayTotalGst = gstAmount;
   console.log(displayTotalGst);
   // const totalAmount = basePrice + displayTotalGst;
 
@@ -402,12 +402,12 @@ export default function ViewDetailsClient({
 
       try {
         setIsProfileLoading(true);
-        const response = await fetch(`${apiUrl}/api/startup/profile`,{
+        const response = await fetch(`${apiUrl}/api/startup/profile`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
-          credentials:"include",
+          credentials: "include",
         });
         if (!response.ok) throw new Error("Failed to fetch profile");
 
@@ -449,15 +449,15 @@ export default function ViewDetailsClient({
   // Sort rental plans in the specified order
   const sortedRentalPlans = facility?.details?.rentalPlans
     ? [...facility.details.rentalPlans].sort((a, b) => {
-      const order = [
-        "Hourly",
-        "One Day (24 Hours)",
-        "Weekly",
-        "Monthly",
-        "Annual",
-      ];
-      return order.indexOf(a.name) - order.indexOf(b.name);
-    })
+        const order = [
+          "Hourly",
+          "One Day (24 Hours)",
+          "Weekly",
+          "Monthly",
+          "Annual",
+        ];
+        return order.indexOf(a.name) - order.indexOf(b.name);
+      })
     : [];
 
   // Set initial booking period if available
@@ -467,6 +467,21 @@ export default function ViewDetailsClient({
     }
   }, [sortedRentalPlans]);
 
+  // ✅ HELPER: Calculate the Unit Price for Display
+  const getDisplayUnitPrice = (rawPrice: number) => {
+    let feePerUnit = 0;
+
+    if (isExisting === !true) {
+      // Existing User: Fixed Fee (e.g., 40) is added per unit
+      feePerUnit = getFixedServiceFee(facility?.facilityType || "");
+    } else {
+      // New User: 7% Fee is added per unit
+      feePerUnit = rawPrice * 0.07;
+    }
+
+    // Returns: Base Rent + Applicable Fee, rounded to nearest whole number
+    return rawPrice + feePerUnit;
+  };
   // Calculate end date based on selected date and booking period
   const calculateEndDate = (startDate: Date, period: string): Date => {
     const endDate = new Date(startDate);
@@ -811,7 +826,7 @@ export default function ViewDetailsClient({
         originalBaseAmount: selectedPlan.price * unitCount * bookingSeats,
         baseAmount: selectedPlan.price * unitCount * bookingSeats,
         perUnitPrice: selectedPlan.price,
-        serviceFee: isExisting
+        serviceFee: !isExisting
           ? calculatedFixedServiceFee * unitCount * bookingSeats
           : selectedPlan.price * unitCount * bookingSeats * 0.07,
         gstOnServiceFee: isExisting
@@ -838,11 +853,11 @@ export default function ViewDetailsClient({
         // Coupon Details
         couponApplied: appliedCoupon
           ? {
-            couponCode: appliedCoupon.couponCode,
-            discount: appliedCoupon.discount,
-            discountAmount: appliedCoupon.discountAmount,
-            couponId: appliedCoupon.couponId,
-          }
+              couponCode: appliedCoupon.couponCode,
+              discount: appliedCoupon.discount,
+              discountAmount: appliedCoupon.discountAmount,
+              couponId: appliedCoupon.couponId,
+            }
           : null,
       };
 
@@ -855,18 +870,14 @@ export default function ViewDetailsClient({
         //   body: JSON.stringify(bookingDetails), // ✅ This is correct, bookingDetails already has coupon
         // });
 
-        const response = await fetch(
-          `${apiUrl}/api/bookings`,
-          {
-            method: "POST",
-            credentials: "include", // IMPORTANT (send JWT cookie)
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(bookingDetails),
-          }
-        );
-
+        const response = await fetch(`${apiUrl}/api/bookings`, {
+          method: "POST",
+          credentials: "include", // IMPORTANT (send JWT cookie)
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(bookingDetails),
+        });
 
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
@@ -1066,7 +1077,7 @@ export default function ViewDetailsClient({
             headers: {
               "Content-Type": "application/json",
             },
-          }
+          },
         );
 
         if (response.ok) {
@@ -1082,6 +1093,41 @@ export default function ViewDetailsClient({
 
     checkFailedPayments();
   }, [facilityId, user?.id]);
+
+  const displayQuantityPrice = priceDetails
+    ? priceDetails.finalPricebeforeGST
+    : (() => {
+        if (!selectedPlan) return 0;
+        const rawRent = selectedPlan.price;
+        // Match backend logic for existing vs new user fee
+        const estimatedFee =
+          isExisting === true
+            ? getFixedServiceFee(facility?.facilityType || "") // Backend: fixed fee for existing
+            : rawRent * 0.07; // Backend: 7% for new users
+        return rawRent + estimatedFee;
+      })();
+  const units = Math.max(1, unitCount * bookingSeats);
+  const perUnitDisplayPrice = displayQuantityPrice / units;
+
+  const displayBasePrice = priceDetails
+    ? priceDetails.finalPricebeforeGST
+    : (() => {
+        if (!selectedPlan) return 0;
+        const rawRent = selectedPlan.price * unitCount * bookingSeats;
+        // Match backend logic for existing vs new user fee
+        const estimatedFee =
+          isExisting === true
+            ? getFixedServiceFee(facility?.facilityType || "") // Backend: fixed fee for existing
+            : rawRent * 0.07; // Backend: 7% for new users
+        return rawRent + estimatedFee;
+      })();
+
+  // 2. Get GST Amount (Backend source of truth)
+  const displayGST = displayTotalGst;
+
+  // 3. Get Total Amount (Backend source of truth)
+  // If backend isn't ready, we sum our local estimates
+  const totalAmount = displayBasePrice + displayGST;
 
   if (loading) {
     return (
@@ -1156,24 +1202,7 @@ export default function ViewDetailsClient({
     setIsBookingModalOpen(true);
   };
 
-  const displayBasePrice = priceDetails 
-    ? priceDetails.finalPricebeforeGST 
-    : (() => {
-        if (!selectedPlan) return 0;
-        const rawRent = selectedPlan.price * unitCount * bookingSeats;
-        // Match backend logic for existing vs new user fee
-        const estimatedFee = isExisting === true
-          ? getFixedServiceFee(facility?.facilityType || "") // Backend: fixed fee for existing
-          : rawRent * 0.07; // Backend: 7% for new users
-        return rawRent + estimatedFee;
-      })();
-
-  // 2. Get GST Amount (Backend source of truth)
-  const displayGST = displayTotalGst;
-
-  // 3. Get Total Amount (Backend source of truth)
-  // If backend isn't ready, we sum our local estimates
-  const totalAmount = displayBasePrice + displayGST;
+  
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-7xl">
@@ -1184,7 +1213,7 @@ export default function ViewDetailsClient({
       {facility.details.images && facility.details.images.length > 0 && (
         <div className="mb-6 sm:mb-8">
           {facility.details.images.length === 1 &&
-            !facility.details.videoLink ? (
+          !facility.details.videoLink ? (
             // Single image layout - full width (only when no video)
             <div className="relative aspect-[16/9] w-full">
               <Image
@@ -1200,7 +1229,7 @@ export default function ViewDetailsClient({
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3">
               <div className="col-span-1 sm:col-span-12 md:col-span-8 relative aspect-[16/9]">
                 {facility.details.videoLink &&
-                  getYouTubeVideoId(facility.details.videoLink) ? (
+                getYouTubeVideoId(facility.details.videoLink) ? (
                   <iframe
                     src={`https://www.youtube.com/embed/${getYouTubeVideoId(facility.details.videoLink)}`}
                     title={`${facility.details.name} Video`}
@@ -1662,7 +1691,7 @@ export default function ViewDetailsClient({
                   {/* Equipment Details */}
                   {facility.details.studioDetails.equipmentDetails &&
                     facility.details.studioDetails.equipmentDetails.length >
-                    0 && (
+                      0 && (
                       <>
                         {facility.details.studioDetails.equipmentDetails
                           .slice(0, 2)
@@ -1688,21 +1717,21 @@ export default function ViewDetailsClient({
                           ))}
                         {facility.details.studioDetails.equipmentDetails
                           .length > 2 && (
-                            <div className="inline-block border border-gray-200 rounded-md p-2 sm:p-3">
-                              <div className="flex items-center gap-2">
-                                <div>
-                                  <div className="text-gray-500 text-xs mb-1">
-                                    More Equipment
-                                  </div>
-                                  <div className="text-base sm:text-lg font-medium text-gray-800">
-                                    +
-                                    {facility.details.studioDetails
-                                      .equipmentDetails.length - 2}
-                                  </div>
+                          <div className="inline-block border border-gray-200 rounded-md p-2 sm:p-3">
+                            <div className="flex items-center gap-2">
+                              <div>
+                                <div className="text-gray-500 text-xs mb-1">
+                                  More Equipment
+                                </div>
+                                <div className="text-base sm:text-lg font-medium text-gray-800">
+                                  +
+                                  {facility.details.studioDetails
+                                    .equipmentDetails.length - 2}
                                 </div>
                               </div>
                             </div>
-                          )}
+                          </div>
+                        )}
                       </>
                     )}
                 </>
@@ -1742,7 +1771,7 @@ export default function ViewDetailsClient({
           <div className="flex items-center gap-3 mb-8 sm:mb-10 pb-6 border-b border-gray-100">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
               {facility.serviceProvider?.logoUrl &&
-                typeof facility.serviceProvider.logoUrl === "string" ? (
+              typeof facility.serviceProvider.logoUrl === "string" ? (
                 <Image
                   src={facility.serviceProvider.logoUrl}
                   alt={
@@ -1764,7 +1793,7 @@ export default function ViewDetailsClient({
               <p className="font-medium text-sm sm:text-base">
                 Hosted by{" "}
                 {facility.serviceProvider?.serviceName &&
-                  facility.serviceProvider?._id ? (
+                facility.serviceProvider?._id ? (
                   <Link
                     href={`/ViewProvider/${facility.serviceProvider._id}`}
                     className="font-bold text-green-600 hover:text-green-700 hover:underline cursor-pointer break-words"
@@ -1981,22 +2010,22 @@ export default function ViewDetailsClient({
                   );
                 }}
               >
-               {mapUrl ? (
-    <iframe
-      width="100%"
-      height="100%"
-      style={{ border: 0 }}
-      loading="lazy"
-      allowFullScreen
-      referrerPolicy="no-referrer-when-downgrade"
-      src={mapUrl}
-    />
-  ) : (
-    // Optional: Placeholder while loading
-    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
-      Loading Map...
-    </div>
-  )}
+                {mapUrl ? (
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={mapUrl}
+                  />
+                ) : (
+                  // Optional: Placeholder while loading
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+                    Loading Map...
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-transparent hover:bg-black/5 transition-colors" />
               </div>
             </div>
@@ -2024,7 +2053,6 @@ export default function ViewDetailsClient({
                       <div className="text-2xl font-semibold text-gray-900">
                         {facility.details.seatingCapacity || 0} people
                       </div>
-                     
                     </div>
 
                     {/* Rental Plans */}
@@ -2038,10 +2066,11 @@ export default function ViewDetailsClient({
                             <div
                               key={index}
                               onClick={() => setSelectedPlan(plan)}
-                              className={`border rounded-lg p-4 cursor-pointer transition-all ${selectedPlan?.name === plan.name
-                                ? "border-primary bg-primary/5"
-                                : "border-gray-200 hover:border-primary/50"
-                                }`}
+                              className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                                selectedPlan?.name === plan.name
+                                  ? "border-primary bg-primary/5"
+                                  : "border-gray-200 hover:border-primary/50"
+                              }`}
                             >
                               <div className="flex justify-between items-center">
                                 <div>
@@ -2361,7 +2390,7 @@ export default function ViewDetailsClient({
                                     : selectedPlan.name === "Weekly"
                                       ? `week${unitCount > 1 ? "s" : ""}`
                                       : selectedPlan.name ===
-                                        "One Day (24 Hours)"
+                                          "One Day (24 Hours)"
                                         ? `day${unitCount > 1 ? "s" : ""}`
                                         : `hour${unitCount > 1 ? "s" : ""}`}
                               </span>
@@ -2398,16 +2427,15 @@ export default function ViewDetailsClient({
                             <span className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></span>
                             Processing...
                           </span>
-                        ) :
-                          // session ? (
-                          user ? (
-                            // selectedRooms.length === 0 ? (
-                            //   "Select Rooms to Continue"
-                            // ) :
-                            "Reserve Event Space"
-                          ) : (
-                            "Sign in to Book"
-                          )}
+                        ) : // session ? (
+                        user ? (
+                          // selectedRooms.length === 0 ? (
+                          //   "Select Rooms to Continue"
+                          // ) :
+                          "Reserve Event Space"
+                        ) : (
+                          "Sign in to Book"
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -2429,9 +2457,13 @@ export default function ViewDetailsClient({
                           Base Price{" "}
                           {unitCount > 1 || bookingSeats > 1 ? (
                             <>
-                              ({bookingSeats} × ₹
+                              ({bookingSeats} × ₹{" "}
                               {selectedPlan
-                                ? (() => {
+                                ? perUnitDisplayPrice.toFixed(2)
+                                : "0.00"}
+                              {/* {selectedPlan
+                                ? 
+                                (() =>{
                                   const basePrice = selectedPlan.price; // per-unit base price
                                   const serviceFee =
                                     isExisting === true
@@ -2456,7 +2488,7 @@ export default function ViewDetailsClient({
                                   const pricePerUnit = basePrice + serviceFee;
                                   return pricePerUnit.toFixed(2);
                                 })()
-                                : "0.00"}
+                                : "0.00"} */}
                               )
                             </>
                           ) : null}
@@ -2485,7 +2517,11 @@ export default function ViewDetailsClient({
                               return `₹${finalTotalPrice.toFixed(2)}`;
                             })()
                             : "₹0.00"} */}
-                            ₹{displayBasePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          ₹
+                          {displayBasePrice.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </span>
                       </div>
 
@@ -2509,8 +2545,12 @@ export default function ViewDetailsClient({
                       <div className="flex justify-between font-semibold pt-3 border-t text-sm sm:text-base">
                         <span>Total Fare (Inclusive of all taxes)</span>
                         <span>
-                          
-₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}                        </span>
+                          ₹
+                          {totalAmount.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                        </span>
                       </div>
                     </div>
 
@@ -2576,64 +2616,57 @@ export default function ViewDetailsClient({
                       <h3 className="text-sm font-medium mb-2 sm:mb-3">
                         Choose Booking Duration
                       </h3>
-                     {sortedRentalPlans.map((plan) => {
-  const isSelected = selectedPlan?.name === plan.name;
+                      {sortedRentalPlans.map((plan) => {
+                        const isSelected = selectedPlan?.name === plan.name;
 
-  // 1. Get the Raw Rent (e.g., 10,000)
-  const rawUnitPrice = plan.price;
+                        // Use the helper function
+                        const displayUnitPrice = getDisplayUnitPrice(
+                          plan.price,
+                        );
 
-  // 2. Determine Service Fee Logic
-  let unitServiceFee = 0;
+                        return (
+                          <button
+                            key={plan.name}
+                            onClick={() => {
+                              setSelectedPlan(plan);
+                              setSelectedDate(null);
+                              setSelectedTime("");
+                              setUnitCount(1);
+                              setBookingSeats(1);
+                            }}
+                            className={`w-full flex items-center justify-between p-2 sm:p-3 mt-2 sm:mt-3 rounded-lg border transition-all text-sm sm:text-base ${
+                              isSelected
+                                ? "border-primary bg-primary/5 text-primary"
+                                : "border-gray-200 hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="flex flex-col items-start">
+                              <span className="font-medium">
+                                {plan.name === "One Day (24 Hours)"
+                                  ? "Daily"
+                                  : plan.name}
+                              </span>
+                              {/* Optional: Add transparency for existing users */}
+                              {/* {isExisting === true && (
+          <span className="text-[10px] text-gray-400 font-normal">
+            (+ Fixed Service Fee at checkout)
+          </span>
+        )} */}
+                            </div>
 
-  if (isExisting === true) {
-    // EXISTING STARTUP: Use Fixed Flat Fee (e.g., 500)
-    // Note: getFixedServiceFee returns the total fee per booking usually. 
-    // If it's per unit, use as is. If it's per booking, we divide? 
-    // Usually fixed fee is per invoice, but for the button display, we add it directly.
-    unitServiceFee = getFixedServiceFee(facility?.facilityType || "");
-  } else {
-    // NEW USER / GUEST: Use 7% of the Rent
-    unitServiceFee = rawUnitPrice * 0.07;
-  }
-
-  // 3. Calculate Final Display Price (Rent + Fee)
-  const displayUnitPrice = rawUnitPrice + unitServiceFee;
-
-  return (
-    <button
-      key={plan.name}
-      onClick={() => {
-        setSelectedPlan(plan);
-        setSelectedDate(null);
-        setSelectedTime("");
-        setUnitCount(1);
-        setBookingSeats(1);
-      }}
-      className={`w-full flex items-center justify-between p-2 sm:p-3 mt-2 sm:mt-3 rounded-lg border transition-all text-sm sm:text-base ${
-        isSelected
-          ? "border-primary bg-primary/5 text-primary"
-          : "border-gray-200 hover:border-primary/50"
-      }`}
-    >
-      <div className="flex flex-col items-start">
-        <span className="font-medium">
-          {plan.name === "One Day (24 Hours)" ? "Daily" : plan.name}
-        </span>
-      </div>
-      
-      <div className="text-right">
-        <span className="font-semibold block">
-          ₹{displayUnitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </span>
-        {/* Optional: Debug text to see what logic is applying */}
-        {/* <span className="text-[10px] text-gray-400">
-           {isExisting === true ? "(Fixed Fee)" : "(+7% Fee)"}
-        </span> */}
-      </div>
-    </button>
-  );
-})}
-                      </div>
+                            <div className="text-right">
+                              <span className="font-semibold block">
+                                ₹
+                                {displayUnitPrice.toLocaleString("en-IN", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
 
                     {/* booking units and slots */}
                     <div className="mb-4 sm:mb-6">
@@ -2755,7 +2788,7 @@ export default function ViewDetailsClient({
                               (facility.details.availableCabins ?? 0) > 0) ||
                             (facilityType === "training-rooms" &&
                               (facility.details.totalTrainingRoomSeaters ?? 0) >
-                              0)
+                                0)
                           ) {
                             return (
                               <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg border border-gray-200">
@@ -2812,7 +2845,6 @@ export default function ViewDetailsClient({
                               Total Price
                             </span>
                             <span className="text-sm font-semibold text-primary">
-                             
                               ₹{totalAmount?.toFixed(2) || "0.00"}
                             </span>
                           </div>
@@ -3018,7 +3050,7 @@ export default function ViewDetailsClient({
                                     : selectedPlan.name === "Weekly"
                                       ? `week${unitCount > 1 ? "s" : ""}`
                                       : selectedPlan.name ===
-                                        "One Day (24 Hours)"
+                                          "One Day (24 Hours)"
                                         ? `day${unitCount > 1 ? "s" : ""}`
                                         : `hour${unitCount > 1 ? "s" : ""}`}
                               </span>
@@ -3149,61 +3181,67 @@ export default function ViewDetailsClient({
                             <>
                               ({bookingSeats} × ₹
                               {selectedPlan
-                                ? (() => {
-                                  const basePrice = selectedPlan.price; // per-unit base price
-                                  const serviceFee =
-                                    isExisting === true
-                                      ? getFixedServiceFee(
-                                        facility?.facilityType || "",
-                                      )
-                                      : basePrice * 0.07; // per-unit service fee
-                                  const companyGstPerUnit = 0.18 * serviceFee; // GST on service fee (per unit)
-                                  const gstTotal =
-                                    priceDetails?.gstAmount &&
-                                      priceDetails.gstAmount > 0
-                                      ? priceDetails.gstAmount
-                                      : 0;
-                                  const unitCountForDivision = Math.max(
-                                    1,
-                                    unitCount * bookingSeats,
-                                  );
-                                  const gstPerUnit = gstTotal
-                                    ? gstTotal / unitCountForDivision
-                                    : 0;
+                                ? perUnitDisplayPrice
+                                // (() => {
+                                //     const basePrice = selectedPlan.price; // per-unit base price
+                                //     const serviceFee =
+                                //       isExisting === true
+                                //         ? getFixedServiceFee(
+                                //             facility?.facilityType || "",
+                                //           )
+                                //         : basePrice * 0.07; // per-unit service fee
+                                //     const companyGstPerUnit = 0.18 * serviceFee; // GST on service fee (per unit)
+                                //     const gstTotal =
+                                //       priceDetails?.gstAmount &&
+                                //       priceDetails.gstAmount > 0
+                                //         ? priceDetails.gstAmount
+                                //         : 0;
+                                //     const unitCountForDivision = Math.max(
+                                //       1,
+                                //       unitCount * bookingSeats,
+                                //     );
+                                //     const gstPerUnit = gstTotal
+                                //       ? gstTotal / unitCountForDivision
+                                //       : 0;
 
-                                  const pricePerUnit = basePrice + serviceFee;
-                                  return pricePerUnit.toFixed(2);
-                                })()
+                                //     const pricePerUnit = basePrice + serviceFee;
+                                //     return pricePerUnit.toFixed(2);
+                                //   })()
                                 : "0.00"}
                               )
                             </>
                           ) : null}
                         </span>
                         <span>
-                          {selectedPlan
+                          {/* {selectedPlan
                             ? (() => {
-                              const basePrice =
-                                selectedPlan.price * unitCount * bookingSeats;
-                              const serviceFee =
-                                isExisting === true
-                                  ? getFixedServiceFee(
-                                    facility?.facilityType || "",
-                                  ) *
-                                  unitCount *
-                                  bookingSeats
-                                  : basePrice * 0.07;
-                              const companygst = serviceFee * 0.18;
-                              const gstAmount =
-                                priceDetails?.gstAmount &&
+                                const basePrice =
+                                  selectedPlan.price * unitCount * bookingSeats;
+                                const serviceFee =
+                                  isExisting === true
+                                    ? getFixedServiceFee(
+                                        facility?.facilityType || "",
+                                      ) *
+                                      unitCount *
+                                      bookingSeats
+                                    : basePrice * 0.07;
+                                const companygst = serviceFee * 0.18;
+                                const gstAmount =
+                                  priceDetails?.gstAmount &&
                                   priceDetails.gstAmount > 0
-                                  ? priceDetails.gstAmount
-                                  : 0;
+                                    ? priceDetails.gstAmount
+                                    : 0;
 
-                              const finalTotalPrice = basePrice + serviceFee;
+                                const finalTotalPrice = basePrice + serviceFee;
 
-                              return `₹${finalTotalPrice.toFixed(2)}`;
-                            })()
-                            : "₹0.00"}
+                                return `₹${finalTotalPrice.toFixed(2)}`;
+                              })()
+                            : "₹0.00"} */}
+                            ₹
+                          {displayBasePrice.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })} 
                         </span>
                       </div>
 
@@ -3252,16 +3290,17 @@ export default function ViewDetailsClient({
 
                       {/* Total Fare */}
                       <div
-                        className={`flex justify-between font-bold pt-3 border-t text-base sm:text-lg ${appliedCoupon ? "text-green-700" : "text-gray-900"
-                          }`}
+                        className={`flex justify-between font-bold pt-3 border-t text-base sm:text-lg ${
+                          appliedCoupon ? "text-green-700" : "text-gray-900"
+                        }`}
                       >
                         <span>Total Amount (Inclusive of all taxes)</span>
                         <span>
                           ₹
                           {appliedCoupon
                             ? (
-                              totalAmount - appliedCoupon.discountAmount
-                            ).toFixed(2)
+                                totalAmount - appliedCoupon.discountAmount
+                              ).toFixed(2)
                             : totalAmount.toFixed(2)}
                         </span>
                       </div>
@@ -3299,13 +3338,12 @@ export default function ViewDetailsClient({
                           <span className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></span>
                           Processing...
                         </span>
-                      ) :
-                        // session ? (
-                        user ? (
-                          "Reserve"
-                        ) : (
-                          "Sign in to Book"
-                        )}
+                      ) : // session ? (
+                      user ? (
+                        "Reserve"
+                      ) : (
+                        "Sign in to Book"
+                      )}
                     </Button>
                   </div>
                 </>
@@ -3321,7 +3359,7 @@ export default function ViewDetailsClient({
           <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900">
             More facilities from{" "}
             {facility.serviceProvider?.serviceName &&
-              facility.serviceProvider?._id ? (
+            facility.serviceProvider?._id ? (
               <Link
                 href={`/ViewProvider/${facility.serviceProvider._id}`}
                 className="font-bold text-green-600 hover:text-green-700 hover:underline cursor-pointer break-words"
@@ -3467,7 +3505,8 @@ export default function ViewDetailsClient({
     </div>
   );
 }
- {/* {facility.details.features?.length > 0 && (
+{
+  /* {facility.details.features?.length > 0 && (
                         <div className="mt-3">
                           <h4 className="text-sm font-medium text-gray-700 mb-2">
                             Features:
@@ -3488,9 +3527,11 @@ export default function ViewDetailsClient({
                             )}
                           </div>
                         </div>
-                      )} */}
+                      )} */
+}
 
-{/* {
+{
+  /* {
                            
                             selectedPlan
                               ? (() => {
@@ -3522,8 +3563,10 @@ export default function ViewDetailsClient({
                                   // console.log("Total Amount:", totalAmount);
                                   return `₹${totalAmount.toFixed(2)}`;
                                 })()
-                              : "₹0.00" */}
- {/* {selectedPlan
+                              : "₹0.00" */
+}
+{
+  /* {selectedPlan
                                 ? (() => {
                                     const basePrice =
                                       selectedPlan.price *
@@ -3553,10 +3596,14 @@ export default function ViewDetailsClient({
                                     // console.log("Total Amount:", totalAmount);
                                     return `₹${totalAmount.toFixed(2)}`;
                                   })()
-                                : "₹0.00"} */}
+                                : "₹0.00"} */
+}
 
- {/* Booking Duration Selection */}
-                      {/* <div className="mb-4 sm:mb-6">
+{
+  /* Booking Duration Selection */
+}
+{
+  /* <div className="mb-4 sm:mb-6">
                         <h3 className="text-sm font-medium mb-2 sm:mb-3">
                           Choose Booking Duration
                         </h3>
@@ -3625,53 +3672,53 @@ export default function ViewDetailsClient({
                             </button>
                           );
                         })}
-                      </div> */}
+                      </div> */
+}
 
-                      
-  // Add this useEffect to auto-select if only one room
-  // useEffect(() => {
-  //   if (
-  //     facility?.facilityType === "event-workspace" &&
-  //     facility?.details?.roomDetails?.length === 1
-  //   ) {
-  //     setSelectedRooms([0]); // Auto-select the first (and only) room
-  //     setBookingSeats(1); // Set booking seats to 1
-  //   }
-  // }, [facility]);
+// Add this useEffect to auto-select if only one room
+// useEffect(() => {
+//   if (
+//     facility?.facilityType === "event-workspace" &&
+//     facility?.details?.roomDetails?.length === 1
+//   ) {
+//     setSelectedRooms([0]); // Auto-select the first (and only) room
+//     setBookingSeats(1); // Set booking seats to 1
+//   }
+// }, [facility]);
 
-  // Add this function to handle room selection
-  // const toggleRoomSelection = (roomIndex: number) => {
-  //   setSelectedRooms((prev) => {
-  //     if (prev.includes(roomIndex)) {
-  //       // Remove room from selection
-  //       const newSelection = prev.filter((idx) => idx !== roomIndex);
-  //       setBookingSeats(newSelection.length || 1);
-  //       return newSelection;
-  //     } else {
-  //       // Add room to selection
-  //       const newSelection = [...prev, roomIndex];
-  //       setBookingSeats(newSelection.length);
-  //       return newSelection;
-  //     }
-  //   });
-  // };
+// Add this function to handle room selection
+// const toggleRoomSelection = (roomIndex: number) => {
+//   setSelectedRooms((prev) => {
+//     if (prev.includes(roomIndex)) {
+//       // Remove room from selection
+//       const newSelection = prev.filter((idx) => idx !== roomIndex);
+//       setBookingSeats(newSelection.length || 1);
+//       return newSelection;
+//     } else {
+//       // Add room to selection
+//       const newSelection = [...prev, roomIndex];
+//       setBookingSeats(newSelection.length);
+//       return newSelection;
+//     }
+//   });
+// };
 
-  // Function to load Razorpay script dynamically
-  
-  // // Calculate amounts for display and payment
-  // const basePrice = selectedPlan ? getSelectedPlanPrice() : 0;
-  // const baseAmount = basePrice * unitCount;  // Base price multiplied by units (without service fee)
+// Function to load Razorpay script dynamically
 
-  // // Calculate fixed service fee - only applied once regardless of unit count
-  // const fixedServiceFee = selectedPlan ? getFixedServiceFee(facility?.facilityType || '') : 0;
+// // Calculate amounts for display and payment
+// const basePrice = selectedPlan ? getSelectedPlanPrice() : 0;
+// const baseAmount = basePrice * unitCount;  // Base price multiplied by units (without service fee)
 
-  // // Calculate total amount with service fee added once
-  // const totalBaseAmount = baseAmount + fixedServiceFee;
+// // Calculate fixed service fee - only applied once regardless of unit count
+// const fixedServiceFee = selectedPlan ? getFixedServiceFee(facility?.facilityType || '') : 0;
 
-  // // GST is set to 0 (removed the 18% calculation)
-  // const gstAmount = 0;
+// // Calculate total amount with service fee added once
+// const totalBaseAmount = baseAmount + fixedServiceFee;
 
-  // // Total amount is now just the base amount + fixed service fee (without GST)
-  // const totalAmount = totalBaseAmount;
+// // GST is set to 0 (removed the 18% calculation)
+// const gstAmount = 0;
 
-  // Handle booking submission
+// // Total amount is now just the base amount + fixed service fee (without GST)
+// const totalAmount = totalBaseAmount;
+
+// Handle booking submission
