@@ -15,6 +15,8 @@ const s3Client = new S3Client({
   },
 });
 
+const base_url = "http://localhost:3001";
+
 /**
  * Generate a PDF invoice for a booking and upload it to S3
  * @param bookingId The MongoDB ObjectId of the booking
@@ -409,23 +411,20 @@ async function sendInvoiceEmail(
     //   `Sending invoice email to ${recipientEmail} for booking ${bookingId}`
     // );
 
-    const response = await fetch(
-      `${process.env.NEXTAUTH_URL || "https://cumma.in"}/api/invoices/email`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Invoice-Automation": process.env.EMAIL_WEBHOOK_SECRET || "",
-        },
-        body: JSON.stringify({
-          bookingId,
-          automated: true,
-          recipientEmail: recipientEmail,
-          forceSend: false,
-        }),
+    const response = await fetch(`${base_url}/api/invoices/email`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Invoice-Automation": process.env.EMAIL_WEBHOOK_SECRET || "",
       },
-    );
-
+      body: JSON.stringify({
+        bookingId,
+        automated: true,
+        recipientEmail,
+        forceSend: false,
+      }),
+    });
     if (!response.ok) {
       const errorData = await response
         .json()
@@ -531,7 +530,7 @@ function generateProfessionalInvoiceHTML(data: InvoiceData): string {
   //               `
   //                   : ""
   //               }
-  // 
+  //
   return `
 <!DOCTYPE html>
 <html>
