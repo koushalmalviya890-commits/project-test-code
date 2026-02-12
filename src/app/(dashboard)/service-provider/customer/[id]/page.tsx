@@ -74,7 +74,7 @@ export default function BookingDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const base_url = "http://localhost:3001";
+  //const base_url = "http://localhost:3001";
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -84,7 +84,7 @@ export default function BookingDetailsPage() {
 
         //const response = await fetch(`/api/bookings/${params.id}`);
         const response = await fetch(
-          `${base_url}/api/bookings/${params.id}`,
+          `${process.env.NEXT_PUBLIC_BASEURL}/api/bookings/${params.id}`,
           {
             method: "GET",
             credentials: "include", // IMPORTANT (send cookie)
@@ -107,7 +107,7 @@ export default function BookingDetailsPage() {
         if (data.serviceProviderId) {
           try {
             const spResponse = await fetch(
-              `${base_url}/api/service-provider/${data.serviceProviderId}`,
+              `${process.env.NEXT_PUBLIC_BASEURL}/api/service-provider/${data.serviceProviderId}`,
               {
                 method: "GET",
                 credentials: "include", // ⬅️ CRITICAL: Sends the auth cookie
@@ -129,7 +129,7 @@ export default function BookingDetailsPage() {
         if (data.bookedBy) {
           try {
             const startupResponse = await fetch(
-              `${base_url}/api/startup/startup_by_userid?userId=${data.bookedBy}`
+              `${process.env.NEXT_PUBLIC_BASEURL}/api/startup/startup_by_userid?userId=${data.bookedBy}`
             );
             if (startupResponse.ok) {
               startupData = await startupResponse.json();
@@ -144,7 +144,7 @@ export default function BookingDetailsPage() {
         if (data.facilityId) {
           try {
             const facilityResponse = await fetch(
-              `${base_url}/api/facilities/${data.facilityId}`
+              `${process.env.NEXT_PUBLIC_BASEURL}/api/facilities/${data.facilityId}`
             );
             if (facilityResponse.ok) {
               facilityData = await facilityResponse.json();

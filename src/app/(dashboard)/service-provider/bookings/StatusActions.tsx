@@ -16,7 +16,7 @@ export default function StatusActions({ bookingId, status: initialStatus }: Stat
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const base_url = "http://localhost:3001";
+  //const base_url = "http://localhost:3001";
 
   // Store successful updates in localStorage to persist through refreshes
   useEffect(() => {
@@ -101,7 +101,7 @@ export default function StatusActions({ bookingId, status: initialStatus }: Stat
       // });
 
       const res = await fetch(
-        `${base_url}/api/bookings/update-status?t=${Date.now()}`,
+        `${process.env.NEXT_PUBLIC_BASEURL}/api/bookings/update-status?t=${Date.now()}`,
         {
           method: "POST",
           credentials: "include", // IMPORTANT (send JWT cookie)

@@ -225,14 +225,14 @@ export default function BookingsPage() {
     XLSX.writeFile(wb, fileName);
   };
 
-  const base_url = "http://localhost:3001";
+  //const base_url = "http://localhost:3001";
   useEffect(() => {
     const fetchBookings = async () => {
       try {
         setIsLoading(true)
         //const response = await fetch('/api/bookings?detailed=true')
         const response = await fetch(
-          `${base_url}/api/bookings?detailed=true`,
+          `${process.env.NEXT_PUBLIC_BASEURL}/api/bookings?detailed=true`,
           {
             method: "GET",
             credentials: "include", // IMPORTANT (send JWT cookie)
@@ -316,7 +316,7 @@ export default function BookingsPage() {
               setIsLoading(true);
               // Re-fetch data
               //</div> fetch('/api/bookings?detailed=true')
-              fetch(`${base_url}/api/bookings?detailed=true`, {
+              fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/bookings?detailed=true`, {
                 method: "GET",
                 credentials: "include", // IMPORTANT for cookie auth
                 headers: {
@@ -518,7 +518,7 @@ export default function BookingsPage() {
                 const bookingDate = safelyParseDate(booking.bookedOn);
                 const startDate = safelyParseDate(booking.startDate);
                 const endDate = safelyParseDate(booking.endDate);
-
+                
                 return (
                   <div key={booking._id || index} className="p-4 space-y-4 mb-[30px]">
                     {/* Header with date and booking ID */}

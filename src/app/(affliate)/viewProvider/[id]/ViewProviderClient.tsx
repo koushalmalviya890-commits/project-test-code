@@ -122,7 +122,7 @@ export default function ViewProviderClient({
   const [showAllTimings, setShowAllTimings] = useState(false);
   const [currentDay, setCurrentDay] = useState<string>("");
 
-  const baseUrl = "http://localhost:3001";
+  //const baseUrl = "http://localhost:3001";
 
   // Track visitor when component mounts with affiliateId
   useEffect(() => {
@@ -130,7 +130,7 @@ export default function ViewProviderClient({
       const trackVisitor = async () => {
         try {
           //const response = await fetch("/api/affiliate/user/visitors", {
-            const response = await fetch(`${baseUrl}/api/affiliate/user/visitors`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/affiliate/user/visitors`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

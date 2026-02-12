@@ -224,7 +224,7 @@ export function ManufacturingLabsForm({
   //   country: initialData?.country,
   // });
 
-  const base_url = "http://localhost:3001";
+  //const base_url = "http://localhost:3001";
 
   const [templateDay, setTemplateDay] = useState<string>("monday");
   const [images, setImages] = useState<string[]>(initialData?.images || []);
@@ -268,7 +268,7 @@ export function ManufacturingLabsForm({
     const fetchSectors = async () => {
       try {
        // const res = await fetch("/api/sector");
-         const res = await fetch(`${base_url}/api/sectors`);
+         const res = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/sectors`);
         const json = await res.json();
         if (json.success) {
           setSectorTags(json.data.map((s: any) => s.name));
@@ -435,7 +435,7 @@ export function ManufacturingLabsForm({
 
   try {
    // const res = await fetch("/api/sector", {
-      const res = await fetch(`${base_url}/api/sectors`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/sectors`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: raw }),

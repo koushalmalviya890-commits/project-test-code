@@ -124,7 +124,7 @@ export default function CalendarPage() {
     'Yearly': []
   })
 
-  const base_url = "http://localhost:3001";
+  //const base_url = "http://localhost:3001";
 
   // Save selected date to localStorage when it changes
   useEffect(() => {
@@ -170,7 +170,7 @@ export default function CalendarPage() {
       // Fetch bookings for the selected week
       //const response = await fetch(`/api/bookings?detailed=true&startDate=${startDateParam}&endDate=${endDateParam}`)
       const response = await fetch(
-        `${base_url}/api/bookings?detailed=true&startDate=${startDateParam}&endDate=${endDateParam}`,
+        `${process.env.NEXT_PUBLIC_BASEURL}/api/bookings?detailed=true&startDate=${startDateParam}&endDate=${endDateParam}`,
         {
           method: "GET",
           credentials: "include", // IMPORTANT (send JWT cookie)

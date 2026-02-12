@@ -173,7 +173,7 @@ type FormValues = z.infer<typeof formSchema>
 export function BioAlliedLabsForm({ onSubmit, onChange, initialData }: FacilityFormProps) {
  // console.log("INitial",initialData);
 
- const base_url = "http://localhost:3001";
+ //const base_url = "http://localhost:3001";
   const [images, setImages] = useState<string[]>(initialData?.images || [])
 
     const [templateDay, setTemplateDay] = useState<string>('monday')
@@ -208,7 +208,7 @@ const [sectorError, setSectorError] = useState<string | null>(null);
   useEffect(() => {
     const fetchSectors = async () => {
       try {
-        const res = await fetch(`${base_url}/api/sectors`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/sectors`);
         // const res = await fetch("/api/sector");
         const json = await res.json();
         if (json.success) {
@@ -332,7 +332,7 @@ const handleCustomSectorAdd = async () => {
   setSectorError(null);
 
   try {
-    const res = await fetch(`${base_url}/api/sectors`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/sectors`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: raw }),

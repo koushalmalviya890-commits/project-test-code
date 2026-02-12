@@ -2226,7 +2226,7 @@ export default function ViewDetailsClient({
     bookingSeats: number;
   } | null>(null);
 
-  const base_url = "http://localhost:3001";
+  //const base_url = "http://localhost:3001";
 
   useEffect(() => {
     const calculatePrices = async () => {
@@ -2570,7 +2570,7 @@ export default function ViewDetailsClient({
       try {
 
       const response = await fetch(
-        `${base_url}/api/bookings/failed?facilityId=${facilityId}`,
+        `${process.env.NEXT_PUBLIC_BASEURL}/api/bookings/failed?facilityId=${facilityId}`,
         {
           method: "GET",
           credentials: "include", // VERY IMPORTANT (send cookie)

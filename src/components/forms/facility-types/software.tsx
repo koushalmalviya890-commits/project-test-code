@@ -114,7 +114,7 @@ type FormValues = z.infer<typeof formSchema>
 
 export function SoftwareForm({ onSubmit, onChange, initialData }: FacilityFormProps) {
 
-  const base_url = "http://localhost:3001";
+  //const base_url = "http://localhost:3001";
 
   const [images, setImages] = useState<string[]>(initialData?.images || [])
   const [templateDay, setTemplateDay] = useState<string>('monday')
@@ -150,7 +150,7 @@ const [customSector, setCustomSector] = useState("");
     const fetchSectors = async () => {
       try {
         // const res = await fetch("/api/sector");
-         const res = await fetch(`${base_url}/api/sectors`);
+         const res = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/sectors`);
         const json = await res.json();
         if (json.success) {
           setSectorTags(json.data.map((s: any) => s.name));
@@ -252,7 +252,7 @@ const [customSector, setCustomSector] = useState("");
 
     try {
       // const res = await fetch("/api/sector", {
-      const res = await fetch(`${base_url}/api/sectors`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/sectors`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: raw }),

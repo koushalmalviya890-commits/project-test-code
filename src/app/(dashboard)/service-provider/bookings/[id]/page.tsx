@@ -74,9 +74,9 @@ export default function BookingDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const base_url = "http://localhost:3001";
+  //const base_url = "http://localhost:3001";
 
-  //console.log("Booking:- ", bookingDetails);
+  
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -87,7 +87,7 @@ export default function BookingDetailsPage() {
         // const response = await fetch(`/api/bookings/${params.id}`);
 
         const response = await fetch(
-          `${base_url}/api/bookings/${params.id}`,
+          `${process.env.NEXT_PUBLIC_BASEURL}/api/bookings/${params.id}`,
           {
             method: "GET",
             credentials: "include", // IMPORTANT (send cookie)
@@ -114,7 +114,7 @@ export default function BookingDetailsPage() {
        // A. Service Provider Fetch
         if (bookingData.serviceProviderId) {
           promises.push(
-            fetch(`${base_url}/api/service-provider/${bookingData.serviceProviderId}`, {
+            fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/service-provider/${bookingData.serviceProviderId}`, {
               credentials: "include",
             })
               .then(res => res.ok ? res.json() : null)
@@ -128,7 +128,7 @@ export default function BookingDetailsPage() {
         // Note: Our updated controller returns 'bookedBy' as the ID
         if (bookingData.bookedBy) {
           promises.push(
-            fetch(`${base_url}/api/startup/startup_by_userid?userId=${bookingData.bookedBy}`, {
+            fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/startup/startup_by_userid?userId=${bookingData.bookedBy}`, {
               credentials: "include",
             })
               .then(res => res.ok ? res.json() : null)
@@ -140,7 +140,7 @@ export default function BookingDetailsPage() {
         // Fetch facility details to get complete data including images
        if (bookingData.facilityId) {
            promises.push(
-            fetch(`${base_url}/api/facilities/${bookingData.facilityId}`, {
+            fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/facilities/${bookingData.facilityId}`, {
               credentials: "include",
             })
               .then(res => res.ok ? res.json() : null)
