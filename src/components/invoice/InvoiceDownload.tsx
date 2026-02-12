@@ -102,7 +102,7 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
 
   const handleEmailInvoice = async () => {
     try {
-      const response = await fetch(`${base_url}/api/invoices/email`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/invoices/email`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
