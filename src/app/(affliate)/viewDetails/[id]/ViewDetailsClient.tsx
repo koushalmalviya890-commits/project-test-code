@@ -2226,6 +2226,7 @@ export default function ViewDetailsClient({
     bookingSeats: number;
   } | null>(null);
 
+   const baseUrl = "http://localhost:3001";
   //const base_url = "http://localhost:3001";
 
   useEffect(() => {
@@ -2274,7 +2275,7 @@ export default function ViewDetailsClient({
     const fetchFacility = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${base_url}/api/facilities/${facilityId}`);
+        const response = await fetch(`${baseUrl}/api/facilities/${facilityId}`);
         if (!response.ok) {
           throw new Error("Failed to fetch facility details");
         }
@@ -2283,7 +2284,7 @@ export default function ViewDetailsClient({
 
         if (data && data.address) {
           const address = `${data.address}, ${data.city}, ${data.state}, ${data.pincode}, ${data.country}`;
-          const mapResponse = await fetch(`${base_url}/api/maps?query=${encodeURIComponent(address)}`);
+          const mapResponse = await fetch(`${baseUrl}/api/maps?query=${encodeURIComponent(address)}`);
           if (mapResponse.ok) {
             const mapData = await mapResponse.json();
             setMapUrl(mapData.embedUrl);
@@ -2375,7 +2376,7 @@ export default function ViewDetailsClient({
     setIsAffiliateDialogOpen(true);
   };
 
-  const baseUrl = "http://localhost:3001";
+ 
 
   const handleAffiliateSubmit = async () => {
     if (!affiliateMailId || affiliateContactNumber.length < 10) {
@@ -2507,7 +2508,7 @@ export default function ViewDetailsClient({
 
       try {
         setLoadingRelatedFacilities(true);
-        const response = await fetch(`${base_url}/api/facilities/by-provider/${facility.serviceProviderId}`);
+        const response = await fetch(`${baseUrl}/api/facilities/by-provider/${facility.serviceProviderId}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch related facilities: ${response.status}`);
         }
