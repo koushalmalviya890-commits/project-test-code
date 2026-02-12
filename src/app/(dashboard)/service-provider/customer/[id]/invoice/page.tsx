@@ -46,9 +46,9 @@ export default function InvoicePage() {
   const [error, setError] = useState<string | null>(null)
   const printRef = useRef<HTMLDivElement>(null)
 
-  const base_url = "http://localhost:3001";
+  //const base_url = "http://localhost:3001";
 
-  console.log("Booking object:", bookingDetails);
+  // console.log("Booking object:", bookingDetails);
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -58,7 +58,7 @@ export default function InvoicePage() {
         
        // const response = await fetch(`/api/bookings/${params.id}`)
         const response = await fetch(
-          `${base_url}/api/bookings/${params.id}`,
+          `${process.env.NEXT_PUBLIC_BASEURL}/api/bookings/${params.id}`,
           {
             method: "GET",
             credentials: "include", // IMPORTANT (send cookie)

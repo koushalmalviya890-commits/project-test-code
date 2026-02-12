@@ -56,7 +56,7 @@ const [reviewStats, setReviewStats] = React.useState<{
   averageRating: number;
 } | null>(null);
 
-const baseUrl = "http://localhost:3001";
+//const baseUrl = "http://localhost:3001";
 
 React.useEffect(() => {
   const fetchFinalPrice = async () => {
@@ -66,7 +66,7 @@ React.useEffect(() => {
 
     try {
       //const res = await fetch("/api/affiliate/user/pricing", {
-        const res = await fetch(`${baseUrl}/api/affiliate/user/pricing`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/affiliate/user/pricing`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -96,7 +96,7 @@ React.useEffect(() => {
 React.useEffect(() => {
   const fetchReviewStats = async () => {
     try {
-      const res = await fetch(`${baseUrl}/api/reviews?facilityId=${facility._id}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/reviews?facilityId=${facility._id}`);
       const data = await res.json();
 
       if (res.ok) {

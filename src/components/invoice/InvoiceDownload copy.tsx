@@ -15,7 +15,7 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const base_url = "http://localhost:3001";
+  //const base_url = "http://localhost:3001";
 
   useEffect(() => {
     async function fetchInvoiceUrl() {
@@ -24,7 +24,7 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
         // const response = await fetch(`/api/bookings/${bookingId}`);
 
         const response = await fetch(
-          `${base_url}/api/bookings/${bookingId}`,
+          `${process.env.NEXT_PUBLIC_BASEURL}/api/bookings/${bookingId}`,
           {
             method: "GET",
             credentials: "include", // IMPORTANT (send JWT cookie)

@@ -211,7 +211,7 @@ useEffect(() => {
 }, [processingPayment]);
  
 
-const baseUrl = "http://localhost:3001"; 
+//const baseUrl = "http://localhost:3001"; 
 
   const handleProceedToPayment = async () => {
     if (!bookingDetails) return;
@@ -221,7 +221,7 @@ const baseUrl = "http://localhost:3001";
 
       // Create a payment order
       //const response = await fetch("/api/affiliate/user/payments/razorpay/order", {
-      const response = await fetch(`${baseUrl}/api/affiliate/user/payments/order`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/affiliate/user/payments/order`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -358,7 +358,7 @@ const baseUrl = "http://localhost:3001";
 
   try {
     // const verifyResponse = await fetch("/api/affiliate/user/payments/razorpay/verify", {
-    const verifyResponse = await fetch(`${baseUrl}/api/affiliate/user/payments/verify`, {
+    const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/affiliate/user/payments/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
