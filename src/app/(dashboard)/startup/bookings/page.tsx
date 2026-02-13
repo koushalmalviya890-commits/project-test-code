@@ -43,18 +43,24 @@ export interface Booking {
     phone: string;
   };
 
-  rentalPlan: 'Annual' | 'Monthly' | 'Weekly' | 'One Day (24 Hours)' | 'Hourly' | string;
+  rentalPlan:
+    | "Annual"
+    | "Monthly"
+    | "Weekly"
+    | "One Day (24 Hours)"
+    | "Hourly"
+    | string;
   amount: number;
   baseAmount: number;
   finalAmount: number;
   gstAmount: number;
-  serviceFee:number;
+  serviceFee: number;
   requestedAt: string; // ISO string
   startDate: string; // ISO string
-  endDate: string;   // ISO string
+  endDate: string; // ISO string
   bookingSeats: number; // Number of booking slots selected
-  status: 'pending' | 'approved' | 'rejected' | 'inactive' | 'cancelled';
-  paymentStatus: 'pending' | 'paid' | 'failed';
+  status: "pending" | "approved" | "rejected" | "inactive" | "cancelled";
+  paymentStatus: "pending" | "completed" | "failed";
 
   requestNotes?: string;
   approvalNotes?: string;
@@ -136,43 +142,63 @@ export default function StartupBookings() {
 
   const apiUrl = "http://localhost:3001";
 
-  useEffect(() => {
-    const fetchBookings = async () => {
-      // Safety check: Don't fetch if we don't have the ID
-      if (!user?.id) return;
+useEffect(() => {
+  if (!user?.id) return;
 
-      try {
-        // 1. Point to your Express Backend
-        // 2. Include the user.id in the URL (required by backend route '/bookings/:userId')
-        const url = `${apiUrl}/api/startup/bookings/${user.id}`;
+  let interval: any = null;
+  let attempts = 0;
+  const maxAttempts = 10;
 
-        const response = await fetch(url);
+  const fetchBookings = async () => {
+    try {
+      const url = `${apiUrl}/api/startup/bookings/${user.id}`;
 
-        const data = await response.json();
+      const response = await fetch(url, {
+        method: "GET",
+        credentials: "include",
+      });
 
-        if (!response.ok) {
-          console.error("API error:", data);
-          throw new Error(data.error || "Failed to fetch bookings");
-        }
+      const data = await response.json();
 
-        if (!Array.isArray(data)) {
-          console.error("Unexpected data format:", data);
-          throw new Error("Invalid data format received");
-        }
-
-        setBookings(data);
-      } catch (error) {
-        console.error("Error fetching bookings:", error);
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        console.error("API error:", data);
+        throw new Error(data.error || "Failed to fetch bookings");
       }
-    };
 
-    // Trigger logic
-    if (user?.id) {
-      fetchBookings();
+      if (!Array.isArray(data)) {
+        console.error("Unexpected data format:", data);
+        throw new Error("Invalid data format received");
+      }
+
+      setBookings(data);
+
+      // ✅ stop polling if all completed bookings have invoiceUrl
+      const pendingInvoice = data.some(
+        (b: any) => b.paymentStatus === "completed" && !b.invoiceUrl,
+      );
+
+      attempts++;
+
+      if (!pendingInvoice || attempts >= maxAttempts) {
+        clearInterval(interval);
+      }
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      clearInterval(interval);
+    } finally {
+      setIsLoading(false);
     }
-  }, [user?.id]);
+  };
+
+  // initial fetch
+  fetchBookings();
+
+  // polling every 3 seconds
+  interval = setInterval(fetchBookings, 3000);
+
+  return () => clearInterval(interval);
+}, [user?.id]);
+
 
   const handleExtensionRequested = (bookingId: string, extentDays: number) => {
     // Update the booking state to mark as extension requested
