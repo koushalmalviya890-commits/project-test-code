@@ -69,7 +69,7 @@ export default function BookingDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(
-    null
+    null,
   );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,32 +77,31 @@ export default function BookingDetailsPage() {
   const base_url = "http://localhost:3001";
 
   useEffect(() => {
+    let timer: any = null;
+    let attempts = 0;
+    const maxAttempts = 10;
+
     const fetchBookingDetails = async () => {
       try {
-        setIsLoading(true);
         setError(null);
 
-        //const response = await fetch(`/api/bookings/${params.id}`);
-        const response = await fetch(
-          `${base_url}/api/bookings/${params.id}`,
-          {
-            method: "GET",
-            credentials: "include", // IMPORTANT (send cookie)
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        const response = await fetch(`${base_url}/api/bookings/${params.id}`, {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
         if (!response.ok) {
           throw new Error(
-            `Failed to fetch booking details: ${response.status}`
+            `Failed to fetch booking details: ${response.status}`,
           );
         }
 
         const data = await response.json();
-        //// console.log(data, `for service provider booking detail`);
-        // Fetch service provider details if serviceProviderId exists
+
+        // Fetch service provider details
         let serviceProviderData = null;
         if (data.serviceProviderId) {
           try {
@@ -110,75 +109,62 @@ export default function BookingDetailsPage() {
               `${base_url}/api/service-provider/${data.serviceProviderId}`,
               {
                 method: "GET",
-                credentials: "include", // ⬅️ CRITICAL: Sends the auth cookie
+                credentials: "include",
                 headers: {
                   "Content-Type": "application/json",
                 },
-              }
+              },
             );
             if (spResponse.ok) {
               serviceProviderData = await spResponse.json();
             }
-          } catch (error) {
-            // Silent catch - continue with null data
-          }
+          } catch (err) {}
         }
 
-        // Fetch startup details if bookedBy exists
+        // Fetch startup details
         let startupData = null;
         if (data.bookedBy) {
           try {
             const startupResponse = await fetch(
-              `${base_url}/api/startup/startup_by_userid?userId=${data.bookedBy}`
+              `${base_url}/api/startup/startup_by_userid?userId=${data.bookedBy}`,
             );
             if (startupResponse.ok) {
               startupData = await startupResponse.json();
             }
-          } catch (error) {
-            // Silent catch - continue with null data
-          }
+          } catch (err) {}
         }
 
-        // Fetch facility details to get complete data including images
+        // Fetch facility details
         let facilityData = null;
         if (data.facilityId) {
           try {
             const facilityResponse = await fetch(
-              `${base_url}/api/facilities/${data.facilityId}`
+              `${base_url}/api/facilities/${data.facilityId}`,
             );
             if (facilityResponse.ok) {
               facilityData = await facilityResponse.json();
             }
-          } catch (error) {
-            // Silent catch - continue with null data
-          }
+          } catch (err) {}
         }
 
-        // Get images from the API response
         let facilityImages: string[] = [];
 
-        // Try to extract images from various possible paths in the data
         if (
           facilityData &&
           facilityData.details &&
           Array.isArray(facilityData.details.images)
         ) {
-          // First priority: direct facility data if available
           facilityImages = facilityData.details.images;
         } else if (
           data.facility &&
           data.facility.details &&
           Array.isArray(data.facility.details.images)
         ) {
-          // Second priority: nested facility.details.images
           facilityImages = data.facility.details.images;
         } else if (data.facility && Array.isArray(data.facility.images)) {
-          // Third priority: facility.images (flattened structure)
           facilityImages = data.facility.images;
         }
 
-        // Transform data to match BookingDetails interface if needed
-        // This handles potential differences in API response structure
         const transformedData: BookingDetails = {
           _id: data._id || "",
           bookingId: data.bookingId || data._id || "",
@@ -195,8 +181,8 @@ export default function BookingDetailsPage() {
           invoiceEmailHistory: data.invoiceEmailHistory || [],
           serviceFee: data.serviceFee || 0,
           unitCount: data.unitCount || 1,
-          bookingSeats: data.bookingSeats || 1, // Default to 1 if not provided
-          // Handle nested facility data
+          bookingSeats: data.bookingSeats || 1,
+
           facility: {
             name:
               data.facilityName ||
@@ -220,7 +206,6 @@ export default function BookingDetailsPage() {
               data.state || facilityData?.state || data.facility?.state || "",
           },
 
-          // Handle startup data, prioritizing the fetched startup details
           startup: {
             startupName: startupData?.startupName || "",
             logoUrl: startupData?.logoUrl || "",
@@ -231,7 +216,6 @@ export default function BookingDetailsPage() {
             emailId: startupData?.email || "",
           },
 
-          // Handle service provider data, prioritizing the fetched service provider details
           serviceProvider: {
             serviceName: serviceProviderData?.serviceName || "",
             logoUrl: serviceProviderData?.logoUrl || "",
@@ -240,17 +224,41 @@ export default function BookingDetailsPage() {
         };
 
         setBookingDetails(transformedData);
+
+        // ✅ Stop polling if invoiceUrl is available
+        if (transformedData.invoiceUrl) {
+          setIsLoading(false);
+          if (timer) clearInterval(timer);
+        }
+
+        attempts++;
+
+        // stop polling after max attempts
+        if (attempts >= maxAttempts) {
+          setIsLoading(false);
+          if (timer) clearInterval(timer);
+        }
       } catch (error) {
         console.error("Error fetching booking details:", error);
         setError("Failed to load booking details. Please try again.");
-      } finally {
         setIsLoading(false);
+        if (timer) clearInterval(timer);
       }
     };
 
     if (params.id) {
+      setIsLoading(true);
+
+      // fetch immediately
       fetchBookingDetails();
+
+      // poll every 3 seconds until invoiceUrl comes
+      timer = setInterval(fetchBookingDetails, 3000);
     }
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, [params.id]);
 
   // Format date to display in the format: Sun, 02 May 2025 by 02:00 PM
@@ -500,7 +508,7 @@ export default function BookingDetailsPage() {
                     </p>
                   </div>
 
-                   <div className="w-[180px] bg-[#f8f8f8] p-3 rounded-md">
+                  <div className="w-[180px] bg-[#f8f8f8] p-3 rounded-md">
                     <p className="text-[15px] font-semibold text-[rgba(34,34,34,0.3)] mb-[2px]">
                       Booked Seats
                     </p>
@@ -578,17 +586,24 @@ export default function BookingDetailsPage() {
                 Download Invoice (PDF)
               </h3>
               {bookingDetails.invoiceUrl ? (
-                <Link
+                // <Link
+                //   href={bookingDetails.invoiceUrl}
+                //   target="_blank"
+
+                // >
+                //   <Download className="h-5 w-5 text-[#222222]" />
+                // </Link>
+                <a
                   href={bookingDetails.invoiceUrl}
                   target="_blank"
-                  // rel="noopener noreferrer"
+                  rel="noopener noreferrer"
                 >
                   <Download className="h-5 w-5 text-[#222222]" />
-                </Link>
-        //          <a href={bookingDetails.invoiceUrl}>
-        //   📥 View Invoice
-        // </a>
+                </a>
               ) : (
+                //          <a href={bookingDetails.invoiceUrl}>
+                //   📥 View Invoice
+                // </a>
                 <span className="text-sm text-gray-400">Not available</span>
               )}
             </div>
@@ -640,8 +655,6 @@ export default function BookingDetailsPage() {
                 {bookingDetails.facility.name}
               </h3>
 
-
-
               <div className="flex justify-between items-start">
                 <div>
                   <div className="text-sm text-[rgba(34,34,34,0.6)] space-y-1">
@@ -671,13 +684,12 @@ export default function BookingDetailsPage() {
               </div>
 
               <div className="flex justify-between border-t border-[rgba(34,34,34,0.6)] border-opacity-30 pt-4 mt-3">
-    <p className="text-xl text-black font-bold flex justify-between gap-6 ">
-      Total
-    </p>
-<p className="text-xl font-bold ">
-      {formatCurrency(bookingDetails.amount)}
-    </p>
-
+                <p className="text-xl text-black font-bold flex justify-between gap-6 ">
+                  Total
+                </p>
+                <p className="text-xl font-bold ">
+                  {formatCurrency(bookingDetails.amount)}
+                </p>
               </div>
             </div>
 
