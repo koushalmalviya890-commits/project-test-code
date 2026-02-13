@@ -69,7 +69,7 @@ export default function BookingDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(
-    null
+    null,
   );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,9 +79,12 @@ export default function BookingDetailsPage() {
   
 
   useEffect(() => {
+    let timer: any = null;
+    let attempts = 0;
+    const maxAttempts = 10;
+
     const fetchBookingDetails = async () => {
       try {
-        setIsLoading(true);
         setError(null);
 
         // const response = await fetch(`/api/bookings/${params.id}`);
@@ -100,18 +103,16 @@ export default function BookingDetailsPage() {
 
         if (!response.ok) {
           throw new Error(
-            `Failed to fetch booking details: ${response.status}`
+            `Failed to fetch booking details: ${response.status}`,
           );
         }
 
         const data = await response.json();
-        // console.log(data, `for service provider booking detail`);
         const bookingData = data.booking || data;
 
-// 2. Prepare Parallel Fetches for related data
         const promises = [];
 
-       // A. Service Provider Fetch
+        // service provider
         if (bookingData.serviceProviderId) {
           promises.push(
             fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/service-provider/${bookingData.serviceProviderId}`, {
@@ -124,8 +125,7 @@ export default function BookingDetailsPage() {
           promises.push(Promise.resolve(null));
         }
 
-        // B. Startup Fetch
-        // Note: Our updated controller returns 'bookedBy' as the ID
+        // startup
         if (bookingData.bookedBy) {
           promises.push(
             fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/startup/startup_by_userid?userId=${bookingData.bookedBy}`, {
@@ -143,28 +143,25 @@ export default function BookingDetailsPage() {
             fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/facilities/${bookingData.facilityId}`, {
               credentials: "include",
             })
-              .then(res => res.ok ? res.json() : null)
-              .catch(() => null)
+              .then((res) => (res.ok ? res.json() : null))
+              .catch(() => null),
           );
         } else {
-           promises.push(Promise.resolve(null));
+          promises.push(Promise.resolve(null));
         }
 
-        // 3. Execute Parallel Fetches
-        const [serviceProviderData, startupData, facilityData] = await Promise.all(promises);
-        // 4. Resolve Images
+        const [serviceProviderData, startupData, facilityData] =
+          await Promise.all(promises);
+
         let facilityImages: string[] = [];
         if (facilityData?.details?.images) {
-            facilityImages = facilityData.details.images;
-        } else if (bookingData.facility?.details?.images) { // nested
-            facilityImages = bookingData.facility.details.images;
-        } else if (bookingData.images) { // flat from controller
-            facilityImages = bookingData.images;
+          facilityImages = facilityData.details.images;
+        } else if (bookingData.facility?.details?.images) {
+          facilityImages = bookingData.facility.details.images;
+        } else if (bookingData.images) {
+          facilityImages = bookingData.images;
         }
-        
-        // Transform data to match BookingDetails interface if needed
-        // This handles potential differences in API response structure
-       // 5. Construct Final Object
+
         const transformedData: BookingDetails = {
           _id: bookingData._id,
           bookingId: bookingData.bookingId || bookingData._id,
@@ -178,14 +175,18 @@ export default function BookingDetailsPage() {
           startDate: bookingData.startDate || "",
           endDate: bookingData.endDate || "",
           whatsappNumber: bookingData.whatsappNumber || "",
-          invoiceUrl: bookingData.invoiceUrl,
+          invoiceUrl: bookingData.invoiceUrl || null,
           invoiceEmailHistory: bookingData.invoiceEmailHistory || [],
           unitCount: bookingData.unitCount || 1,
           bookingSeats: bookingData.bookingSeats || 1,
 
           facility: {
-            name: bookingData.facilityName || facilityData?.details?.name || "Unknown Facility",
-            facilityType: bookingData.facilityType || facilityData?.facilityType || "",
+            name:
+              bookingData.facilityName ||
+              facilityData?.details?.name ||
+              "Unknown Facility",
+            facilityType:
+              bookingData.facilityType || facilityData?.facilityType || "",
             images: facilityImages,
             address: bookingData.address || facilityData?.address || "",
             city: bookingData.city || facilityData?.city || "",
@@ -193,10 +194,17 @@ export default function BookingDetailsPage() {
           },
 
           startup: {
-            startupName: startupData?.startupName || bookingData.bookedByName || "Unknown Startup",
+            startupName:
+              startupData?.startupName ||
+              bookingData.bookedByName ||
+              "Unknown Startup",
             logoUrl: startupData?.logoUrl || "",
-            founderName: startupData?.founderName || startupData?.contactName || "",
-            primaryContactNumber: startupData?.primaryContactNumber || bookingData.whatsappNumber || "",
+            founderName:
+              startupData?.founderName || startupData?.contactName || "",
+            primaryContactNumber:
+              startupData?.primaryContactNumber ||
+              bookingData.whatsappNumber ||
+              "",
             city: startupData?.city || "",
             emailId: startupData?.startupMailId || startupData?.email || "",
           },
@@ -210,17 +218,36 @@ export default function BookingDetailsPage() {
 
         setBookingDetails(transformedData);
 
+        // ✅ stop polling when invoiceUrl comes
+        if (transformedData.invoiceUrl) {
+          setIsLoading(false);
+          if (timer) clearInterval(timer);
+        }
+
+        attempts++;
+
+        if (attempts >= maxAttempts) {
+          setIsLoading(false);
+          if (timer) clearInterval(timer);
+        }
       } catch (error) {
         console.error("Error fetching booking details:", error);
         setError("Failed to load booking details.");
-      } finally {
         setIsLoading(false);
+        if (timer) clearInterval(timer);
       }
     };
 
     if (params.id) {
+      setIsLoading(true);
+
       fetchBookingDetails();
+      timer = setInterval(fetchBookingDetails, 3000);
     }
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, [params.id]);
 
   // Format date to display in the format: Sun, 02 May 2025 by 02:00 PM
@@ -292,8 +319,8 @@ export default function BookingDetailsPage() {
               {/* Facility image */}
               <div className="flex-shrink-0">
                 {bookingDetails.facility &&
-                  bookingDetails.facility.images &&
-                  bookingDetails.facility.images.length > 0 ? (
+                bookingDetails.facility.images &&
+                bookingDetails.facility.images.length > 0 ? (
                   <div className="relative h-[180px] w-[180px] rounded-[10px] overflow-hidden bg-[#f8f8f8]">
                     <Image
                       src={bookingDetails.facility.images[0]}
@@ -350,14 +377,14 @@ export default function BookingDetailsPage() {
                   </p>
                   <div className="flex flex-wrap gap-[15px]">
                     {bookingDetails.serviceProvider?.features &&
-                      bookingDetails.serviceProvider.features.length > 0 ? (
+                    bookingDetails.serviceProvider.features.length > 0 ? (
                       <>
                         {bookingDetails.serviceProvider.features
                           .slice(0, 5)
                           .map((feature, index) => {
                             const IconComponent =
                               AMENITY_ICONS[
-                              feature as keyof typeof AMENITY_ICONS
+                                feature as keyof typeof AMENITY_ICONS
                               ] || AMENITY_ICONS["Other"];
                             return (
                               <div
@@ -548,17 +575,24 @@ export default function BookingDetailsPage() {
                 Download Invoice (PDF)
               </h3>
               {bookingDetails.invoiceUrl ? (
-                <Link
+                // <Link
+                //   href={bookingDetails.invoiceUrl}
+                //   target="_blank"
+
+                // >
+                //   <Download className="h-5 w-5 text-[#222222]" />
+                // </Link>
+                <a
                   href={bookingDetails.invoiceUrl}
                   target="_blank"
-                // rel="noopener noreferrer"
+                  rel="noopener noreferrer"
                 >
                   <Download className="h-5 w-5 text-[#222222]" />
-                </Link>
+                </a>
+              ) : (
                 //          <a href={bookingDetails.invoiceUrl}>
                 //   📥 View Invoice
                 // </a>
-              ) : (
                 <span className="text-sm text-gray-400">Not available</span>
               )}
             </div>
@@ -610,8 +644,6 @@ export default function BookingDetailsPage() {
                 {bookingDetails.facility.name}
               </h3>
 
-
-
               <div className="flex justify-between items-start">
                 <div>
                   <div className="text-sm text-[rgba(34,34,34,0.6)] space-y-1">
@@ -647,7 +679,6 @@ export default function BookingDetailsPage() {
                 <p className="text-xl font-bold ">
                   {formatCurrency(bookingDetails.amount)}
                 </p>
-
               </div>
             </div>
 

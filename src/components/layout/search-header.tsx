@@ -104,23 +104,34 @@ function SearchHeaderClient() {
   };
 
   // Function to handle search
-  const handleSearch = () => {
-    // Create a new URLSearchParams object based on current params
-    const params = new URLSearchParams(searchParams.toString());
-    
-    // Update or remove search parameter
-    if (keyword) {
-      params.set('search', keyword);
-    } else {
-      params.delete('search');
-    }
-    
-    // Reset to page 1 when searching
-    params.set('page', '1');
-    
-    // Navigate to search page with parameters
-    router.push(`/SearchPage?${params.toString()}`);
-  };
+ const handleSearch = () => {
+   const params = new URLSearchParams(searchParams.toString());
+
+   if (keyword) {
+     params.set("search", keyword);
+
+     const searchLower = keyword.toLowerCase().trim();
+     const matchedCategory = categories.find(
+       (cat) =>
+         cat.name.toLowerCase().includes(searchLower) ||
+         searchLower.includes(cat.name.toLowerCase()),
+     );
+
+     if (matchedCategory) {
+       const propertyTypes = getPropertyTypesForCategory(matchedCategory.name);
+       params.set("propertyTypes", propertyTypes.join(","));
+     } else {
+
+       params.delete("propertyTypes");
+     }
+   } else {
+     params.delete("search");
+     params.delete("propertyTypes");
+   }
+
+   params.set("page", "1");
+   router.push(`/SearchPage?${params.toString()}`);
+ };
 
   // Function to open filter dialog
   const openFilters = () => {
@@ -544,7 +555,7 @@ if(!user) return;
   );
 }
 
-export function SearchHeader() {
+export function    SearchHeader() {
   return (
     <Suspense fallback={<SearchHeaderLoading />}>
       <SearchHeaderClient />

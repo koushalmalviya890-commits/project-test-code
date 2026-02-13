@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import {
   Calendar,
   Clock,
-  MapPin, 
+  MapPin,
   Info,
   CheckCircle,
   Phone,
@@ -66,9 +66,9 @@ export default function BookingDetailsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // const { data: session, status } = useSession();
-  const {user, loading: authLoading} = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(
-    null
+    null,
   );
   const [loading, setLoading] = useState(true);
   const [processingPayment, setProcessingPayment] = useState(false);
@@ -77,6 +77,8 @@ export default function BookingDetailsClient() {
     message: string;
     redirect: string;
   } | null>(null);
+
+  const baseUrl = "http://localhost:3001";
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -150,7 +152,14 @@ export default function BookingDetailsClient() {
 
   const fetchFacilityDetails = async (facilityId: string) => {
     try {
-      const response = await fetch(`/api/facilities/${facilityId}`);
+      const response = await fetch(`${baseUrl}/api/facilities/${facilityId}`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
       if (!response.ok) throw new Error("Failed to fetch facility details");
 
       const facilityData = await response.json();
@@ -182,36 +191,35 @@ export default function BookingDetailsClient() {
     });
   };
 
-//refresh and back button block
+  //refresh and back button block
 
-useEffect(() => {
-  if (processingPayment) {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = ""; // Required for Chrome to show confirmation
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }
-}, [processingPayment]);
+  useEffect(() => {
+    if (processingPayment) {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = ""; // Required for Chrome to show confirmation
+      };
+      window.addEventListener("beforeunload", handleBeforeUnload);
+      return () =>
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+    }
+  }, [processingPayment]);
 
+  useEffect(() => {
+    if (processingPayment) {
+      const handlePopState = (e: PopStateEvent) => {
+        e.preventDefault();
+        window.history.pushState(null, "", window.location.href); // Push the same state again
+      };
 
-useEffect(() => {
-  if (processingPayment) {
-    const handlePopState = (e: PopStateEvent) => {
-      e.preventDefault();
-      window.history.pushState(null, "", window.location.href); // Push the same state again
-    };
+      window.history.pushState(null, "", window.location.href); // Initial push
+      window.addEventListener("popstate", handlePopState);
 
-    window.history.pushState(null, "", window.location.href); // Initial push
-    window.addEventListener("popstate", handlePopState);
+      return () => window.removeEventListener("popstate", handlePopState);
+    }
+  }, [processingPayment]);
 
-    return () => window.removeEventListener("popstate", handlePopState);
-  }
-}, [processingPayment]);
- 
-
-//const baseUrl = "http://localhost:3001"; 
+  // const baseUrl = "http://localhost:3001";
 
   const handleProceedToPayment = async () => {
     if (!bookingDetails) return;
@@ -221,27 +229,30 @@ useEffect(() => {
 
       // Create a payment order
       //const response = await fetch("/api/affiliate/user/payments/razorpay/order", {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/affiliate/user/payments/order`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASEURL}/api/affiliate/user/payments/order`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            facilityId: bookingDetails.facilityId,
+            email: bookingDetails.email,
+            rentalPlan: bookingDetails.rentalPlan,
+            amount: bookingDetails.baseAmount, // baseAmount (includes service fee)
+            originalBaseAmount: bookingDetails.originalBaseAmount, // Original base price × units
+            serviceFee: bookingDetails.serviceFee, // Fixed service fee
+            gstAmount: bookingDetails.gstAmount, // GST amount
+            totalAmount: bookingDetails.totalAmount, // Total amount with GST
+            startDate: bookingDetails.startDate.toISOString(),
+            endDate: bookingDetails.endDate.toISOString(),
+            contactNumber: bookingDetails.contactNumber,
+            unitCount: bookingDetails.unitCount || 1,
+            bookingSeats: bookingDetails.bookingSeats || 1, // Include booking seats
+          }),
         },
-        body: JSON.stringify({
-          facilityId: bookingDetails.facilityId,
-          email: bookingDetails.email,
-          rentalPlan: bookingDetails.rentalPlan,
-          amount: bookingDetails.baseAmount, // baseAmount (includes service fee)
-          originalBaseAmount: bookingDetails.originalBaseAmount, // Original base price × units
-          serviceFee: bookingDetails.serviceFee, // Fixed service fee
-          gstAmount: bookingDetails.gstAmount, // GST amount
-          totalAmount: bookingDetails.totalAmount, // Total amount with GST
-          startDate: bookingDetails.startDate.toISOString(),
-          endDate: bookingDetails.endDate.toISOString(),
-          contactNumber: bookingDetails.contactNumber,
-          unitCount: bookingDetails.unitCount || 1,
-          bookingSeats: bookingDetails.bookingSeats || 1, // Include booking seats
-        }),
-      });
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -294,7 +305,7 @@ useEffect(() => {
             // This will catch Razorpay server errors
             console.error("Razorpay error:", response);
             setError(
-              "Payment service error. Please try again in a few moments."
+              "Payment service error. Please try again in a few moments.",
             );
             setProcessingPayment(false);
           },
@@ -313,7 +324,7 @@ useEffect(() => {
     } catch (error) {
       console.error("Error initiating payment:", error);
       setError(
-        error instanceof Error ? error.message : "Failed to initiate payment"
+        error instanceof Error ? error.message : "Failed to initiate payment",
       );
       setProcessingPayment(false);
     }
@@ -354,7 +365,7 @@ useEffect(() => {
   //   }
   // };
   const verifyPayment = async (response: any, bookingId: string) => {
-  setProcessingPayment(true); // triggers back/refresh block via useEffect
+    setProcessingPayment(true); // triggers back/refresh block via useEffect
 
   try {
     // const verifyResponse = await fetch("/api/affiliate/user/payments/razorpay/verify", {
@@ -375,17 +386,17 @@ useEffect(() => {
       router.push(
         `/booking/success?bookingId=${bookingId}&paymentId=${response.razorpay_payment_id}`
       );
-    } else {
-      setError("Payment verification failed");
+
+     } else {
+        setError("Payment verification failed");
+        setProcessingPayment(false);
+      }
+    } catch (error) {
+      console.error("Error verifying payment:", error);
+      setError("Failed to verify payment");
       setProcessingPayment(false);
     }
-  } catch (error) {
-    console.error("Error verifying payment:", error);
-    setError("Failed to verify payment");
-    setProcessingPayment(false);
-  }
-};
-
+  };
 
   if (loading) {
     return (
@@ -507,11 +518,12 @@ useEffect(() => {
               <div className="flex justify-between">
                 <span className="text-gray-600">
                   Base Price{" "}
-                    {bookingDetails.unitCount > 1
+                  {bookingDetails.unitCount > 1
                     ? `(${bookingDetails.unitCount} units${bookingDetails.bookingSeats && bookingDetails.bookingSeats > 1 ? `, ${bookingDetails.bookingSeats} seats` : ""})`
-                    : bookingDetails.bookingSeats && bookingDetails.bookingSeats > 1
-                    ? `(${bookingDetails.bookingSeats} seats)`
-                    : ""}
+                    : bookingDetails.bookingSeats &&
+                        bookingDetails.bookingSeats > 1
+                      ? `(${bookingDetails.bookingSeats} seats)`
+                      : ""}
                 </span>
                 <span className="text-right min-w-[100px]">
                   ₹
@@ -533,8 +545,6 @@ useEffect(() => {
                 </span>
               </div> */}
 
-
-
               <div className="flex justify-between">
                 <span className="text-gray-600">GST Amount</span>
                 <span className="text-right min-w-[100px]">
@@ -546,7 +556,7 @@ useEffect(() => {
                 </span>
               </div>
 
-                  {/* <div className="flex justify-between">
+              {/* <div className="flex justify-between">
                     <span className="text-gray-600">Booking Seats</span>
                     <span className="text-right min-w-[100px]">
                       

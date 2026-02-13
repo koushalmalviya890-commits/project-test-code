@@ -155,7 +155,7 @@ export default function ViewProviderClient({
     const fetchServiceProvider = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/service-provider/${providerId}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/service-provider/${providerId}`);
         if (!response.ok) {
           if (response.status === 401) {
             setError("You need to sign in to view provider details");
@@ -177,7 +177,7 @@ export default function ViewProviderClient({
 
         if (provider.address) {
           const fullAddress = [provider.address, provider.city, provider.state, provider.pincode].filter(Boolean).join(", ");
-          const mapResponse = await fetch(`/api/maps?query=${encodeURIComponent(fullAddress)}`);
+          const mapResponse = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/maps?query=${encodeURIComponent(fullAddress)}`);
           if (mapResponse.ok) {
             const mapData = await mapResponse.json();
             setMapUrl(mapData.embedUrl);
@@ -201,7 +201,7 @@ export default function ViewProviderClient({
     const fetchFacilities = async () => {
       try {
         setLoadingFacilities(true);
-        const response = await fetch(`/api/service-providers/${providerId}/facilities?page=${pagination.page}&limit=${pagination.limit}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/service-provider/${providerId}/facilities?page=${pagination.page}&limit=${pagination.limit}`);
 
         if (!response.ok) {
           if (response.status === 401) {

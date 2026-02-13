@@ -453,7 +453,7 @@ setError(data.message || "Payment verification failed");
   const TotalBasePrice = bookingDetails.baseAmount + bookingDetails.serviceFee;
 
   const TotalGst = (bookingDetails.hasGST === true)
-    ? bookingDetails.gstAmount + bookingDetails.gstOnServiceFee
+    ? bookingDetails.gstAmount 
     : bookingDetails.gstOnServiceFee;
 
   return (

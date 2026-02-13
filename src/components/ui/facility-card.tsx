@@ -241,7 +241,9 @@ export function FacilityCard({
     const fetchFinalPrice = async () => {
       if (!facility.details.rentalPlans?.length) return; // removed session check
 
-      const lowestBasePrice = Math.min(...facility.details.rentalPlans.map(plan => plan.price));
+      const lowestBasePrice = facility.details.rentalPlans.reduce((prev, curr) =>
+        prev.price < curr.price ? prev : curr
+      );
 
       try {
         
@@ -252,7 +254,9 @@ export function FacilityCard({
           },
           body: JSON.stringify({
             facilityId: facility._id,
-            basePrice: Number(lowestBasePrice),
+            rentalPlan: lowestBasePrice.name, // ✅ Required by Backend
+            unitCount: 1,                // ✅ Required by Backend
+            bookingSeats: 1   
           }),
         });
 
@@ -263,7 +267,8 @@ export function FacilityCard({
         } else {
           console.warn("Price fallback:", data.error);
           const fixedFee = getFixedServiceFee(facility.facilityType);
-          setFinalPrice(lowestBasePrice + fixedFee);
+         const fallbackPrice = lowestBasePrice.price + (lowestBasePrice.price * 0.07); 
+          setFinalPrice(fallbackPrice);
         }
       } catch (err) {
         console.error("Error fetching price:", err);
@@ -279,13 +284,11 @@ export function FacilityCard({
         const res = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/reviews?facilityId=${facility._id}`);
         const data = await res.json();
 
-        if (res.ok) {
+      if (res.ok) {
           setReviewStats({
             totalReviews: data.totalReviews,
             averageRating: data.averageRating,
           });
-        } else {
-          console.warn("Review stats fetch failed:", data.error);
         }
       } catch (err) {
         console.error("Error fetching review stats:", err);
@@ -296,16 +299,16 @@ export function FacilityCard({
   }, [facility._id]);
 
   // Calculate total price (base price + service fee + GST + GST on service fee)
-  const totalPrice = React.useMemo(() => {
-    if (!facility.details.rentalPlans?.length) return null;
+  // const totalPrice = React.useMemo(() => {
+  //   if (!facility.details.rentalPlans?.length) return null;
 
-    const lowestBasePrice = Math.min(...facility.details.rentalPlans.map(plan => plan.price));
-    const serviceFee = lowestBasePrice * 0.07; // Assuming 7% service fee
-    const gstOnServiceFee = serviceFee * 0.18; // 18% GST on service fee
-    const gstOnBasePrice = lowestBasePrice * 0.18; // 18% GST on base price
+  //   const lowestBasePrice = Math.min(...facility.details.rentalPlans.map(plan => plan.price));
+  //   const serviceFee = lowestBasePrice * 0.07; // Assuming 7% service fee
+  //   const gstOnServiceFee = serviceFee * 0.18; // 18% GST on service fee
+  //   const gstOnBasePrice = lowestBasePrice * 0.18; // 18% GST on base price
 
-    return lowestBasePrice + serviceFee;
-  }, [facility.details.rentalPlans]);
+  //   return lowestBasePrice + serviceFee;
+  // }, [facility.details.rentalPlans]);
 
   return (
     <Link
@@ -327,7 +330,9 @@ export function FacilityCard({
       >
         <div
           className="relative w-full h-[200px] bg-cover bg-center flex-shrink-0"
-          style={{ backgroundImage: `url(${facility.details.images[0] || '/placeholder-facility.jpg'})` }}
+          style={{
+            backgroundImage: `url(${facility.details.images[0] || "/placeholder-facility.jpg"})`,
+          }}
         >
           {isFeatured && (
             <Badge className="absolute top-5 left-0 bg-[#23bb4e] text-white rounded-none w-[110px] h-7 flex items-center justify-center">
@@ -337,7 +342,6 @@ export function FacilityCard({
             </Badge>
           )}
 
-          {/* Facility Type Badge */}
           <div className="absolute bottom-5 left-5 z-10">
             <FacilityBadge
               facilityType={facility.facilityType || "meeting-rooms"}
@@ -356,7 +360,9 @@ export function FacilityCard({
               <span className="font-medium text-[#000]">
                 ⭐ {reviewStats.averageRating.toFixed(1)}
               </span>
-              <span className="text-xs text-[#666]">({reviewStats.totalReviews} reviews)</span>
+              <span className="text-xs text-[#666]">
+                ({reviewStats.totalReviews} reviews)
+              </span>
             </div>
           )}
           <div className="flex flex-col w-full overflow-hidden">
@@ -373,16 +379,19 @@ export function FacilityCard({
 
         <CardFooter className="flex justify-between items-center mt-auto py-3 flex-shrink-0 w-full overflow-hidden">
           <div className="flex flex-col gap-0.5 overflow-hidden min-w-0">
-            {totalPrice !== null ? (
+            {/* ✅ UPDATED: Use state variable 'finalPrice' instead of memoized calculation */}
+            {finalPrice !== null ? (
               <>
                 <span className="text-xs text-[#40404099] truncate">
                   Starting from
                 </span>
                 <span className="font-bold text-base tracking-[0.03px] text-[#0a0b0a] truncate">
-                  ₹{totalPrice.toLocaleString("en-IN", {
+                  ₹
+                  {finalPrice.toLocaleString("en-IN", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
-                  })}/-
+                  })}
+                  /-
                 </span>
               </>
             ) : (
