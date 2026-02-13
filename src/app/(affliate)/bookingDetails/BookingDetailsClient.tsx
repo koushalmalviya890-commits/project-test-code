@@ -78,13 +78,11 @@ export default function BookingDetailsClient() {
     redirect: string;
   } | null>(null);
 
-  const baseUrl = "http://localhost:3001";
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/sign-in");
-    }
-  }, [user, authLoading, router]);
+  // useEffect(() => {
+  //   if (!authLoading && !user) {
+  //     router.push("/sign-in");
+  //   }
+  // }, [user, authLoading, router]);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -152,7 +150,7 @@ export default function BookingDetailsClient() {
 
   const fetchFacilityDetails = async (facilityId: string) => {
     try {
-      const response = await fetch(`${baseUrl}/api/facilities/${facilityId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/facilities/${facilityId}`, {
         method: "GET",
         credentials: "include",
         headers: {
