@@ -2400,7 +2400,7 @@ export default function ViewDetailsClient({
     setIsAffiliateDialogOpen(true);
   };
 
-  const baseUrl = "http://localhost:3001";
+  //const baseUrl = "http://localhost:3001";
 
   const handleAffiliateSubmit = async () => {
     if (!affiliateMailId || !affiliateContactNumber) {
