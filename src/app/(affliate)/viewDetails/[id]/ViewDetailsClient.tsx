@@ -2375,7 +2375,7 @@ export default function ViewDetailsClient({
     setIsAffiliateDialogOpen(true);
   };
 
-  const baseUrl = "http://localhost:3001";
+  //const baseUrl = "http://localhost:3001";
 
   const handleAffiliateSubmit = async () => {
     if (!affiliateMailId || affiliateContactNumber.length < 10) {
@@ -2391,7 +2391,7 @@ export default function ViewDetailsClient({
 
       // Send affiliate data to API
       //const affiliateResponse = await fetch("/api/affiliate/user", {
-      const affiliateResponse = await fetch(`${baseUrl}/api/affiliate/user`, {
+      const affiliateResponse = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/affiliate/user`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -41,7 +41,8 @@ function ChooseAccountTypeContent() {
     try {
       // Call API to update user type
       const apiUrl = "http://localhost:3001"
-      await axios.post(`${apiUrl}/auth/update-user-type`, 
+
+      await axios.post(`${apiUrl}/api/auth/update-user-type`, 
         {
           email,
           userType: selectedType,

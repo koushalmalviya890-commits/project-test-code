@@ -249,6 +249,7 @@ export default function BookingsPage() {
         }
 
         const data = await response.json()
+        
 // console.log(data)
         // Check if we have the new format (with bookings and metrics) or old format (just bookings array)
         if (Array.isArray(data)) {
@@ -676,7 +677,7 @@ export default function BookingsPage() {
                         </TableCell>
                         <TableCell className="py-4 px-6 text-center">
                           <StatusActions
-                            bookingId={booking._id}
+                            bookingId={booking._id || booking.bookingId}
                             status={booking.status as 'pending' | 'approved' | 'rejected'}
                           />
                         </TableCell>

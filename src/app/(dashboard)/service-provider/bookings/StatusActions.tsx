@@ -107,8 +107,8 @@ export default function StatusActions({ bookingId, status: initialStatus }: Stat
           credentials: "include", // IMPORTANT (send JWT cookie)
           headers: {
             "Content-Type": "application/json",
-            "Cache-Control": "no-cache, no-store",
-            "Pragma": "no-cache",
+            // "Cache-Control": "no-cache, no-store",
+            // "Pragma": "no-cache",
           },
           body: JSON.stringify(requestData),
           signal: controller.signal,
