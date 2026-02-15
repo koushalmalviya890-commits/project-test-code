@@ -51,44 +51,38 @@ export default function Header({ mode, setMode }: HeaderProps) {
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center space-x-8 md:space-x-12 gap-12">
           <nav className="flex space-x-6 xl:space-x-8 text-gray-700">
-            <Link href="/offices/about" legacyBehavior>
-              <a
+            <Link href="/offices/about" 
                 className={`${baseLink} ${
                   pathname === "/offices/about" ? activeLink : ""
                 }`}
               >
                 About
-              </a>
+              
             </Link>
 
-            <Link href="/offices/user" legacyBehavior>
-              <a
+            <Link href="/offices/user"
                 className={`${baseLink} ${
                   pathname === "/offices/user" ? activeLink : ""
                 }`}
               >
                 User
-              </a>
             </Link>
 
-            <Link href="/offices/enabler" legacyBehavior>
-              <a
+            <Link href="/offices/enabler"
                 className={`${baseLink} ${
                   pathname === "/offices/enabler" ? activeLink : ""
                 }`}
               >
                 Enabler
-              </a>
             </Link>
 
-            <Link href="/offices/features" legacyBehavior>
-              <a
+            <Link href="/offices/features"
                 className={`${baseLink} ${
                   pathname === "/offices/features" ? activeLink : ""
                 }`}
               >
                 Features
-              </a>
+              
             </Link>
 
             {/* Stories with dropdown */}
@@ -168,37 +162,30 @@ export default function Header({ mode, setMode }: HeaderProps) {
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-gray-200 bg-white">
           <nav className="flex flex-col px-4 py-4 space-y-3">
-            <Link href="/offices/about" legacyBehavior>
-              <a
+            <Link href="/offices/about"
                 className="text-gray-700 hover:text-green-600 py-2 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 About
-              </a>
             </Link>
-            <Link href="/offices/user" legacyBehavior>
-              <a
+            <Link href="/offices/user" 
                 className="text-gray-700 hover:text-green-600 py-2 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 User
-              </a>
+              
             </Link>
-            <Link href="/offices/enabler" legacyBehavior>
-              <a
+            <Link href="/offices/enabler" 
                 className="text-gray-700 hover:text-green-600 py-2 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Enabler
-              </a>
             </Link>
-            <Link href="/offices/features" legacyBehavior>
-              <a
+            <Link href="/offices/features" 
                 className="text-gray-700 hover:text-green-600 py-2 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Features
-              </a>
             </Link>
 
             {/* Mobile Stories dropdown */}

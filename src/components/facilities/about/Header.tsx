@@ -51,44 +51,40 @@ export default function Header({ mode, setMode }: HeaderProps) {
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center space-x-8 md:space-x-12 gap-12">
           <nav className="flex space-x-6 xl:space-x-8 text-gray-700">
-            <Link href="/sciences/about">
-              <a
+            <Link href="/sciences/about"
                 className={`${baseLink} ${
                   pathname === "/sciences/about" ? activeLink : ""
                 }`}
               >
                 About
-              </a>
+              
             </Link>
 
-            <Link href="/sciences/user" >
-              <a
+            <Link href="/sciences/user" 
                 className={`${baseLink} ${
                   pathname === "/sciences/user" ? activeLink : ""
                 }`}
               >
                 User
-              </a>
+              
             </Link>
 
-            <Link href="/sciences/enabler" >
-              <a
+            <Link href="/sciences/enabler" 
                 className={`${baseLink} ${
                   pathname === "/sciences/enabler" ? activeLink : ""
                 }`}
               >
                 Enabler
-              </a>
+              
             </Link>
 
-            <Link href="/sciences/features" >
-              <a
+            <Link href="/sciences/features" 
                 className={`${baseLink} ${
                   pathname === "/sciences/features" ? activeLink : ""
                 }`}
               >
                 Features
-              </a>
+              
             </Link>
 
             {/* Stories with dropdown */}
@@ -167,37 +163,33 @@ export default function Header({ mode, setMode }: HeaderProps) {
       {mobileMenuOpen && (
         <div className="hidden lg:hidden border-t border-gray-200 bg-white">
           <nav className="flex flex-col px-4 py-4 space-y-3">
-            <Link href="/sciences/about" >
-              <a
+            <Link href="/sciences/about" 
                 className="text-gray-700 hover:text-green-600 py-2 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 About
-              </a>
+              
             </Link>
-            <Link href="/sciences/user" >
-              <a
+            <Link href="/sciences/user" 
                 className="text-gray-700 hover:text-green-600 py-2 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 User
-              </a>
+              
             </Link>
-            <Link href="/sciences/enabler" >
-              <a
+            <Link href="/sciences/enabler" 
                 className="text-gray-700 hover:text-green-600 py-2 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Enabler
-              </a>
+              
             </Link>
-            <Link href="/sciences/features" >
-              <a
+            <Link href="/sciences/features" 
                 className="text-gray-700 hover:text-green-600 py-2 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Features
-              </a>
+              
             </Link>
 
             {/* Mobile Stories dropdown */}
