@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { AMENITY_ICONS } from "@/components";
+import axios from "axios";
 import {
   ChevronLeft,
   ChevronRight,
@@ -149,6 +150,26 @@ interface Facility {
   timings: Timings;
 }
 
+// const originalFetch = global.fetch;
+// global.fetch = async (...args) => {
+//   try {
+//     return await originalFetch(...args);
+//   } catch (error) {
+//     if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+//       // THIS will print the exact URL that timed out!
+//       console.error(`🚨 FETCH TIMEOUT DETECTED FOR URL: ${args[0]}`); 
+//     }
+//     throw error;
+//   }
+// };
+
+
+const api = axios.create({
+  baseURL: "http://localhost:3001",
+  withCredentials: true, // This fixes the AuthContext /me dropping cookies!
+  timeout: 15000, // Safe 15-second timeout. It will throw if backend hangs.
+});
+
 export default function ViewDetailsClient({
   facilityId,
 }: {
@@ -210,6 +231,9 @@ export default function ViewDetailsClient({
   const [couponCode, setCouponCode] = useState("");
   const [isCouponLoading, setIsCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState("");
+  // Stores the backend-calculated sticker price for each button
+const [planButtonPrices, setPlanButtonPrices] = useState<Record<string, number>>({});
+const [isLoadingButtonPrices, setIsLoadingButtonPrices] = useState(false);
   const apiUrl = "http://localhost:3001";
 
   const loadRazorpayScript = () => {
@@ -259,12 +283,12 @@ export default function ViewDetailsClient({
             : basePriceCalc * 0.07;
         const gstOnServiceFee = serviceFee * 0.18;
         const gstAmount = 0; // Fallback GST amount
-        const finalPricebeforeGST = setPriceDetails({
-          basePrice: basePriceCalc, // Pure base price without fee
+        setPriceDetails({
+          basePrice: basePriceCalc,
           fixedFee: serviceFee,
-          gstAmount, // Match backend field name
+          gstAmount: 0,
           gstOnServiceFee: gstOnServiceFee,
-          finalPrice: basePriceCalc + serviceFee + gstOnServiceFee + gstAmount,
+          finalPrice: basePriceCalc + serviceFee + gstOnServiceFee,
           isExistingUser: isExisting === true,
           hasGST: false,
           bookingSeats,
@@ -275,11 +299,12 @@ export default function ViewDetailsClient({
 
     calculatePrices();
   }, [
-    selectedPlan,
-    unitCount,
-    facilityId,
-    bookingSeats,
-    isExisting,
+    selectedPlan?.name,       // ✅ Safe: string
+    selectedPlan?.price,      // ✅ Safe: number
+    unitCount,                // ✅ Safe: number
+    facilityId,               // ✅ Safe: string
+    bookingSeats,             // ✅ Safe: number
+    isExisting,               // ✅ Safe: boolean/null
     facility?.facilityType,
   ]);
   // console.log("testing total", priceDetails);
@@ -312,11 +337,12 @@ export default function ViewDetailsClient({
     const fetchFacility = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${apiUrl}/api/facilities/${facilityId}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch facility details");
-        }
-        const data = await response.json();
+        const response = await api.get(`/api/facilities/${facilityId}`);
+        // if (!response.ok) {
+        //   throw new Error("Failed to fetch facility details");
+        // }
+        // const data = await response.json();
+        const data = response.data;
 
         setFacility(data);
 
@@ -325,17 +351,18 @@ export default function ViewDetailsClient({
           const address = `${data.address}, ${data.city}, ${data.state}, ${data.pincode}, ${data.country}`;
 
           // Use the apiUrl variable here
-          const mapResponse = await fetch(
-            `${apiUrl}/api/maps?query=${encodeURIComponent(address)}`,
+          const mapResponse = await api.get(`/api/maps?query=${encodeURIComponent(address)}`,
           );
 
-          if (mapResponse.ok) {
-            const mapData = await mapResponse.json();
-            setMapUrl(mapData.embedUrl);
-          }
+          // if (mapResponse.ok) {
+          //   const mapData = await mapResponse.json();
+          //   setMapUrl(mapData.embedUrl);
+          // }
+          setMapUrl(mapResponse.data.embedUrl);
+
         }
-      } catch (error) {
-        console.error("Error fetching facility:", error);
+      } catch (error: any) {
+        console.error("Error fetching facility:", error.message);
         setError("Failed to load facility details");
       } finally {
         setLoading(false);
@@ -355,28 +382,28 @@ export default function ViewDetailsClient({
       try {
         // const token = sessionStorage.getItem("authUser");
 
-        const res = await fetch(`${apiUrl}/api/checkuser`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // Include cookies for authentication
-          // NOW THIS IS VALID: You send incubatorId, Backend grabs userId from token
-          body: JSON.stringify({
+        const res = await api.post(`/api/checkuser`, {
+          // method: "POST",
+          // headers: {
+          //   "Content-Type": "application/json",
+          // },
+          // credentials: "include", // Include cookies for authentication
+          // // NOW THIS IS VALID: You send incubatorId, Backend grabs userId from token
+          // body: JSON.stringify({
             incubatorId: facility.serviceProviderId,
-          }),
+          // }),
         });
 
-        const data = await res.json();
+        const data = res.data;
 
-        if (res.ok) {
+        // if (res.ok) {
           setIsExisting(data.exists);
-        } else {
-          console.error("Check user API error:", data.error);
-          setIsExisting(false);
-        }
-      } catch (err) {
-        console.error("Request failed:", err);
+        // } else {
+        //   console.error("Check user API error:", data.error);
+        //   setIsExisting(false);
+        // }
+     } catch (err: any) {
+        console.error("🚨 Axios Error checking user:", err.message);
         setIsExisting(false);
       } finally {
         setLoading(false);
@@ -402,16 +429,17 @@ export default function ViewDetailsClient({
 
       try {
         setIsProfileLoading(true);
-        const response = await fetch(`${apiUrl}/api/startup/profile`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        });
-        if (!response.ok) throw new Error("Failed to fetch profile");
+        const response = await api.get("/api/startup/profile");
+        //   method: "GET",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        //   credentials: "include",
+        // });
+        const data  = response.data;
+        // if (!response.ok) throw new Error("Failed to fetch profile");
 
-        const data = await response.json();
+        // const data = await response.json();
         setProfile(data);
 
         // Check if profile is complete
@@ -447,18 +475,21 @@ export default function ViewDetailsClient({
   }, [bookingPeriod]);
 
   // Sort rental plans in the specified order
-  const sortedRentalPlans = facility?.details?.rentalPlans
-    ? [...facility.details.rentalPlans].sort((a, b) => {
-        const order = [
-          "Hourly",
-          "One Day (24 Hours)",
-          "Weekly",
-          "Monthly",
-          "Annual",
-        ];
-        return order.indexOf(a.name) - order.indexOf(b.name);
-      })
-    : [];
+// ✅ Wrapped in useMemo to prevent infinite loops!
+  const sortedRentalPlans = useMemo(() => {
+    return facility?.details?.rentalPlans
+      ? [...facility.details.rentalPlans].sort((a, b) => {
+          const order = [
+            "Hourly",
+            "One Day (24 Hours)",
+            "Weekly",
+            "Monthly",
+            "Annual",
+          ];
+          return order.indexOf(a.name) - order.indexOf(b.name);
+        })
+      : [];
+  }, [facility?.details?.rentalPlans]); // Only recalculate if backend plans change
 
   // Set initial booking period if available
   useEffect(() => {
@@ -466,22 +497,56 @@ export default function ViewDetailsClient({
       setBookingPeriod(sortedRentalPlans[0].name);
     }
   }, [sortedRentalPlans]);
+useEffect(() => {
+    const fetchAllButtonPrices = async () => {
+      // Only run if we have plans and we know the user's status
+      if (!sortedRentalPlans.length || !facilityId || isExisting === null) return;
 
-  // ✅ HELPER: Calculate the Unit Price for Display
-  const getDisplayUnitPrice = (rawPrice: number) => {
-    let feePerUnit = 0;
+      setIsLoadingButtonPrices(true);
+      try {
+        const priceMap: Record<string, number> = {};
 
-    if (isExisting === true) {
-      // Existing User: Fixed Fee (e.g., 40) is added per unit
-      feePerUnit = getFixedServiceFee(facility?.facilityType || "");
-    } else {
-      // New User: 7% Fee is added per unit
-      feePerUnit = rawPrice * 0.07;
-    }
+        // ✅ Run sequentially so we don't crash the backend
+        for (const plan of sortedRentalPlans) {
+          const details = await fetchDynamicPrice({
+            facilityId,
+            rentalPlan: plan.name,
+            unitCount: 1, 
+            bookingSeats: 1,
+          });
+          
+          priceMap[plan.name] = details.finalPricebeforeGST;
+        }
 
-    // Returns: Base Rent + Applicable Fee, rounded to nearest whole number
-    return rawPrice + feePerUnit;
+        setPlanButtonPrices(priceMap);
+
+      } catch (error) {
+        console.error("Failed to fetch button prices from backend:", error);
+      } finally {
+        setIsLoadingButtonPrices(false);
+      }
+    };
+
+    fetchAllButtonPrices();
+  }, [sortedRentalPlans.length, facilityId, isExisting]); // ✅ Safe: Primitives
+
+  
+const getDisplayUnitPrice = (rawPrice: any) => {
+    // 1. Force the price to be a strict number. 
+    // This stops JS from accidentally doing "1000" + 70 = "100070"
+    const numericPrice = typeof rawPrice === 'string' ? parseFloat(rawPrice) : Number(rawPrice) || 0;
+
+    // 2. Normal Users / Guests (isExisting is false or null)
+    if (isExisting === false || isExisting === null) {
+      const estimatedFee = numericPrice * 0.07; // 7% fee for new users
+      return numericPrice + estimatedFee;
+    } 
+    
+    // 3. Existing Users (isExisting is true)
+    const fixedFee = getFixedServiceFee(facility?.facilityType || ""); // Fixed fee for existing
+    return numericPrice + fixedFee;
   };
+
 
   // Calculate end date based on selected date and booking period
   const calculateEndDate = (startDate: Date, period: string): Date => {
@@ -527,25 +592,24 @@ export default function ViewDetailsClient({
     // console.log("facilityId check", facilityId);
 
     try {
-      const res = await fetch(
-        `${apiUrl}/api/service-provider/${facilityId}/validate-coupon`,
+      const res = await api.post(`/api/service-provider/${facilityId}/validate-coupon`,
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+          // method: "POST",
+          // headers: { "Content-Type": "application/json" },
+          // body: JSON.stringify({
             couponCode: couponCode.toUpperCase(),
             bookingAmount: totalAmount,
-          }),
+          // }),
         },
       );
 
-      const data = await res.json();
+      // const data = await res.json();
 
-      if (data.success) {
-        setAppliedCoupon(data.data);
+      if (res.data.success) {
+        setAppliedCoupon(res.data.data);
         setCouponError("");
       } else {
-        setCouponError(data.message);
+        setCouponError(res.data.message);
         setAppliedCoupon(null);
       }
     } catch (error) {
@@ -871,23 +935,25 @@ export default function ViewDetailsClient({
         //   body: JSON.stringify(bookingDetails), // ✅ This is correct, bookingDetails already has coupon
         // });
 
-        const response = await fetch(`${apiUrl}/api/bookings`, {
-          method: "POST",
-          credentials: "include", // IMPORTANT (send JWT cookie)
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(bookingDetails),
-        });
+        const response = await api.post('/api/bookings',bookingDetails);
+          //  {
+          // method: "POST",
+          // credentials: "include", // IMPORTANT (send JWT cookie)
+          // headers: {
+          //   "Content-Type": "application/json",
+          // },
+          // body: JSON.stringify(bookingDetails),
+        // });
 
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          const text = await response.text();
-          console.error("Server Error (HTML):", text);
-          throw new Error("Server returned an error. Check console.");
-        }
+        // const contentType = response.headers.get("content-type");
+        // if (!contentType || !contentType.includes("application/json")) {
+        //   const text = await response.text();
+        //   console.error("Server Error (HTML):", text);
+        //   throw new Error("Server returned an error. Check console.");
+        // }
 
-        const result = await response.json();
+        // const result = await response.json();
+        const result = response.data;
 
         if (result.success) {
           const bookingDataForPayment = {
@@ -976,17 +1042,17 @@ export default function ViewDetailsClient({
         // );
 
         // Fetch facilities from the API using serviceProviderId
-        const response = await fetch(
-          `${apiUrl}/api/facilities/by-provider/${facility.serviceProviderId}`,
-        );
+        const response = await api.get(`/api/facilities/by-provider/${facility.serviceProviderId}`)
+      
 
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch related facilities: ${response.status}`,
-          );
-        }
+        // if (!response.data.success) {
+        //   throw new Error(
+        //     `Failed to fetch related facilities: ${response.status}`,
+        //   );
+        // }
 
-        const data = await response.json();
+        // const data = await response.json();
+        const data = response.data;
 
         // console.log(
         //   `Found ${data.length} related facilities, first facility:`,
@@ -1014,25 +1080,26 @@ export default function ViewDetailsClient({
           });
 
         setRelatedFacilities(filteredFacilities);
-      } catch (error) {
-        console.error("Error fetching related facilities:", error);
-        setRelatedFacilities([]); // Set empty array on error
+      } catch (error: any) {
+        console.error("🚨 Axios Error fetching related facilities:", error.message);
+        setRelatedFacilities([]);
       } finally {
         setLoadingRelatedFacilities(false);
       }
     };
 
-    if (facility) {
+if (facility?.serviceProviderId) {
       fetchRelatedFacilities();
     }
-  }, [facility, facilityId]);
+  }, [facility?.serviceProviderId, facilityId]);
 
   // Update the useEffect for initial plan selection
   useEffect(() => {
     if (sortedRentalPlans.length > 0 && !selectedPlan) {
+      setBookingPeriod(sortedRentalPlans[0].name);
       setSelectedPlan(sortedRentalPlans[0]);
     }
-  }, [sortedRentalPlans]);
+  }, [sortedRentalPlans.length]); // ✅ Safe: Primitive number
 
   // Set current day on component mount
   useEffect(() => {
@@ -1070,22 +1137,21 @@ export default function ViewDetailsClient({
         //   `/api/bookings/failed?facilityId=${facilityId}`,
         // );
 
-        const response = await fetch(
-          `${apiUrl}/api/bookings/failed?facilityId=${facilityId}`,
-          {
-            method: "GET",
-            credentials: "include", // IMPORTANT (send JWT cookie)
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        );
+        const response = await api.get(`/api/bookings/failed?facilityId=${facilityId}`)
+        //   {
+        //     method: "GET",
+        //     credentials: "include", // IMPORTANT (send JWT cookie)
+        //     headers: {
+        //       "Content-Type": "application/json",
+        //     },
+        //   },
+        // );
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.bookingId) {
-            setFailedBookingId(data.bookingId);
-          }
+        if (response.data.bookingId) {
+          // const data = await response.json();
+          // if (data.bookingId) {
+            setFailedBookingId(response.data.bookingId);
+          // }
         }
       } catch (error) {
         console.error("Error checking for failed payments:", error);
@@ -1118,7 +1184,7 @@ export default function ViewDetailsClient({
         // Match backend logic for existing vs new user fee
         const estimatedFee =
           isExisting === true
-            ? getFixedServiceFee(facility?.facilityType || "") // Backend: fixed fee for existing
+            ? getFixedServiceFee(facility?.facilityType || "") * unitCount * bookingSeats
             : rawRent * 0.07; // Backend: 7% for new users
         return rawRent + estimatedFee;
       })();
@@ -2621,9 +2687,7 @@ export default function ViewDetailsClient({
                         const isSelected = selectedPlan?.name === plan.name;
 
                         // Use the helper function
-                        const displayUnitPrice = getDisplayUnitPrice(
-                          plan.price,
-                        );
+                       const displayUnitPrice = planButtonPrices[plan.name] || plan.price;
 
                         return (
                           <button
@@ -2647,12 +2711,12 @@ export default function ViewDetailsClient({
                                   ? "Daily"
                                   : plan.name}
                               </span>
-                              {/* Optional: Add transparency for existing users */}
-                              {/* {isExisting === true && (
-          <span className="text-[10px] text-gray-400 font-normal">
-            (+ Fixed Service Fee at checkout)
-          </span>
-        )} */}
+                                                    {/* Optional: Add transparency for existing users */}
+                                                    {/* {isExisting === true && (
+                                <span className="text-[10px] text-gray-400 font-normal">
+                                  (+ Fixed Service Fee at checkout)
+                                </span>
+                              )} */}
                             </div>
 
                             <div className="text-right">

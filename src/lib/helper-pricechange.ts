@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export default async function fetchDynamicPrice({
   facilityId,
   rentalPlan,
@@ -9,23 +11,28 @@ export default async function fetchDynamicPrice({
   unitCount: number;
   bookingSeats: number;
 }) {
-  const apiUrl = "http://localhost:3001"
-  // const res = await fetch("/api/pricing-detail-page", {
-  const res = await fetch(`${apiUrl}/api/pricing/calculate-detail`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({
-      facilityId,
-      rentalPlan,
-      unitCount,
-      bookingSeats, // Include bookingSeats in the request
-    }),
-  });
+  const apiUrl = "http://localhost:3001";
+  try {
+    const res = await axios.post(
+      `${apiUrl}/api/pricing/calculate-detail`,
+      {
+        facilityId,
+        rentalPlan,
+        unitCount,
+        bookingSeats,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      }
+    );
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to fetch price");
-  return data.data;
+    const data = res.data;
+    return data.data;
+  } catch (err: any) {
+    const message = err?.response?.data?.error || err?.message || "Failed to fetch price";
+    throw new Error(message);
+  }
 }
