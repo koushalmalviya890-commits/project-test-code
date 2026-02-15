@@ -471,7 +471,7 @@ export default function ViewDetailsClient({
   const getDisplayUnitPrice = (rawPrice: number) => {
     let feePerUnit = 0;
 
-    if (isExisting === !true) {
+    if (isExisting === true) {
       // Existing User: Fixed Fee (e.g., 40) is added per unit
       feePerUnit = getFixedServiceFee(facility?.facilityType || "");
     } else {
@@ -482,6 +482,7 @@ export default function ViewDetailsClient({
     // Returns: Base Rent + Applicable Fee, rounded to nearest whole number
     return rawPrice + feePerUnit;
   };
+
   // Calculate end date based on selected date and booking period
   const calculateEndDate = (startDate: Date, period: string): Date => {
     const endDate = new Date(startDate);
@@ -826,7 +827,7 @@ export default function ViewDetailsClient({
         originalBaseAmount: selectedPlan.price * unitCount * bookingSeats,
         baseAmount: selectedPlan.price * unitCount * bookingSeats,
         perUnitPrice: selectedPlan.price,
-        serviceFee: !isExisting
+        serviceFee: isExisting
           ? calculatedFixedServiceFee * unitCount * bookingSeats
           : selectedPlan.price * unitCount * bookingSeats * 0.07,
         gstOnServiceFee: isExisting

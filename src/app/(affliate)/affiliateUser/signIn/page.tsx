@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+// import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -173,7 +173,7 @@ const apiUrl = "http://localhost:3001";
       //   throw new Error(signInResult.error);
       // }
 
-      router.push("/startup/dashboard");
+      router.push("/startup/bookings");
     } catch (error: any) {
      const msg = error.response?.data?.message || error.message || "Failed to set password";
       setEmailError("root", { message: msg });
