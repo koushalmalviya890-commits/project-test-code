@@ -167,7 +167,7 @@ interface Facility {
 const api = axios.create({
   baseURL: "http://localhost:3001",
   withCredentials: true, // This fixes the AuthContext /me dropping cookies!
-  timeout: 15000, // Safe 15-second timeout. It will throw if backend hangs.
+  timeout: 30000, // Safe 30-second timeout. It will throw if backend hangs.
 });
 
 export default function ViewDetailsClient({

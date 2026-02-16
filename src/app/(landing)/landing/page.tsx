@@ -64,31 +64,8 @@ import { NewsletterSignup } from "@/components/sections/newsletter-signup";
 // Import AMENITY_ICONS from components
 import { AMENITY_ICONS } from "@/components";
 
-// Dummy data for featured facilities
-const featuredFacilities = [
-  {
-    id: 1,
-    name: "Modern Co-working Space",
-    description:
-      "A vibrant workspace designed for productivity and collaboration.",
-    image: "/facilities/coworking-1.jpg",
-  },
-  {
-    id: 2,
-    name: "Bio Research Lab",
-    description:
-      "State-of-the-art laboratory facilities for biotechnology research.",
-    image: "/facilities/lab-1.jpg",
-  },
-  {
-    id: 3,
-    name: "Private Office Suite",
-    description: "Fully furnished private offices for teams of all sizes.",
-    image: "/facilities/office-1.jpg",
-  },
-];
 
-// Dummy data for reviews
+// data for reviews
 const reviews = [
   {
     id: 1,
@@ -129,38 +106,6 @@ const reviews = [
     rating: 4.5,
     text: "cumma is a game-changer for the startup ecosystem. At SRIIC, we see tremendous value in this platform, as it optimizes the utilization of incubation resources and fosters greater collaboration among entrepreneurs.",
     logo: "/reviews/anand-thirunavukarasou.jpeg",
-  },
-];
-
-// Dummy data for trusted brands
-const trustedBrands = [
-  {
-    name: "Weebsite Studio",
-    logo: "/brands/weebsite-studio.png",
-  },
-  {
-    name: "Creative Poster Designer",
-    logo: "/brands/creative-poster.png",
-  },
-  {
-    name: "Artifex",
-    logo: "/brands/artifex.png",
-  },
-  {
-    name: "Madrasi Buddha",
-    logo: "/brands/madrasi-buddha.png",
-  },
-  {
-    name: "Proud International",
-    logo: "/brands/proud-international.png",
-  },
-  {
-    name: "Man & Rani",
-    logo: "/brands/man-and-rani.png",
-  },
-  {
-    name: "Online Education Channel",
-    logo: "/brands/online-education.png",
   },
 ];
 
@@ -227,20 +172,20 @@ export default function Home() {
   // const { data: session } = useSession();
   const { user } = useAuth();
   // const [activeTab, setActiveTab] = useState("facility");
-  //   const [activeTab, setActiveTab] = useState<string[]>(["facility"])
-  //   const toggleTab = (value: string) => {
-  //   setActiveTab((prev) =>
-  //     prev.includes(value)
-  //       ? prev.filter((tab) => tab !== value)
-  //       : [...prev, value]
-  //   )
-  // }
+    const [activeTab, setActiveTab] = useState<string[]>(["facility"])
+    const toggleTab = (value: string) => {
+    setActiveTab((prev) =>
+      prev.includes(value)
+        ? prev.filter((tab) => tab !== value)
+        : [...prev, value]
+    )
+  }
 
-  const [activeTab, setActiveTab] = useState("facility");
+  // const [activeTab, setActiveTab] = useState("facility");
 
-  const toggleTab = (value: string) => {
-    setActiveTab(value);
-  };
+  // const toggleTab = (value: string) => {
+  //   setActiveTab(value);
+  // };
   const [currentSlide, setCurrentSlide] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -365,28 +310,28 @@ export default function Home() {
       : "/service-provider/dashboard";
   };
 
-  const getPropertyTypesByTab = (tab: string) => {
+const getPropertyTypesByTab = (tab: string) => {
     switch (tab) {
-      case "offices":
+      case "facility":
         return [
           "Individual Cabin",
           "Coworking space",
           "Meeting Room",
-          "Raw Space Office",
-        ];
-      case "labs":
-        return [
           "Bio Allied",
           "Manufacturing",
           "Prototype Labs",
+          "Raw Space Office",
           "Raw Space Lab",
+          "Studio"
         ];
-      case "software":
-        return ["Software", "SaaS Allied"];
-      case "all":
-        return ["All"]; // Return 'All' for no filtering
+      case "enabler":
+        return ["Software", "SaaS Allied"]; // Add more if needed
+      case "sector":
+        return []; // Handle sector-specific logic if needed
+      case "location":
+        return []; // Handle location-specific logic if needed
       default:
-        return ["All"];
+        return [];
     }
   };
 
@@ -409,46 +354,54 @@ export default function Home() {
 
   //   router.push(`/SearchPage?${searchParams.toString()}`);
   // };
-  // const handleSearch = () => {
-  //   setIsSearching(true);
-  //   const searchParams = new URLSearchParams();
-
-  //   if (searchTerm) {
-  //     searchParams.set("search", searchTerm);
-  //   }
-
-  //   searchParams.set("searchScope", activeTab.join(",")); // <- Send the tab names as a comma-separated string to backend
-  //   searchParams.set("sortBy", "newest");
-
-  //   const propertyTypes = activeTab.flatMap((tab) => getPropertyTypesByTab(tab));
-  //   if (propertyTypes.length > 0) {
-  //     searchParams.set("propertyTypes", propertyTypes.join(","));
-  //   }
-
-  //   router.push(`/SearchPage?${searchParams.toString()}`);
-  // };
-
   const handleSearch = () => {
     setIsSearching(true);
+    const searchParams = new URLSearchParams();
 
-    const params = new URLSearchParams();
-
-    if (searchTerm.trim()) {
-      params.set("search", searchTerm.trim());
+  if (searchTerm.trim()) {
+      searchParams.set("search", searchTerm.trim());
     }
 
-    // Optional: pass scope if you want (SearchPage can ignore it)
-    params.set("searchScope", activeTab);
+    if (activeTab.length > 0) {
+      searchParams.set("searchScope", activeTab.join(","));
+    }
 
-    params.set("sortBy", "newest");
-    params.set("page", "1");
+    searchParams.set("sortBy", "newest");
+    searchParams.set("page", "1");
 
-    router.push(`/SearchPage?${params.toString()}`);
+    const propertyTypes = activeTab.flatMap((tab) => getPropertyTypesByTab(tab));
+    if (propertyTypes.length > 0) {
+      searchParams.set("propertyTypes", propertyTypes.join(","));
+    }
+
+    router.push(`/SearchPage?${searchParams.toString()}`);
 
     setTimeout(() => {
       setIsSearching(false);
     }, 500);
   };
+
+  // const handleSearch = () => {
+  //   setIsSearching(true);
+
+  //   const params = new URLSearchParams();
+
+  //   if (searchTerm.trim()) {
+  //     params.set("search", searchTerm.trim());
+  //   }
+
+  //   // Optional: pass scope if you want (SearchPage can ignore it)
+  //   params.set("searchScope", activeTab);
+
+  //   params.set("sortBy", "newest");
+  //   params.set("page", "1");
+
+  //   router.push(`/SearchPage?${params.toString()}`);
+
+  //   setTimeout(() => {
+  //     setIsSearching(false);
+  //   }, 500);
+  // };
 
   const fetchFeaturedFacilities = async () => {
     try {
@@ -652,69 +605,68 @@ export default function Home() {
           </div>
 
           {/* Search Section */}
+       {/* Search Section */}
           <div className="max-w-4xl mx-auto px-4 mb-16 mt-16">
-            <Tabs
-              value={activeTab}
-              className="w-full relative"
-              onValueChange={toggleTab}
-            >
+            <div className="w-full relative">
               <span className="text-[12px] text-gray-500 absolute left-11 top-1">
                 Search by
               </span>
 
-              <TabsList className="flex gap-6 overflow-x-auto overflow-y-hidden flex-start rounded-b-none bg-white h-[50px] py-2 w-full sm:w-1/2 border-b-2">
-                <TabsTrigger
-                  value="facility"
-                  className={`mt-4 text-sm rounded-none bg-transparent ml-32 sm:ml-0 font-semibold ${
-                    activeTab === "facility"
-                      ? "data-[state=active]:text-[#23BB4E] border-b-2 border-green-600"
-                      : "text-gray-800"
+              {/* REPLACED Radix Tabs with multi-select buttons */}
+              <div className="flex gap-6 overflow-x-auto overflow-y-hidden flex-start bg-white h-[50px] py-2 w-full sm:w-1/2 border-b-2">
+                <button
+                  onClick={() => toggleTab("facility")}
+                  className={`mt-4 text-sm bg-transparent ml-32 sm:ml-0 font-semibold transition-colors pb-2 ${
+                    activeTab.includes("facility")
+                      ? "text-[#23BB4E] border-b-2 border-green-600"
+                      : "text-gray-800 border-b-2 border-transparent"
                   }`}
                 >
                   Facility
-                </TabsTrigger>
+                </button>
 
-                <TabsTrigger
-                  value="enabler"
-                  className={`mt-4 text-sm font-semibold rounded-none bg-transparent ${
-                    activeTab === "enabler"
-                      ? "data-[state=active]:text-[#23BB4E] border-b-2 border-green-600"
-                      : "text-gray-800"
+                <button
+                  onClick={() => toggleTab("enabler")}
+                  className={`mt-4 text-sm font-semibold bg-transparent transition-colors pb-2 ${
+                    activeTab.includes("enabler")
+                      ? "text-[#23BB4E] border-b-2 border-green-600"
+                      : "text-gray-800 border-b-2 border-transparent"
                   }`}
                 >
                   Enabler
-                </TabsTrigger>
+                </button>
 
-                <TabsTrigger
-                  value="sector"
-                  className={`mt-4 text-sm font-semibold rounded-none bg-transparent ${
-                    activeTab === "sector"
-                      ? "data-[state=active]:text-[#23BB4E] border-b-2 border-green-600"
-                      : "text-gray-800"
+                <button
+                  onClick={() => toggleTab("sector")}
+                  className={`mt-4 text-sm font-semibold bg-transparent transition-colors pb-2 ${
+                    activeTab.includes("sector")
+                      ? "text-[#23BB4E] border-b-2 border-green-600"
+                      : "text-gray-800 border-b-2 border-transparent"
                   }`}
                 >
                   Sector
-                </TabsTrigger>
+                </button>
 
-                <TabsTrigger
-                  value="location"
-                  className={`mt-4 text-sm rounded-none bg-transparent font-semibold ${
-                    activeTab === "location"
-                      ? "data-[state=active]:text-[#23BB4E] border-b-2 border-green-600"
-                      : "text-gray-800"
+                <button
+                  onClick={() => toggleTab("location")}
+                  className={`mt-4 text-sm font-semibold bg-transparent transition-colors pb-2 ${
+                    activeTab.includes("location")
+                      ? "text-[#23BB4E] border-b-2 border-green-600"
+                      : "text-gray-800 border-b-2 border-transparent"
                   }`}
                 >
                   Location
-                </TabsTrigger>
-              </TabsList>
+                </button>
+              </div>
 
               <div className="relative">
                 <div className="w-auto bg-white rounded-lg rounded-tl-none rounded-tr-none sm:rounded-tr-lg py-6 px-4">
                   <div className="flex flex-col sm:flex-row gap-2 sm:gap-1">
+                    
+                    {/* Search Input */}
                     <div className="flex-1">
                       <div className="w-full relative flex items-center bg-[#F7F7F7] rounded-xl h-16 px-4">
                         <Search className="h-5 w-5 text-gray-400 mr-2" />
-
                         <input
                           type="text"
                           placeholder="Enter a Keyword, Facilities, City, or ZIP code for Quick Search"
@@ -730,6 +682,7 @@ export default function Home() {
                       </div>
                     </div>
 
+                    {/* Search Button */}
                     <div className="flex gap-2 sm:gap-3 items-center h-16">
                       <Button
                         size="lg"
@@ -753,8 +706,10 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            </Tabs>
+            </div>
           </div>
+
+
 
           {/* Trusted By Section */}
           {/* <div className="mt-auto">
