@@ -227,14 +227,20 @@ export default function Home() {
   // const { data: session } = useSession();
   const { user } = useAuth();
   // const [activeTab, setActiveTab] = useState("facility");
-    const [activeTab, setActiveTab] = useState<string[]>(["facility"])
-    const toggleTab = (value: string) => {
-    setActiveTab((prev) =>
-      prev.includes(value)
-        ? prev.filter((tab) => tab !== value)
-        : [...prev, value]
-    )
-  }
+  //   const [activeTab, setActiveTab] = useState<string[]>(["facility"])
+  //   const toggleTab = (value: string) => {
+  //   setActiveTab((prev) =>
+  //     prev.includes(value)
+  //       ? prev.filter((tab) => tab !== value)
+  //       : [...prev, value]
+  //   )
+  // }
+
+  const [activeTab, setActiveTab] = useState("facility");
+
+  const toggleTab = (value: string) => {
+    setActiveTab(value);
+  };
   const [currentSlide, setCurrentSlide] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -254,7 +260,7 @@ export default function Home() {
   // Track hovered card index
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
 
-const apiUrl = "http://localhost:3001"
+  const apiUrl = "http://localhost:3001";
 
   // Calculate max slides based on window width
   useEffect(() => {
@@ -272,7 +278,7 @@ const apiUrl = "http://localhost:3001"
                 : 1
             : 1;
         setMaxFeaturedSlides(
-          Math.max(0, Math.ceil(featuredFacilities.length / itemsPerView) - 1)
+          Math.max(0, Math.ceil(featuredFacilities.length / itemsPerView) - 1),
         );
       }
 
@@ -286,7 +292,7 @@ const apiUrl = "http://localhost:3001"
               : 1
           : 1;
       setMaxFeatureSlides(
-        Math.max(0, Math.ceil(facilityTypes.length / itemsPerView) - 1)
+        Math.max(0, Math.ceil(facilityTypes.length / itemsPerView) - 1),
       );
     };
 
@@ -403,24 +409,46 @@ const apiUrl = "http://localhost:3001"
 
   //   router.push(`/SearchPage?${searchParams.toString()}`);
   // };
-const handleSearch = () => {
-  setIsSearching(true);
-  const searchParams = new URLSearchParams();
+  // const handleSearch = () => {
+  //   setIsSearching(true);
+  //   const searchParams = new URLSearchParams();
 
-  if (searchTerm) {
-    searchParams.set("search", searchTerm);
-  }
+  //   if (searchTerm) {
+  //     searchParams.set("search", searchTerm);
+  //   }
 
-  searchParams.set("searchScope", activeTab.join(",")); // <- Send the tab names as a comma-separated string to backend
-  searchParams.set("sortBy", "newest");
+  //   searchParams.set("searchScope", activeTab.join(",")); // <- Send the tab names as a comma-separated string to backend
+  //   searchParams.set("sortBy", "newest");
 
-  const propertyTypes = activeTab.flatMap((tab) => getPropertyTypesByTab(tab));
-  if (propertyTypes.length > 0) {
-    searchParams.set("propertyTypes", propertyTypes.join(","));
-  }
+  //   const propertyTypes = activeTab.flatMap((tab) => getPropertyTypesByTab(tab));
+  //   if (propertyTypes.length > 0) {
+  //     searchParams.set("propertyTypes", propertyTypes.join(","));
+  //   }
 
-  router.push(`/SearchPage?${searchParams.toString()}`);
-};
+  //   router.push(`/SearchPage?${searchParams.toString()}`);
+  // };
+
+  const handleSearch = () => {
+    setIsSearching(true);
+
+    const params = new URLSearchParams();
+
+    if (searchTerm.trim()) {
+      params.set("search", searchTerm.trim());
+    }
+
+    // Optional: pass scope if you want (SearchPage can ignore it)
+    params.set("searchScope", activeTab);
+
+    params.set("sortBy", "newest");
+    params.set("page", "1");
+
+    router.push(`/SearchPage?${params.toString()}`);
+
+    setTimeout(() => {
+      setIsSearching(false);
+    }, 500);
+  };
 
   const fetchFeaturedFacilities = async () => {
     try {
@@ -431,13 +459,13 @@ const handleSearch = () => {
           new URLSearchParams({
             isFeatured: "true",
             limit: "8",
-          })
+          }),
       );
       if (!response.ok) throw new Error("Failed to fetch featured facilities");
       const data = await response.json();
 
       // Log the data structure to debug
-     // console.log("Featured facilities data:", data.facilities[0]);
+      // console.log("Featured facilities data:", data.facilities[0]);
 
       // Ensure the data structure is correct for the FacilityCard component
       const formattedFacilities = data.facilities.map((facility: any) => {
@@ -478,25 +506,25 @@ const handleSearch = () => {
 
   const nextFeaturedSlide = () => {
     setFeaturedSlide((current) =>
-      current === maxFeaturedSlides ? 0 : current + 1
+      current === maxFeaturedSlides ? 0 : current + 1,
     );
   };
 
   const prevFeaturedSlide = () => {
     setFeaturedSlide((current) =>
-      current === 0 ? maxFeaturedSlides : current - 1
+      current === 0 ? maxFeaturedSlides : current - 1,
     );
   };
 
   const nextFeatureSlide = () => {
     setFeatureSlide((current) =>
-      current === maxFeatureSlides ? 0 : current + 1
+      current === maxFeatureSlides ? 0 : current + 1,
     );
   };
 
   const prevFeatureSlide = () => {
     setFeatureSlide((current) =>
-      current === 0 ? maxFeatureSlides : current - 1
+      current === 0 ? maxFeatureSlides : current - 1,
     );
   };
 
@@ -535,13 +563,13 @@ const handleSearch = () => {
 
   const nextTestimonialSlide = () => {
     setTestimonialSlide((current) =>
-      current === maxTestimonialSlides ? 0 : current + 1
+      current === maxTestimonialSlides ? 0 : current + 1,
     );
   };
 
   const prevTestimonialSlide = () => {
     setTestimonialSlide((current) =>
-      current === 0 ? maxTestimonialSlides : current - 1
+      current === 0 ? maxTestimonialSlides : current - 1,
     );
   };
 
@@ -625,24 +653,20 @@ const handleSearch = () => {
 
           {/* Search Section */}
           <div className="max-w-4xl mx-auto px-4 mb-16 mt-16">
-           
             <Tabs
-              defaultValue="all"
+              value={activeTab}
               className="w-full relative"
               onValueChange={toggleTab}
             >
-             
-             
-              <span className="text-[12px] text-gray-500  absolute left-11 top-1">Search by</span>
-  
-    {/* <span className="text-sm text-gray-500">Search by</span>/ */}
+              <span className="text-[12px] text-gray-500 absolute left-11 top-1">
+                Search by
+              </span>
 
-              <TabsList className="flex gap-6  overflow-x-auto overflow-y-hidden flex-start rounded-b-none bg-white h-[50px] py-2  w-full sm:w-1/2  border-b-2">
-               
+              <TabsList className="flex gap-6 overflow-x-auto overflow-y-hidden flex-start rounded-b-none bg-white h-[50px] py-2 w-full sm:w-1/2 border-b-2">
                 <TabsTrigger
                   value="facility"
                   className={`mt-4 text-sm rounded-none bg-transparent ml-32 sm:ml-0 font-semibold ${
-                    activeTab.includes("facility")
+                    activeTab === "facility"
                       ? "data-[state=active]:text-[#23BB4E] border-b-2 border-green-600"
                       : "text-gray-800"
                   }`}
@@ -652,8 +676,8 @@ const handleSearch = () => {
 
                 <TabsTrigger
                   value="enabler"
-                  className={` mt-4 text-sm font-semibold rounded-none    bg-transparent  ${
-                     activeTab.includes("enabler")
+                  className={`mt-4 text-sm font-semibold rounded-none bg-transparent ${
+                    activeTab === "enabler"
                       ? "data-[state=active]:text-[#23BB4E] border-b-2 border-green-600"
                       : "text-gray-800"
                   }`}
@@ -663,8 +687,8 @@ const handleSearch = () => {
 
                 <TabsTrigger
                   value="sector"
-                  className={` mt-4 text-sm font-semibold rounded-none   bg-transparent ${
-                     activeTab.includes("sector")
+                  className={`mt-4 text-sm font-semibold rounded-none bg-transparent ${
+                    activeTab === "sector"
                       ? "data-[state=active]:text-[#23BB4E] border-b-2 border-green-600"
                       : "text-gray-800"
                   }`}
@@ -674,8 +698,8 @@ const handleSearch = () => {
 
                 <TabsTrigger
                   value="location"
-                  className={`mt-4 text-sm  rounded-none bg-transparent  font-semibold ${
-                     activeTab.includes("location")
+                  className={`mt-4 text-sm rounded-none bg-transparent font-semibold ${
+                    activeTab === "location"
                       ? "data-[state=active]:text-[#23BB4E] border-b-2 border-green-600"
                       : "text-gray-800"
                   }`}
@@ -685,19 +709,16 @@ const handleSearch = () => {
               </TabsList>
 
               <div className="relative">
-                 
                 <div className="w-auto bg-white rounded-lg rounded-tl-none rounded-tr-none sm:rounded-tr-lg py-6 px-4">
-                 
                   <div className="flex flex-col sm:flex-row gap-2 sm:gap-1">
-                    {/* Updated input style here */}
-                   
                     <div className="flex-1">
                       <div className="w-full relative flex items-center bg-[#F7F7F7] rounded-xl h-16 px-4">
                         <Search className="h-5 w-5 text-gray-400 mr-2" />
+
                         <input
                           type="text"
                           placeholder="Enter a Keyword, Facilities, City, or ZIP code for Quick Search"
-                          className="w-full bg-transparent focus:outline-none  text-sm md:text-lg placeholder:text-gray-500 h-10"
+                          className="w-full bg-transparent focus:outline-none text-sm md:text-lg placeholder:text-gray-500 h-10"
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           onKeyDown={(e) => {
@@ -709,7 +730,6 @@ const handleSearch = () => {
                       </div>
                     </div>
 
-                    {/* Button section unchanged */}
                     <div className="flex gap-2 sm:gap-3 items-center h-16">
                       <Button
                         size="lg"
@@ -732,10 +752,8 @@ const handleSearch = () => {
                     </div>
                   </div>
                 </div>
-              
-            </div>
+              </div>
             </Tabs>
-
           </div>
 
           {/* Trusted By Section */}
@@ -797,7 +815,7 @@ const handleSearch = () => {
                   >
                     {category}
                   </button>
-                )
+                ),
               )}
             </div>
           </div>
