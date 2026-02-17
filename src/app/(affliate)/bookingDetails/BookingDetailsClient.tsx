@@ -78,11 +78,13 @@ export default function BookingDetailsClient() {
     redirect: string;
   } | null>(null);
 
-  // useEffect(() => {
-  //   if (!authLoading && !user) {
-  //     router.push("/sign-in");
-  //   }
-  // }, [user, authLoading, router]);
+  const baseUrl = process.env.NEXT_PUBLIC_BASEURL;
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/sign-in");
+    }
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -150,13 +152,16 @@ export default function BookingDetailsClient() {
 
   const fetchFacilityDetails = async (facilityId: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/facilities/${facilityId}`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASEURL}/api/facilities/${facilityId}`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       if (!response.ok) throw new Error("Failed to fetch facility details");
 
@@ -365,27 +370,29 @@ export default function BookingDetailsClient() {
   const verifyPayment = async (response: any, bookingId: string) => {
     setProcessingPayment(true); // triggers back/refresh block via useEffect
 
-  try {
-    // const verifyResponse = await fetch("/api/affiliate/user/payments/razorpay/verify", {
-    const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/affiliate/user/payments/verify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        razorpay_payment_id: response.razorpay_payment_id,
-        razorpay_order_id: response.razorpay_order_id,
-        razorpay_signature: response.razorpay_signature,
-        bookingId,
-      }),
-    }); 
-
-    const data = await verifyResponse.json();
-
-    if (verifyResponse.ok && data.success) {
-      router.push(
-        `/booking/success?bookingId=${bookingId}&paymentId=${response.razorpay_payment_id}`
+    try {
+      // const verifyResponse = await fetch("/api/affiliate/user/payments/razorpay/verify", {
+      const verifyResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_BASEURL}/api/affiliate/user/payments/verify`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature,
+            bookingId,
+          }),
+        },
       );
 
-     } else {
+      const data = await verifyResponse.json();
+
+      if (verifyResponse.ok && data.success) {
+        router.push(
+          `/booking/success?bookingId=${bookingId}&paymentId=${response.razorpay_payment_id}`,
+        );
+      } else {
         setError("Payment verification failed");
         setProcessingPayment(false);
       }

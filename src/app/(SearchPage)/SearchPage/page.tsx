@@ -182,157 +182,115 @@ function SearchPageClient() {
 
   // URL Parameters
 
-  const [isClient, setIsClient] = useState(false)
+const [isClient, setIsClient] = useState(false);
 
-// URL Parameters - Initialize with defaults
-const [urlParams, setUrlParams] = useState({
-  typeFromUrl: '',
-  searchFromUrl: '',
-  searchScopeFromUrl: '',
-  propertyTypesFromUrl: [] as string[],
-  categoryFromUrl: '',
-  sortByFromUrl: '',
-  listingStatusFromUrl: 'All',
-  minPriceFromUrl: 0,
-  maxPriceFromUrl: 100000,
-  showFiltersFromUrl: false,
-  pageFromUrl: 1
-})
+  // ✅ 1. Initialize filters DIRECTLY from the URL (No urlParams middleman!)
+  const [filters, setFilters] = useState({
+    searchTerm: searchParams.get('search') || '',
+    searchScope: searchParams.get('searchScope') || '', // Track searchScope!
+    propertyTypes: searchParams.get('propertyTypes')
+      ? searchParams.get('propertyTypes')!.split(',').filter(Boolean)
+      : searchParams.get('category') && categoryToPropertyTypeMapping[searchParams.get('category')!]
+        ? [searchParams.get('category')!]
+        : searchParams.get('type')
+          ? [searchParams.get('type')!]
+          : ['All'],
+    category: searchParams.get('category') || '',
+    listingStatus: searchParams.get('listingStatus') || 'All',
+    priceRange: [
+      parseInt(searchParams.get('minPrice') || '0'),
+      parseInt(searchParams.get('maxPrice') || '100000')
+    ] as [number, number],
+    sortBy: searchParams.get('sortBy') || 'newest'
+  });
 
-// Initialize URL params on client side only
-useEffect(() => {
-  setIsClient(true)
-  setUrlParams({
-    typeFromUrl: searchParams.get('type') || '',
-    searchFromUrl: searchParams.get('search') || '',
-    searchScopeFromUrl: searchParams.get('searchScope') || '',
-    propertyTypesFromUrl: searchParams.get('propertyTypes')?.split(',').filter(Boolean) || [],
-    categoryFromUrl: searchParams.get('category') || '',
-    sortByFromUrl: searchParams.get('sortBy') || '',
-    listingStatusFromUrl: searchParams.get('listingStatus') || 'All',
-    minPriceFromUrl: parseInt(searchParams.get('minPrice') || '0'),
-    maxPriceFromUrl: parseInt(searchParams.get('maxPrice') || '100000'),
-    showFiltersFromUrl: searchParams.get('showFilters') === 'true',
-    pageFromUrl: parseInt(searchParams.get('page') || '1')
-  })
-}, [searchParams])
-
-  // State
-  const [facilities, setFacilities] = useState<Facility[]>([])
   const [pagination, setPagination] = useState<PaginationData>({
-    currentPage: urlParams.pageFromUrl,
+    currentPage: parseInt(searchParams.get('page') || '1'),
     totalPages: 1,
     totalItems: 0,
     itemsPerPage: ITEMS_PER_PAGE
-  })
-  
-  // Main filter state - derived from URL parameters
-  const [filters, setFilters] = useState({
-    searchTerm: urlParams.searchFromUrl || '',
-    propertyTypes: urlParams.propertyTypesFromUrl.length > 0 
-      ? urlParams.propertyTypesFromUrl.includes('All') 
-        ? ['All'] 
-        : urlParams.propertyTypesFromUrl
-      : urlParams.categoryFromUrl && categoryToPropertyTypeMapping[urlParams.categoryFromUrl]
-        ? [urlParams.categoryFromUrl] // Use the category as a filter if it exists in our mapping
-        : urlParams.typeFromUrl 
-          ? [urlParams.typeFromUrl] 
-          : ['All'],
-    category: urlParams.categoryFromUrl || '',
-    listingStatus: urlParams.listingStatusFromUrl,
-    priceRange: [urlParams.minPriceFromUrl, urlParams.maxPriceFromUrl] as [number, number],
-    sortBy: urlParams.sortByFromUrl || 'newest'
-  })
+  });
 
-  // Filter dialog state - synchronized with main filters when dialog opens
-  const [dialogFilters, setDialogFilters] = useState({...filters})
-  
-  const [isFilterOpen, setIsFilterOpen] = useState(urlParams.showFiltersFromUrl)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedFacility, setSelectedFacility] = useState<BookingFacility | null>(null)
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
-  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null)
+  // State
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [dialogFilters, setDialogFilters] = useState({...filters});
+  const [isFilterOpen, setIsFilterOpen] = useState(searchParams.get('showFilters') === 'true');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedFacility, setSelectedFacility] = useState<BookingFacility | null>(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
-  const apiUrl = "http://localhost:3001"
+  const apiUrl = "http://localhost:3001";
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Synchronize dialog filters with main filters when dialog opens
   useEffect(() => {
     if (isFilterOpen) {
-      setDialogFilters({...filters})
+      setDialogFilters({...filters});
     }
-  }, [isFilterOpen])
+  }, [isFilterOpen, filters]);
 
-  // URL Management - Updates URL with new filters and triggers a page reload
+  // URL Management
   const updateUrlWithFilters = (newFilters: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString())
-    
-    // Update or remove parameters based on the new filters
+    const params = new URLSearchParams(searchParams.toString());
     Object.entries(newFilters).forEach(([key, value]) => {
       if (value !== null) {
-        params.set(key, value)
+        params.set(key, value);
       } else {
-        params.delete(key)
+        params.delete(key);
       }
-    })
+    });
     
-    // Ensure category is preserved in the URL if it exists
     if (filters.category && !newFilters.hasOwnProperty('category')) {
-      params.set('category', filters.category)
+      params.set('category', filters.category);
     }
     
-    // Use router.push instead of router.replace to ensure a full page update
-    router.push(`${pathname}?${params.toString()}`)
-  }
+    router.push(`${pathname}?${params.toString()}`);
+  };
 
-  // Data Fetching - Fetches facilities based on current filters
+  // ✅ 2. Data Fetching uses the directly initialized filters instantly
   const fetchFacilities = async () => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       
-      // Get all property types if multiple types are selected
-      let propertyTypesForQuery = [...filters.propertyTypes]
+      let propertyTypesForQuery = [...filters.propertyTypes];
       
-      // If 'All' is selected, don't send any property types
       if (propertyTypesForQuery.includes('All')) {
-        propertyTypesForQuery = []
+        propertyTypesForQuery = [];
       }
       
-      // Special handling for media categories (Video, Podcasts, Edit)
-      // These should all map to the Studio property type
       if (filters.category && ['Video', 'Podcasts', 'Edit'].includes(filters.category)) {
         if (!propertyTypesForQuery.includes('Studio')) {
-          propertyTypesForQuery.push('Studio')
+          propertyTypesForQuery.push('Studio');
         }
       }
       
-      // If a single category is selected (not 'All'), expand it to include all mapped property types
       if (propertyTypesForQuery.length === 1 && propertyTypesForQuery[0] !== 'All') {
-        const category = propertyTypesForQuery[0]
-        // Check if this is a category name that needs to be expanded
+        const category = propertyTypesForQuery[0];
         const mappedTypes = Object.entries(categoryToPropertyTypeMapping)
-          .find(([key]) => key === category)?.[1]
+          .find(([key]) => key === category)?.[1];
         
         if (mappedTypes) {
-          propertyTypesForQuery = mappedTypes
+          propertyTypesForQuery = mappedTypes as string[];
         }
       }
       
-      // If we have a category filter, also check if it maps to property types
       if (filters.category && !propertyTypesForQuery.includes(filters.category)) {
-        const categoryMappedTypes = categoryToPropertyTypeMapping[filters.category]
+        const categoryMappedTypes = categoryToPropertyTypeMapping[filters.category];
         if (categoryMappedTypes) {
-          // If we're already using specific property types, merge them with the category types
           if (propertyTypesForQuery.length > 0) {
-            propertyTypesForQuery = [...new Set([...propertyTypesForQuery, ...categoryMappedTypes])]
+            propertyTypesForQuery = [...new Set([...propertyTypesForQuery, ...categoryMappedTypes])];
           } else {
-            propertyTypesForQuery = categoryMappedTypes
+            propertyTypesForQuery = categoryMappedTypes as string[];
           }
         }
       }
       
-      // Build the query parameters
       const queryParams = new URLSearchParams({
         page: pagination.currentPage.toString(),
         search: filters.searchTerm,
@@ -341,129 +299,94 @@ useEffect(() => {
         maxPrice: filters.priceRange[1].toString(),
         sortBy: filters.sortBy,
         limit: ITEMS_PER_PAGE.toString()
-      })
+      });
 
-      // Only add propertyTypes if we have specific types to filter by
       if (propertyTypesForQuery.length > 0) {
-        queryParams.set('propertyTypes', propertyTypesForQuery.join(','))
+        queryParams.set('propertyTypes', propertyTypesForQuery.join(','));
       }
 
-      if (urlParams.searchScopeFromUrl) {
-        queryParams.set('searchScope', urlParams.searchScopeFromUrl)
+      // 🎯 Pass searchScope securely to backend
+      if (filters.searchScope) {
+        queryParams.set('searchScope', filters.searchScope);
       }
       
-      // Add category to query if it exists
       if (filters.category) {
-        queryParams.set('category', filters.category)
+        queryParams.set('category', filters.category);
       }
 
-      // Make the API request
-      // const response = await fetch('/api/facilities/search?' + queryParams)
-      
-        const response = await fetch(`${apiUrl}/api/facilities/search?${queryParams.toString()}`, {
-       // 👇 CHANGE 2: Add credentials if your search relies on user-specific data (optional for public search, but good practice)
-       credentials: 'include', 
-       headers: {
-         'Content-Type': 'application/json'
-       }
-    })
+      const response = await fetch(`${apiUrl}/api/facilities/search?${queryParams.toString()}`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch facilities')
-      }
+      if (!response.ok) throw new Error('Failed to fetch facilities');
 
-      const data: SearchResponse = await response.json()
+      const data: SearchResponse = await response.json();
       
-      setFacilities(data.facilities)
+      setFacilities(data.facilities);
       setPagination({
         ...pagination,
         totalPages: data.pagination.totalPages,
         totalItems: data.pagination.totalItems,
         itemsPerPage: ITEMS_PER_PAGE
-      })
+      });
     } catch (error) {
-      console.error('Error fetching facilities:', error)
-      setError('Failed to load facilities. Please try again later.')
-      setFacilities([])
+      console.error('Error fetching facilities:', error);
+      setError('Failed to load facilities. Please try again later.');
+      setFacilities([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  // Effects - Fetch facilities when filters or pagination change
   useEffect(() => {
-    fetchFacilities()
-  }, [filters, pagination.currentPage])
+    fetchFacilities();
+  }, [filters, pagination.currentPage]);
 
-  // Synchronize filters with URL parameters
+  // ✅ 3. Safely sync Filters if the URL changes while already on the SearchPage
   useEffect(() => {
-    const newFilters = {...filters}
-    let hasChanges = false
-    
-    // Update search term
-    if (urlParams.searchFromUrl !== null && urlParams.searchFromUrl !== filters.searchTerm) {
-      newFilters.searchTerm = urlParams.searchFromUrl
-      hasChanges = true
-    }
-    
-    // Update property types
-    const propertyTypesParam = searchParams.get('propertyTypes')
-    if (propertyTypesParam) {
-      const propertyTypesFromParam = propertyTypesParam.split(',').filter(Boolean)
-      if (JSON.stringify(propertyTypesFromParam) !== JSON.stringify(filters.propertyTypes)) {
-        newFilters.propertyTypes = propertyTypesFromParam.includes('All') 
-          ? ['All'] 
-          : propertyTypesFromParam
-        hasChanges = true
+    setFilters(prev => {
+      const newFilters = { ...prev };
+      let hasChanges = false;
+      
+      const urlSearch = searchParams.get('search') || '';
+      if (urlSearch !== prev.searchTerm) { newFilters.searchTerm = urlSearch; hasChanges = true; }
+
+      const urlScope = searchParams.get('searchScope') || '';
+      if (urlScope !== prev.searchScope) { newFilters.searchScope = urlScope; hasChanges = true; }
+      
+      const propertyTypesParam = searchParams.get('propertyTypes');
+      if (propertyTypesParam) {
+        const types = propertyTypesParam.split(',').filter(Boolean);
+        const formattedTypes = types.includes('All') ? ['All'] : types;
+        if (JSON.stringify(formattedTypes) !== JSON.stringify(prev.propertyTypes)) {
+          newFilters.propertyTypes = formattedTypes;
+          hasChanges = true;
+        }
       }
-    } else if (!searchParams.get('type') && !searchParams.get('category') && filters.propertyTypes.length > 0 && filters.propertyTypes[0] !== 'All') {
-      // Only reset to 'All' if there is no 'type' or 'category' parameter present in the URL
-      newFilters.propertyTypes = ['All']
-      hasChanges = true
-    }
-    
-    // Update listing status
-    const listingStatusParam = searchParams.get('listingStatus')
-    if (listingStatusParam && listingStatusParam !== filters.listingStatus) {
-      newFilters.listingStatus = listingStatusParam
-      hasChanges = true
-    }
-    
-    // Update price range
-    const minPriceParam = searchParams.get('minPrice')
-    const maxPriceParam = searchParams.get('maxPrice')
-    if (minPriceParam && parseInt(minPriceParam) !== filters.priceRange[0]) {
-      newFilters.priceRange[0] = parseInt(minPriceParam)
-      hasChanges = true
-    }
-    if (maxPriceParam && parseInt(maxPriceParam) !== filters.priceRange[1]) {
-      newFilters.priceRange[1] = parseInt(maxPriceParam)
-      hasChanges = true
-    }
-    
-    // Update sort by
-    const sortByParam = searchParams.get('sortBy')
-    if (sortByParam && sortByParam !== filters.sortBy) {
-      newFilters.sortBy = sortByParam
-      hasChanges = true
-    }
-    
-    // Update category
-    if (urlParams.categoryFromUrl !== filters.category) {
-      newFilters.category = urlParams.categoryFromUrl || ''
-      hasChanges = true
-    }
-    
-    // Apply changes if any
-    if (hasChanges) {
-      setFilters(newFilters)
-    }
-    
-    // Update filter dialog state
-    const showFilters = searchParams.get('showFilters') === 'true'
-    setIsFilterOpen(showFilters)
-    
-  }, [searchParams])
+      
+      const listingStatusParam = searchParams.get('listingStatus') || 'All';
+      if (listingStatusParam !== prev.listingStatus) { newFilters.listingStatus = listingStatusParam; hasChanges = true; }
+      
+      const minPriceParam = parseInt(searchParams.get('minPrice') || '0');
+      if (minPriceParam !== prev.priceRange[0]) { newFilters.priceRange[0] = minPriceParam; hasChanges = true; }
+      
+      const maxPriceParam = parseInt(searchParams.get('maxPrice') || '100000');
+      if (maxPriceParam !== prev.priceRange[1]) { newFilters.priceRange[1] = maxPriceParam; hasChanges = true; }
+      
+      const sortByParam = searchParams.get('sortBy') || 'newest';
+      if (sortByParam !== prev.sortBy) { newFilters.sortBy = sortByParam; hasChanges = true; }
+      
+      const categoryParam = searchParams.get('category') || '';
+      if (categoryParam !== prev.category) { newFilters.category = categoryParam; hasChanges = true; }
+      
+      return hasChanges ? newFilters : prev;
+    });
+
+    setIsFilterOpen(searchParams.get('showFilters') === 'true');
+  }, [searchParams]);
+
+  // Handlers - Property type change handler for main page
 
   // Handlers - Property type change handler for main page
   const handlePropertyTypeChange = (type: string, checked: boolean) => {
@@ -781,15 +704,20 @@ useEffect(() => {
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto">
         <div className="container mx-auto px-4 py-8">
-          <div className="mb-6">
+       <div className="mb-6">
             <h1 className="text-2xl font-bold mb-2">
-              {urlParams.typeFromUrl ? `${urlParams.typeFromUrl} Facilities` : 'All Facilities'}
+              {searchParams.get('type') || filters.category 
+                ? `${searchParams.get('type') || filters.category} Facilities` 
+                : 'All Facilities'}
             </h1>
-            {urlParams.searchFromUrl && (
+            
+            {/* ✅ Swapped urlParams.searchFromUrl to filters.searchTerm */}
+            {filters.searchTerm && (
               <p className="text-gray-600">
-                Search results for: <span className="font-medium">{urlParams.searchFromUrl}</span>
+                Search results for: <span className="font-medium">{filters.searchTerm}</span>
               </p>
             )}
+            
             {!loading && facilities.length > 0 && (
               <p className="text-gray-600 mt-2">
                 Showing {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1}-
