@@ -8,7 +8,7 @@ export async function checkAndSendReminders() {
   const today = dayjs().startOf('day');
   const reminderWindow = today.add(3, 'days'); // Send reminders 3 days before endDate
 
- // console.log(`🔍 Checking bookings expiring between ${today.format()} and ${reminderWindow.format()}`);
+  // console.log(`🔍 Checking bookings expiring between ${today.format()} and ${reminderWindow.format()}`);
 
   const bookings = await db.collection('bookings').find({
     paymentStatus: 'completed',
@@ -35,7 +35,7 @@ export async function checkAndSendReminders() {
     });
 
     if (alreadyNotified) {
-     // console.log(`ℹ️ Already notified booking ${booking._id}`);
+      // console.log(`ℹ️ Already notified booking ${booking._id}`);
       continue;
     }
 
@@ -48,7 +48,7 @@ export async function checkAndSendReminders() {
         endDate: booking.endDate,
       });
 
-     // console.log(`✅ Sent reminder to ${startup.startupMailId} for booking ${booking._id}`);
+      // console.log(`✅ Sent reminder to ${startup.startupMailId} for booking ${booking._id}`);
 
       await db.collection('notifications').insertOne({
         userId: booking.startupId.toString(),
@@ -71,5 +71,5 @@ export async function checkAndSendReminders() {
     }
   }
 
- // console.log('🎉 Reminder check completed.');
+  // console.log('🎉 Reminder check completed.');
 }
