@@ -68,7 +68,8 @@ const facilityTypeNames: Record<string, string> = {
 
 // Interface for booking data
 interface Booking {
-  _id: string;
+  // _id?: string;
+  bookingId?: string;
   facilityId: string;
   facilityName: string;
   facilityType: string;
@@ -756,10 +757,10 @@ export default function CalendarPage() {
                       } else {
                         titleText += ` - ${startDateInfo.formattedTime} to ${endDateInfo.formattedTime}`;
                       }
-
+                     
                       return (
                         <div
-                          key={`${booking._id}-day-${dayIndex}`}
+                          key={`${booking.bookingId?.toString()}-day-${dayIndex}`}
                           className={cardClass}
                           style={{
                             top: `${dayIndex * 100 + 2}px`, // Slight adjustment to center better
@@ -842,7 +843,7 @@ export default function CalendarPage() {
 
                       return (
                         <div
-                          key={booking._id}
+                          key={booking.bookingId}
                           className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 hover:shadow-md transition-shadow"
                           style={{ borderLeft: `4px solid ${color}` }}
                         >
