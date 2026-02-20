@@ -341,6 +341,31 @@ useEffect(() => {
       // Create Razorpay instance and open checkout
       try {
         const razorpay = new (window as any).Razorpay(options);
+
+
+        
+        razorpay.on('payment.failed', async function (response: any) {
+        console.error("Razorpay Payment Failed:", response.error);
+        
+        try {
+          await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/facility-bookings/payments/mark-failed`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              bookingId: orderData.bookingId, // Or whatever variable holds your booking ID here
+              errorDetails: response.error,
+            }),
+          });
+
+          window.location.reload();
+          
+        } catch (err) {
+          console.error("Could not notify backend of failure", err);
+        }
+      });
+      
+
         razorpay.open();
       } catch (initError) {
         console.error("Error initializing Razorpay:", initError);

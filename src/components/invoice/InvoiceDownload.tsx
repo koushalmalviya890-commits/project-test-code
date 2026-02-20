@@ -17,13 +17,10 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
 
   //const base_url = "http://localhost:3001";
 
-  useEffect(() => {
-    // Poll the booking endpoint for a short period so the invoice appears
-    // as soon as the background generator writes it. This avoids forcing
-    // the user to manually refresh the success page.
+useEffect(() => {
     let mounted = true;
     let attempts = 0;
-    const maxAttempts = 12; // ~36s total (12 * 3s)
+    const maxAttempts = 6; // Reduced to 6 attempts (~18 seconds) for better UX
     const intervalMs = 3000;
     let timer: ReturnType<typeof setInterval> | null = null;
 
@@ -32,28 +29,37 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
         if (!mounted) return;
         setLoading(true);
         
-        //const response = await fetch(`/api/bookings/${bookingId}`);
         console.log(`Checking for invoice availability (attempt ${attempts + 1}/${maxAttempts})...`);
 
+        // ✅ 1. Add timestamp cache-buster to the URL
+        const timestamp = new Date().getTime();
+
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BASEURL}/api/bookings/${bookingId}`,
+          `${process.env.NEXT_PUBLIC_BASEURL}/api/bookings/${bookingId}?t=${timestamp}`,
           {
             method: "GET",
-            credentials: "include", // IMPORTANT (send JWT cookie)
+            credentials: "include",
+            // ✅ 2. Tell the browser strictly NOT to cache this polling request
+            cache: "no-store", 
             headers: {
               "Content-Type": "application/json",
+              // "Cache-Control": "no-cache, no-store, must-revalidate",
+              // "Pragma": "no-cache",
             },
           }
         );
+        
         if (!response.ok) {
           throw new Error('Failed to fetch booking details');
         }
 
         const data = await response.json();
-       // console.log('Booking data for invoice:', data);
 
-        if (data.invoiceUrl) {
-          setInvoiceUrl(data.invoiceUrl);
+        // ✅ 3. THE FIX: Access the invoiceUrl inside the 'booking' object!
+        const fetchedInvoiceUrl = data.booking?.invoiceUrl || data.invoiceUrl;
+
+        if (fetchedInvoiceUrl) {
+          setInvoiceUrl(fetchedInvoiceUrl);
           setError(null);
           setLoading(false);
           if (timer) {
@@ -65,7 +71,7 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
 
         attempts += 1;
         if (attempts >= maxAttempts) {
-          setError('Invoice is not yet available for this booking');
+          setError('Invoice generation is taking longer than expected. It will be available in your dashboard shortly.');
           setLoading(false);
           if (timer) {
             clearInterval(timer);
@@ -85,7 +91,6 @@ export default function InvoiceDownload({ bookingId }: InvoiceDownloadProps) {
     }
 
     if (bookingId) {
-      // Run first check immediately, then poll
       check();
       timer = setInterval(check, intervalMs);
     }
