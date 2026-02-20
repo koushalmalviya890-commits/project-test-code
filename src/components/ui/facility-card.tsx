@@ -235,7 +235,7 @@ export function FacilityCard({
     averageRating: number;
   } | null>(null);
 
-//const base_url = "http://localhost:3001";
+const base_url = "http://localhost:3001";
 
   React.useEffect(() => {
     const fetchFinalPrice = async () => {
@@ -247,7 +247,7 @@ export function FacilityCard({
 
       try {
         
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/pricing/calculate-detail`, {
+      const res = await fetch(`${base_url}/api/pricing/calculate-detail`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -281,7 +281,7 @@ export function FacilityCard({
   React.useEffect(() => {
     const fetchReviewStats = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/reviews?facilityId=${facility._id}`);
+        const res = await fetch(`${base_url}/api/reviews?facilityId=${facility._id}`);
         const data = await res.json();
 
       if (res.ok) {
