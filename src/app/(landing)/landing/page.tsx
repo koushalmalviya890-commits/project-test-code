@@ -60,7 +60,7 @@ import {
 } from "@/components/ui/facility-card";
 import { ExploreEnablers } from "@/components/sections/explore-enablers";
 import { NewsletterSignup } from "@/components/sections/newsletter-signup";
-
+import { getPropertyTypesForCategory, categoryToPropertyTypeMapping } from "@/lib/category-mappings";
 // Import AMENITY_ICONS from components
 import { AMENITY_ICONS } from "@/components";
 
@@ -354,14 +354,31 @@ const getPropertyTypesByTab = (tab: string) => {
 
   //   router.push(`/SearchPage?${searchParams.toString()}`);
   // };
-  const handleSearch = () => {
+const handleSearch = () => {
     setIsSearching(true);
     const searchParams = new URLSearchParams();
 
-  if (searchTerm.trim()) {
+    if (searchTerm.trim()) {
       searchParams.set("search", searchTerm.trim());
+
+      // 🔥 SMART CATEGORY MATCHING using your mapping file!
+      const searchLower = searchTerm.toLowerCase().trim();
+      
+      // Look through all the keys in your mapping file (e.g., "Labs", "Video", etc.)
+      const matchedCategoryName = Object.keys(categoryToPropertyTypeMapping).find(
+        (category) =>
+          category.toLowerCase().includes(searchLower) ||
+          searchLower.includes(category.toLowerCase())
+      );
+
+      // If they searched a keyword like "lab", attach the mapped property types
+      if (matchedCategoryName) {
+        const propertyTypes = getPropertyTypesForCategory(matchedCategoryName);
+        searchParams.set("propertyTypes", propertyTypes.join(","));
+      }
     }
 
+    // Attach the selected tabs (e.g., 'facility', 'enabler')
     if (activeTab.length > 0) {
       searchParams.set("searchScope", activeTab.join(","));
     }
@@ -369,18 +386,12 @@ const getPropertyTypesByTab = (tab: string) => {
     searchParams.set("sortBy", "newest");
     searchParams.set("page", "1");
 
-    const propertyTypes = activeTab.flatMap((tab) => getPropertyTypesByTab(tab));
-    if (propertyTypes.length > 0) {
-      searchParams.set("propertyTypes", propertyTypes.join(","));
-    }
-
     router.push(`/SearchPage?${searchParams.toString()}`);
 
     setTimeout(() => {
       setIsSearching(false);
     }, 500);
   };
-
   // const handleSearch = () => {
   //   setIsSearching(true);
 
@@ -605,7 +616,7 @@ const getPropertyTypesByTab = (tab: string) => {
           </div>
 
           {/* Search Section */}
-       {/* Search Section */}
+       
           <div className="max-w-4xl mx-auto px-4 mb-16 mt-16">
             <div className="w-full relative">
               <span className="text-[12px] text-gray-800 absolute left-6 top-1">
