@@ -102,11 +102,12 @@ export default function PaymentFailedBanner({ bookingId }: PaymentFailedBannerPr
       setRetrying(true)
       
       // Call API to create a new payment order for retry
-      const response = await fetch('/api/payments/razorpay/retry', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/facility-bookings/payments/create-retry-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // ✅ CRITICAL: Send cookies to backend
         body: JSON.stringify({
           bookingId,
         }),
@@ -134,13 +135,38 @@ export default function PaymentFailedBanner({ bookingId }: PaymentFailedBannerPr
         description: `Retry booking for ${paymentDetails?.facilityName}`,
         order_id: orderData.orderId,
         image: `${window.location.origin}/logo.png`,
-        handler: function(response: any) {
-          window.location.href = `/booking/success?bookingId=${orderData.bookingId}&paymentId=${response.razorpay_payment_id}`
+       handler: async function(response: any) {
+          try {
+            const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_BASEURL}/api/facility-bookings/payments/verify-signature`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                bookingId: orderData.bookingId,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyData.success || verifyData.isValid) {
+              toast.success("Payment verified successfully!");
+              window.location.href = `/booking/success?bookingId=${orderData.bookingId}`;
+            } else {
+              throw new Error(verifyData.message || "Verification failed");
+            }
+          } catch (verifyError) {
+            console.error("Verification error:", verifyError);
+            toast.error("Payment verification failed. Please check your dashboard.");
+            setRetrying(false);
+          }
         },
-        prefill: {
-          name: '', // Will be filled by user
-          email: '', // Will be filled by user
-          contact: '', // Will be filled by user
+       prefill: {
+          name: '', 
+          email: '', 
+          contact: '', 
         },
         notes: {
           bookingId: orderData.bookingId,

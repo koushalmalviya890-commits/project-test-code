@@ -25,11 +25,11 @@ export default function FailedPaymentsSection() {
   const [failedPayments, setFailedPayments] = useState<FailedPayment[]>([])
   const [loading, setLoading] = useState(true)
   const [retryingId, setRetryingId] = useState<string | null>(null)
-
+const api = "http://localhost:3001"
   useEffect(() => {
     const fetchFailedPayments = async () => {
       try {
-        const response = await fetch('/api/dashboard/failed-payments')
+        const response = await fetch(`${api}/api/dashboard/failed-payments`)
         if (!response.ok) throw new Error('Failed to fetch failed payments')
         
         const data = await response.json()
@@ -62,11 +62,12 @@ export default function FailedPaymentsSection() {
       setRetryingId(bookingId)
       
       // Create a retry order
-      const response = await fetch('/api/payments/razorpay/retry', {
-        method: 'POST',
+      const response = await fetch(`${api}/api/facility-bookings/payments/create-retry-order`, {
+       method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // ✅ CRITICAL: Required so backend knows WHO is making the request
         body: JSON.stringify({ bookingId }),
       })
       
@@ -92,9 +93,38 @@ export default function FailedPaymentsSection() {
         description: `Retry booking for ${facilityName}`,
         order_id: orderData.orderId,
         image: `${window.location.origin}/logo.png`,
-        handler: function(response: any) {
-          window.location.href = `/booking/success?bookingId=${orderData.bookingId}&paymentId=${response.razorpay_payment_id}`
+        handler: async function(response: any) {
+          try {
+            const verifyRes = await fetch(`${api}/api/facility-bookings/payments/verify-signature`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                bookingId: orderData.bookingId,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyData.success) {
+              toast.success("Payment verified successfully!");
+              // Note: Adjust this URL if your actual success page route is different!
+              window.location.href = `/booking/success?bookingId=${orderData.bookingId}`;
+            } else {
+              throw new Error(verifyData.message || "Verification failed");
+            }
+          } catch (verifyError) {
+            console.error("Verification error:", verifyError);
+            toast.error("Payment verification failed. Please check your dashboard.");
+            setRetryingId(null);
+          }
         },
+        // handler: function(response: any) {
+        //   window.location.href = `/booking/success?bookingId=${orderData.bookingId}&paymentId=${response.razorpay_payment_id}`
+        // },
         modal: {
           ondismiss: function() {
             setRetryingId(null)

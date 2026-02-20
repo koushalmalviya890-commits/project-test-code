@@ -608,15 +608,15 @@ const getPropertyTypesByTab = (tab: string) => {
        {/* Search Section */}
           <div className="max-w-4xl mx-auto px-4 mb-16 mt-16">
             <div className="w-full relative">
-              <span className="text-[12px] text-gray-500 absolute left-11 top-1">
+              <span className="text-[12px] text-gray-800 absolute left-6 top-1">
                 Search by
               </span>
 
               {/* REPLACED Radix Tabs with multi-select buttons */}
-              <div className="flex gap-6 overflow-x-auto overflow-y-hidden flex-start bg-white h-[50px] py-2 w-full sm:w-1/2 border-b-2">
+              <div className="flex gap-6 left-16 overflow-x-auto overflow-y-hidden flex-start bg-white h-[50px] py-2 w-full sm:w-1/2 border-b-2">
                 <button
                   onClick={() => toggleTab("facility")}
-                  className={`mt-4 text-sm bg-transparent ml-32 sm:ml-0 font-semibold transition-colors pb-2 ${
+                  className={`mt-4 text-sm bg-transparent ml-6 sm:ml-6 font-semibold transition-colors pb-5 ${
                     activeTab.includes("facility")
                       ? "text-[#23BB4E] border-b-2 border-green-600"
                       : "text-gray-800 border-b-2 border-transparent"
@@ -627,7 +627,7 @@ const getPropertyTypesByTab = (tab: string) => {
 
                 <button
                   onClick={() => toggleTab("enabler")}
-                  className={`mt-4 text-sm font-semibold bg-transparent transition-colors pb-2 ${
+                  className={`mt-4 text-sm font-semibold bg-transparent transition-colors pb-5 ${
                     activeTab.includes("enabler")
                       ? "text-[#23BB4E] border-b-2 border-green-600"
                       : "text-gray-800 border-b-2 border-transparent"
@@ -638,7 +638,7 @@ const getPropertyTypesByTab = (tab: string) => {
 
                 <button
                   onClick={() => toggleTab("sector")}
-                  className={`mt-4 text-sm font-semibold bg-transparent transition-colors pb-2 ${
+                  className={`mt-4 text-sm font-semibold bg-transparent transition-colors pb-5 ${
                     activeTab.includes("sector")
                       ? "text-[#23BB4E] border-b-2 border-green-600"
                       : "text-gray-800 border-b-2 border-transparent"
@@ -649,7 +649,7 @@ const getPropertyTypesByTab = (tab: string) => {
 
                 <button
                   onClick={() => toggleTab("location")}
-                  className={`mt-4 text-sm font-semibold bg-transparent transition-colors pb-2 ${
+                  className={`mt-4 text-sm font-semibold bg-transparent transition-colors pb-5 ${
                     activeTab.includes("location")
                       ? "text-[#23BB4E] border-b-2 border-green-600"
                       : "text-gray-800 border-b-2 border-transparent"

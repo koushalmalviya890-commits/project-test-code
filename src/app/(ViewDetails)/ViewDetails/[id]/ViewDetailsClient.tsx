@@ -2128,76 +2128,54 @@ if (facility?.serviceProviderId) {
                         Select Rental Plan:
                       </h4>
                       <div className="space-y-3">
-                        {facility.details.rentalPlans?.map(
-                          (plan: any, index: number) => (
-                            <div
-                              key={index}
-                              onClick={() => setSelectedPlan(plan)}
-                              className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                                selectedPlan?.name === plan.name
-                                  ? "border-primary bg-primary/5"
-                                  : "border-gray-200 hover:border-primary/50"
-                              }`}
-                            >
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <h5 className="font-medium text-gray-900">
-                                    {plan.name}
-                                  </h5>
-                                  <p className="text-sm text-gray-500">
-                                    {plan.rentalPlan}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <div className="font-semibold text-gray-900">
-                                    ₹{basePrice.toLocaleString()}
-                                  </div>
-                                  {plan.discount && (
-                                    <span className="text-xs text-green-600">
-                                      {plan.discount}% off
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
+                        {sortedRentalPlans.map((plan) => {
+                        const isSelected = selectedPlan?.name === plan.name;
 
-                              {/* Quantity Selector - Only show for selected plan */}
-                              {selectedPlan?.name === plan.name && (
-                                <div className="mt-3 pt-3 border-t">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-700">
-                                      {plan.name}
-                                    </span>
-                                    <div className="flex items-center space-x-2">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          if (unitCount > 1)
-                                            setUnitCount(unitCount - 1);
-                                        }}
-                                        className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 hover:bg-gray-100"
-                                        disabled={unitCount <= 1}
-                                      >
-                                        <span className="text-lg">-</span>
-                                      </button>
-                                      <span className="w-10 text-center">
-                                        {unitCount}
-                                      </span>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setUnitCount(unitCount + 1);
-                                        }}
-                                        className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 hover:bg-gray-100"
-                                      >
-                                        <span className="text-lg">+</span>
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
+                        // Use the helper function
+                       const displayUnitPrice = planButtonPrices[plan.name] || plan.price;
+
+                        return (
+                          <button
+                            key={plan.name}
+                            onClick={() => {
+                              setSelectedPlan(plan);
+                              setSelectedDate(null);
+                              setSelectedTime("");
+                              setUnitCount(1);
+                              setBookingSeats(1);
+                            }}
+                            className={`w-full flex items-center justify-between p-2 sm:p-3 mt-2 sm:mt-3 rounded-lg border transition-all text-sm sm:text-base ${
+                              isSelected
+                                ? "border-primary bg-primary/5 text-primary"
+                                : "border-gray-200 hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="flex flex-col items-start">
+                              <span className="font-medium">
+                                {plan.name === "One Day (24 Hours)"
+                                  ? "Daily"
+                                  : plan.name}
+                              </span>
+                                                    {/* Optional: Add transparency for existing users */}
+                                                    {/* {isExisting === true && (
+                                <span className="text-[10px] text-gray-400 font-normal">
+                                  (+ Fixed Service Fee at checkout)
+                                </span>
+                              )} */}
                             </div>
-                          ),
-                        )}
+
+                            <div className="text-right">
+                              <span className="font-semibold block">
+                                ₹
+                                {displayUnitPrice.toLocaleString("en-IN", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
                       </div>
 
                       {!facility.details.rentalPlans?.length && (
@@ -2224,7 +2202,7 @@ if (facility?.serviceProviderId) {
                           {/* <span>₹{(selectedPlan?.price * unitCount)?.toFixed(2) || "0.00"}</span> */}
                         </div>
 
-                        {gstAmount > 0 && (
+                        {displayTotalGst > 0 && (
                           <div className="flex justify-between text-sm sm:text-base">
                             <span>GST (18%)</span>
                             <span>₹{displayTotalGst?.toFixed(2)}</span>
