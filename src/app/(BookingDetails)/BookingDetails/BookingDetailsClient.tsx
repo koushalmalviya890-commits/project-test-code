@@ -475,7 +475,7 @@ setError(data.message || "Payment verification failed");
 
   const { facility } = bookingDetails;
 
-  const TotalBasePrice = bookingDetails.baseAmount + bookingDetails.serviceFee;
+  const TotalBasePrice = bookingDetails.baseAmount;
 
   const TotalGst = (bookingDetails.hasGST === true)
     ? bookingDetails.gstAmount 

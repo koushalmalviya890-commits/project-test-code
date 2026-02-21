@@ -725,8 +725,14 @@ const getDisplayUnitPrice = (rawPrice: any) => {
     switch (facility.facilityType) {
       case "coworking-spaces":
         return facility.details.availableSeats || 1;
+      case "individual-cabin":
+        return facility.details.availableCabins || 1;
       case "meeting-rooms":
-        return facility.details.seatingCapacity || 1;
+        return (
+          facility.details.totalRooms ||
+          facility.details.roomDetails?.length ||
+          1
+        );
       case "training-rooms":
         return facility.details.totalTrainingRoomSeaters || 1;
       default:
@@ -734,267 +740,6 @@ const getDisplayUnitPrice = (rawPrice: any) => {
     }
   };
 
-  const handleBookingSubmit = async () => {
-    // Check if user is signed in
-    if (!user) {
-      toast.error("Please sign in to book this facility", {
-        duration: 3000,
-        icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-      });
-      return;
-    }
-
-    // Check if user is a service provider
-    if (user?.userType === "Service Provider") {
-      toast.error(
-        "Facility Partners cannot make bookings. Please use a startup account to book facilities.",
-        {
-          duration: 5000,
-          icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-        },
-      );
-      return;
-    }
-
-    // Check if profile is complete before allowing to book
-    if (!isStartupProfileComplete(profile)) {
-      setShowIncompleteProfileModal(true);
-      return;
-    }
-    // console.log("Facility Type:", facility?.facilityType);
-    // console.log("Available Cabins:", facility?.details?.availableCabins);
-    // console.log("Available Seats:", facility?.details?.availableSeats);
-    // Check facility availability
-    // Check facility availability based on facility type
-    if (
-      (facility?.facilityType === "individual-cabin" &&
-        (facility.details.availableCabins ?? 0) <= 0) ||
-      (facility?.facilityType === "coworking-spaces" &&
-        (facility.details.availableSeats ?? 0) <= 0) ||
-      (facility?.facilityType === "meeting-rooms" &&
-        ((facility.details.totalRooms ?? 0) <= 0 ||
-          (facility.details.seatingCapacity ?? 0) <= 0 ||
-          (facility.details.totalTrainingRoomSeaters ?? 0) <= 0))
-    ) {
-      toast.error("This facility is currently not available for booking", {
-        duration: 3000,
-        icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-      });
-      return;
-    }
-
-    // Check if all required fields are filled
-    if (!selectedDate || !selectedTime || !contactNumber || !selectedPlan) {
-      toast.error("Please fill in all required fields", {
-        duration: 3000,
-        icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-      });
-      return;
-    }
-
-    try {
-      setProcessingPayment(true);
-
-      // Format date and time for API
-      const startDateTime = new Date(selectedDate);
-      const [hours, minutes] =
-        selectedTime.split(" ")[0].split(":").length === 2
-          ? selectedTime.split(" ")[0].split(":")
-          : [selectedTime.split(" ")[0], "00"];
-
-      const isPM = selectedTime.includes("PM");
-      startDateTime.setHours(
-        isPM
-          ? parseInt(hours) === 12
-            ? 12
-            : parseInt(hours) + 12
-          : parseInt(hours) === 12
-            ? 0
-            : parseInt(hours),
-        parseInt(minutes) || 0,
-        0, // Set seconds to 0
-        0, // Set milliseconds to 0
-      );
-
-      // Calculate end date based on rental plan
-      const endDateTime = new Date(startDateTime.getTime()); // Clone the start date to preserve the time
-
-      // Calculate the end date while properly preserving the time component
-      switch (selectedPlan.name) {
-        case "Annual":
-          // For annual plans, set to the same time but years ahead
-          endDateTime.setFullYear(endDateTime.getFullYear() + unitCount);
-          break;
-        case "Monthly":
-          // For monthly plans, set to the same time but months ahead
-          endDateTime.setMonth(endDateTime.getMonth() + unitCount);
-          break;
-        case "Weekly":
-          // For weekly plans, set to the same time but 7*unitCount days ahead
-          endDateTime.setDate(endDateTime.getDate() + 7 * unitCount);
-          break;
-        case "One Day (24 Hours)":
-          // For daily plans, set to the same time but unitCount days ahead
-          endDateTime.setDate(endDateTime.getDate() + unitCount);
-          break;
-        case "Hourly":
-          // For hourly plans, set to unitCount hours ahead
-          endDateTime.setHours(endDateTime.getHours() + unitCount);
-          break;
-      }
-      // Calculate fixed service fee safely
-      const calculatedFixedServiceFee =
-        priceDetails?.fixedFee ||
-        getFixedServiceFee(facility?.facilityType || "");
-
-      // Prepare booking details for confirmation page
-      const bookingDetails = {
-        // Facility Information
-        //  userId: session?.user?.id,
-        facilityId: facilityId,
-        // facility: facility,
-
-        // Booking Duration Details
-        // duration: {
-        rentalPlan: selectedPlan.name,
-        unitCount: unitCount,
-        unitLabel:
-          selectedPlan.name === "Annual"
-            ? `year${unitCount > 1 ? "s" : ""}`
-            : selectedPlan.name === "Monthly"
-              ? `month${unitCount > 1 ? "s" : ""}`
-              : selectedPlan.name === "Weekly"
-                ? `week${unitCount > 1 ? "s" : ""}`
-                : selectedPlan.name === "One Day (24 Hours)"
-                  ? `day${unitCount > 1 ? "s" : ""}`
-                  : `hour${unitCount > 1 ? "s" : ""}`,
-
-        // Seating Details
-        // seating: {
-        bookingSeats: bookingSeats,
-        // type: facility?.details?.bookingPlanType || 'seat',
-        label: bookingUnitLabel,
-        // },
-
-        // Timing Details
-        // timing: {
-        startDate: startDateTime.toISOString(),
-        endDate: endDateTime.toISOString(),
-        // },
-
-        // Contact Information
-        contactNumber: contactNumber,
-        hasGST: priceDetails?.hasGST,
-        // Pricing Details
-        // Pricing Details
-        // pricing:{
-        originalBaseAmount: selectedPlan.price * unitCount * bookingSeats,
-        baseAmount: selectedPlan.price * unitCount * bookingSeats,
-        perUnitPrice: selectedPlan.price,
-        serviceFee: isExisting
-          ? calculatedFixedServiceFee * unitCount * bookingSeats
-          : selectedPlan.price * unitCount * bookingSeats * 0.07,
-        gstOnServiceFee: isExisting
-          ? calculatedFixedServiceFee * unitCount * bookingSeats * 0.18
-          : selectedPlan.price * unitCount * bookingSeats * 0.07 * 0.18,
-        gstAmount:
-          priceDetails?.gstAmount && priceDetails.gstAmount > 0
-            ? priceDetails.gstAmount
-            : currentBaseRent * 0.18,
-        totalBeforeDiscount:
-          selectedPlan.price * unitCount * bookingSeats + // Base
-          (priceDetails?.fixedFee ??
-            (isExisting
-              ? calculatedFixedServiceFee * unitCount * bookingSeats
-              : selectedPlan.price * unitCount * bookingSeats * 0.07)) + // Fee
-          (priceDetails?.gstOnServiceFee ??
-            (isExisting
-              ? calculatedFixedServiceFee * unitCount * bookingSeats * 0.18
-              : selectedPlan.price * unitCount * bookingSeats * 0.07 * 0.18)) + // GST on Fee
-          (priceDetails?.gstAmount ?? 0), // GST on Base
-        discount: appliedCoupon ? appliedCoupon.discountAmount : 0,
-        amount: getFinalAmount(),
-        // }
-        // Coupon Details
-        couponApplied: appliedCoupon
-          ? {
-              couponCode: appliedCoupon.couponCode,
-              discount: appliedCoupon.discount,
-              discountAmount: appliedCoupon.discountAmount,
-              couponId: appliedCoupon.couponId,
-            }
-          : null,
-      };
-
-      // console.log(bookingDetails)
-
-      try {
-        // const response = await fetch("/api/bookings", {
-        //   method: "POST",
-        //   headers: { "Content-Type": "application/json" },
-        //   body: JSON.stringify(bookingDetails), // ✅ This is correct, bookingDetails already has coupon
-        // });
-
-        const response = await api.post('/api/bookings',bookingDetails);
-          //  {
-          // method: "POST",
-          // credentials: "include", // IMPORTANT (send JWT cookie)
-          // headers: {
-          //   "Content-Type": "application/json",
-          // },
-          // body: JSON.stringify(bookingDetails),
-        // });
-
-        // const contentType = response.headers.get("content-type");
-        // if (!contentType || !contentType.includes("application/json")) {
-        //   const text = await response.text();
-        //   console.error("Server Error (HTML):", text);
-        //   throw new Error("Server returned an error. Check console.");
-        // }
-
-        // const result = await response.json();
-        const result = response.data;
-
-        if (result.success) {
-          const bookingDataForPayment = {
-            ...bookingDetails,
-            bookingId: result.bookingId, // Add the booking ID
-          };
-
-          // Redirect to booking details page
-          const encodedData = encodeURIComponent(
-            JSON.stringify(bookingDataForPayment),
-          );
-          router.push(`/BookingDetails?data=${encodedData}`);
-        } else {
-          toast.error(result.message || "Failed to create booking", {
-            duration: 5000,
-            icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-          });
-        }
-      } catch (error) {
-        console.error("Booking error:", error);
-        toast.error("Failed to create booking. Please try again.", {
-          duration: 5000,
-          icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-        });
-      }
-
-      // Redirect to booking details page
-      const encodedData = encodeURIComponent(JSON.stringify(bookingDetails));
-      router.push(`/BookingDetails?data=${encodedData}`);
-    } catch (error) {
-      console.error("Booking processing error:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Booking processing failed",
-        {
-          duration: 5000,
-          icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-        },
-      );
-      setProcessingPayment(false);
-    }
-  };
 
   // Add keyboard event handler for fullscreen navigation - always define this hook
   useEffect(() => {
@@ -1195,6 +940,269 @@ if (facility?.serviceProviderId) {
   // 3. Get Total Amount (Backend source of truth)
   // If backend isn't ready, we sum our local estimates
   const totalAmount = displayBasePrice + displayGST;
+
+
+  
+  const handleBookingSubmit = async () => {
+    // Check if user is signed in
+    if (!user) {
+      toast.error("Please sign in to book this facility", {
+        duration: 3000,
+        icon: <AlertCircle className="h-5 w-5 text-red-500" />,
+      });
+      return;
+    }
+
+    // Check if user is a service provider
+    if (user?.userType === "Service Provider") {
+      toast.error(
+        "Facility Partners cannot make bookings. Please use a startup account to book facilities.",
+        {
+          duration: 5000,
+          icon: <AlertCircle className="h-5 w-5 text-red-500" />,
+        },
+      );
+      return;
+    }
+
+    // Check if profile is complete before allowing to book
+    if (!isStartupProfileComplete(profile)) {
+      setShowIncompleteProfileModal(true);
+      return;
+    }
+    // console.log("Facility Type:", facility?.facilityType);
+    // console.log("Available Cabins:", facility?.details?.availableCabins);
+    // console.log("Available Seats:", facility?.details?.availableSeats);
+    // Check facility availability
+    // Check facility availability based on facility type
+    if (
+      (facility?.facilityType === "individual-cabin" &&
+        (facility.details.availableCabins ?? 0) <= 0) ||
+      (facility?.facilityType === "coworking-spaces" &&
+        (facility.details.availableSeats ?? 0) <= 0) ||
+      (facility?.facilityType === "meeting-rooms" &&
+        ((facility.details.totalRooms ?? 0) <= 0 ||
+          (facility.details.seatingCapacity ?? 0) <= 0 ||
+          (facility.details.totalTrainingRoomSeaters ?? 0) <= 0))
+    ) {
+      toast.error("This facility is currently not available for booking", {
+        duration: 3000,
+        icon: <AlertCircle className="h-5 w-5 text-red-500" />,
+      });
+      return;
+    }
+
+    // Check if all required fields are filled
+    if (!selectedDate || !selectedTime || !contactNumber || !selectedPlan) {
+      toast.error("Please fill in all required fields", {
+        duration: 3000,
+        icon: <AlertCircle className="h-5 w-5 text-red-500" />,
+      });
+      return;
+    }
+
+    try {
+      setProcessingPayment(true);
+
+      // Format date and time for API
+      const startDateTime = new Date(selectedDate);
+      const [hours, minutes] =
+        selectedTime.split(" ")[0].split(":").length === 2
+          ? selectedTime.split(" ")[0].split(":")
+          : [selectedTime.split(" ")[0], "00"];
+
+      const isPM = selectedTime.includes("PM");
+      startDateTime.setHours(
+        isPM
+          ? parseInt(hours) === 12
+            ? 12
+            : parseInt(hours) + 12
+          : parseInt(hours) === 12
+            ? 0
+            : parseInt(hours),
+        parseInt(minutes) || 0,
+        0, // Set seconds to 0
+        0, // Set milliseconds to 0
+      );
+
+      // Calculate end date based on rental plan
+      const endDateTime = new Date(startDateTime.getTime()); // Clone the start date to preserve the time
+
+      // Calculate the end date while properly preserving the time component
+      switch (selectedPlan.name) {
+        case "Annual":
+          // For annual plans, set to the same time but years ahead
+          endDateTime.setFullYear(endDateTime.getFullYear() + unitCount);
+          break;
+        case "Monthly":
+          // For monthly plans, set to the same time but months ahead
+          endDateTime.setMonth(endDateTime.getMonth() + unitCount);
+          break;
+        case "Weekly":
+          // For weekly plans, set to the same time but 7*unitCount days ahead
+          endDateTime.setDate(endDateTime.getDate() + 7 * unitCount);
+          break;
+        case "One Day (24 Hours)":
+          // For daily plans, set to the same time but unitCount days ahead
+          endDateTime.setDate(endDateTime.getDate() + unitCount);
+          break;
+        case "Hourly":
+          // For hourly plans, set to unitCount hours ahead
+          endDateTime.setHours(endDateTime.getHours() + unitCount);
+          break;
+      }
+      // Calculate service fee (backend is source of truth when available)
+      const basePriceForFee = selectedPlan.price * unitCount * bookingSeats;
+      const fallbackServiceFee =
+        isExisting === true
+          ? getFixedServiceFee(facility?.facilityType || "") *
+            unitCount *
+            bookingSeats
+          : basePriceForFee * 0.07;
+      const serviceFee = priceDetails?.fixedFee ?? fallbackServiceFee;
+      const gstOnServiceFee =
+        priceDetails?.gstOnServiceFee ?? serviceFee * 0.18;
+      const basePriceForTotals = priceDetails?.basePrice ?? currentBaseRent;
+      const gstOnBase =
+        priceDetails?.gstAmount && priceDetails.gstAmount > 0
+          ? priceDetails.gstAmount
+          : basePriceForTotals * 0.18;
+      // Prepare booking details for confirmation page
+      const bookingDetails = {
+        // Facility Information
+        //  userId: session?.user?.id,
+        facilityId: facilityId,
+        // facility: facility,
+
+        // Booking Duration Details
+        // duration: {
+        rentalPlan: selectedPlan.name,
+        unitCount: unitCount,
+        unitLabel:
+          selectedPlan.name === "Annual"
+            ? `year${unitCount > 1 ? "s" : ""}`
+            : selectedPlan.name === "Monthly"
+              ? `month${unitCount > 1 ? "s" : ""}`
+              : selectedPlan.name === "Weekly"
+                ? `week${unitCount > 1 ? "s" : ""}`
+                : selectedPlan.name === "One Day (24 Hours)"
+                  ? `day${unitCount > 1 ? "s" : ""}`
+                  : `hour${unitCount > 1 ? "s" : ""}`,
+
+        // Seating Details
+        // seating: {
+        bookingSeats: bookingSeats,
+        // type: facility?.details?.bookingPlanType || 'seat',
+        label: bookingUnitLabel,
+        // },
+
+        // Timing Details
+        // timing: {
+        startDate: startDateTime.toISOString(),
+        endDate: endDateTime.toISOString(),
+        // },
+
+        // Contact Information
+        contactNumber: contactNumber,
+        hasGST: priceDetails?.hasGST,
+        // Pricing Details
+        // Pricing Details
+        // pricing:{
+        originalBaseAmount: displayQuantityPrice,
+        baseAmount: displayQuantityPrice,
+        perUnitPrice: selectedPlan.price,
+        serviceFee: serviceFee,
+        gstOnServiceFee: gstOnServiceFee,
+        gstAmount: gstOnBase,
+        totalBeforeDiscount:
+          basePriceForTotals + // Base
+          serviceFee + // Fee
+          // gstOnServiceFee + // GST on Fee
+          gstOnBase, // GST on Base
+        discount: appliedCoupon ? appliedCoupon.discountAmount : 0,
+        amount: getFinalAmount(),
+        // }
+        // Coupon Details
+        couponApplied: appliedCoupon
+          ? {
+              couponCode: appliedCoupon.couponCode,
+              discount: appliedCoupon.discount,
+              discountAmount: appliedCoupon.discountAmount,
+              couponId: appliedCoupon.couponId,
+            }
+          : null,
+      };
+
+
+      console.log(bookingDetails)
+
+      try {
+        // const response = await fetch("/api/bookings", {
+        //   method: "POST",
+        //   headers: { "Content-Type": "application/json" },
+        //   body: JSON.stringify(bookingDetails), // ✅ This is correct, bookingDetails already has coupon
+        // });
+
+        const response = await api.post('/api/bookings',bookingDetails);
+          //  {
+          // method: "POST",
+          // credentials: "include", // IMPORTANT (send JWT cookie)
+          // headers: {
+          //   "Content-Type": "application/json",
+          // },
+          // body: JSON.stringify(bookingDetails),
+        // });
+
+        // const contentType = response.headers.get("content-type");
+        // if (!contentType || !contentType.includes("application/json")) {
+        //   const text = await response.text();
+        //   console.error("Server Error (HTML):", text);
+        //   throw new Error("Server returned an error. Check console.");
+        // }
+
+        // const result = await response.json();
+        const result = response.data;
+
+        if (result.success) {
+          const bookingDataForPayment = {
+            ...bookingDetails,
+            bookingId: result.bookingId, // Add the booking ID
+          };
+
+          // Redirect to booking details page
+          const encodedData = encodeURIComponent(
+            JSON.stringify(bookingDataForPayment),
+          );
+          router.push(`/BookingDetails?data=${encodedData}`);
+        } else {
+          toast.error(result.message || "Failed to create booking", {
+            duration: 5000,
+            icon: <AlertCircle className="h-5 w-5 text-red-500" />,
+          });
+        }
+      } catch (error) {
+        console.error("Booking error:", error);
+        toast.error("Failed to create booking. Please try again.", {
+          duration: 5000,
+          icon: <AlertCircle className="h-5 w-5 text-red-500" />,
+        });
+      }
+
+      // Redirect to booking details page
+      const encodedData = encodeURIComponent(JSON.stringify(bookingDetails));
+      router.push(`/BookingDetails?data=${encodedData}`);
+    } catch (error) {
+      console.error("Booking processing error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Booking processing failed",
+        {
+          duration: 5000,
+          icon: <AlertCircle className="h-5 w-5 text-red-500" />,
+        },
+      );
+      setProcessingPayment(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -2823,23 +2831,29 @@ if (facility?.serviceProviderId) {
                             );
                           }
 
-                          // Show for facilities with available seats/cabins (coworking, individual-cabin)
+                          // Show for facilities with available seats/cabins/rooms (coworking, individual-cabin, meeting-rooms, training-rooms)
                           if (
                             (facilityType === "coworking-spaces" &&
                               (facility.details.availableSeats ?? 0) > 0) ||
                             (facilityType === "individual-cabin" &&
                               (facility.details.availableCabins ?? 0) > 0) ||
+                            (facilityType === "meeting-rooms" &&
+                              ((facility.details.totalRooms ?? 0) > 0 ||
+                                (facility.details.roomDetails?.length ?? 0) >
+                                  0)) ||
                             (facilityType === "training-rooms" &&
                               (facility.details.totalTrainingRoomSeaters ?? 0) >
                                 0)
                           ) {
                             return (
                               <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg border border-gray-200">
-                                <span className="text-sm font-medium">
-                                  Number of{" "}
+                                  <span className="text-sm font-medium">
+                                    Number of{" "}
                                   {facilityType === "individual-cabin"
                                     ? "Cabins"
-                                    : "Seats"}
+                                    : facilityType === "meeting-rooms"
+                                      ? "Rooms"
+                                      : "Seats"}
                                 </span>
                                 <div className="flex items-center gap-2 sm:gap-3">
                                   <button
